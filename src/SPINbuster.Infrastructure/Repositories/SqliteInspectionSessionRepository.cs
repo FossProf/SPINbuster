@@ -23,6 +23,7 @@ public sealed class SqliteInspectionSessionRepository : IInspectionSessionReposi
       .AsNoTracking()
       .Include(session => session.FieldNotes)
       .Include(session => session.EvidenceAttachments)
+      .AsSplitQuery()
       .SingleOrDefaultAsync(session => session.Id == inspectionSessionId, cancellationToken);
 
     if (record is null)
@@ -49,6 +50,7 @@ public sealed class SqliteInspectionSessionRepository : IInspectionSessionReposi
     var existing = await _dbContext.InspectionSessions
       .Include(session => session.FieldNotes)
       .Include(session => session.EvidenceAttachments)
+      .AsSplitQuery()
       .SingleAsync(session => session.Id == inspectionSession.Id, cancellationToken);
 
     existing.Lifecycle = inspectionSession.Lifecycle;

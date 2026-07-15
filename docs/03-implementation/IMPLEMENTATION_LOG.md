@@ -15,7 +15,10 @@ Completed:
 - Local SQLite Infrastructure foundation
 - Local SQLite Infrastructure migration validation
 - Infrastructure baseline release (`INFRASTRUCTURE-0.1`)
+- First executable local Desktop-to-SQLite vertical slice
+- Desktop end-to-end workflow validation
+- Vertical-slice baseline release (`VERTICAL-SLICE-0.1`)
 
 Next:
 
-- Application-layer vertical-slice contracts and use cases
+- Next implementation package definition

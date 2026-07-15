@@ -59,13 +59,14 @@ public sealed class StartInspectionSessionUseCase
       _currentUser.UserId,
       _clock.UtcNow);
 
-    var sessionAuditStart = inspectionSession.AuditTrail.Count;
     inspectionSession.Start(_currentUser.UserId, _clock.UtcNow);
 
     await _projectRepository.UpdateAsync(project, cancellationToken);
     await _inspectionSessionRepository.AddAsync(inspectionSession, cancellationToken);
     var newAuditEvents = AuditTrailSlice.GetNewEvents(project, projectAuditStart)
-      .Concat(AuditTrailSlice.GetNewEvents(inspectionSession, sessionAuditStart))
+      // New inspection sessions are staged as brand-new aggregates, so both the
+      // creation event and the start event must be persisted in the same commit.
+      .Concat(AuditTrailSlice.GetNewEvents(inspectionSession, 0))
       .ToArray();
     StageAuditEvents(newAuditEvents);
     await _unitOfWork.CommitAsync(cancellationToken);

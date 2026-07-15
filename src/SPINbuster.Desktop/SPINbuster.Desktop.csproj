@@ -2,11 +2,14 @@
   <ItemGroup>
     <ProjectReference Include="..\SPINbuster.Application\SPINbuster.Application.csproj" />
     <ProjectReference Include="..\SPINbuster.Infrastructure\SPINbuster.Infrastructure.csproj" />
-    <ProjectReference Include="..\SPINbuster.AI\SPINbuster.AI.csproj" />
-    <ProjectReference Include="..\SPINbuster.Rules\SPINbuster.Rules.csproj" />
-    <ProjectReference Include="..\SPINbuster.Documents\SPINbuster.Documents.csproj" />
-    <ProjectReference Include="..\SPINbuster.Reporting\SPINbuster.Reporting.csproj" />
-    <ProjectReference Include="..\SPINbuster.Shared\SPINbuster.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <PropertyGroup>

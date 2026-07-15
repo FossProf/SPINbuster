@@ -2,7 +2,7 @@
 
 ## Current Baseline
 
-- `INFRASTRUCTURE-0.1`
+- `VERTICAL-SLICE-0.1`
 - Status: `Released`
 - Build: `Passing`
 - Warnings: `0`
@@ -10,6 +10,7 @@
 - Domain tests: `24/24 passing`
 - Application tests: `13/13 passing`
 - Infrastructure tests: `7/7 passing`
+- Desktop end-to-end tests: `2/2 passing`
 
 ## Current Branch
 
@@ -17,11 +18,11 @@
 
 ## Last Completed Milestone
 
-- Local SQLite persistence foundation released
+- First executable local Desktop-to-SQLite vertical slice released
 
 ## Current Implementation Phase
 
-- Application vertical-slice planning
+- Next implementation package planning
 
 ## Current Milestone
 
@@ -47,11 +48,11 @@
 
 ## Immediate Next Task
 
-- Application-layer vertical-slice contracts and use cases
+- Next implementation package definition
 
 ## Fast Context
 
 - The repository is the source of truth for project state and architecture.
 - Start every new AI session from `.ai/bootstrap.md`.
 - The current scaffold builds successfully, Infrastructure tests pass, Application tests pass, Domain tests pass, and the architecture guardrails pass.
-- The current Infrastructure baseline is released with no pending model changes, successful empty-database migration, idempotent repeat migration, verified migration history, atomic aggregate-plus-audit commit and rollback, and detached updates validated.
+- The current vertical-slice baseline is released with migrations applied at startup, project creation and persistence, inspection-session start and persistence, field-note capture and preservation, successful project/session rehydration, and persisted audit-history reload.

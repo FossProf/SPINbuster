@@ -1,7 +1,7 @@
 # Current State
 
 Repository status:
-`INFRASTRUCTURE-0.1` is the latest released baseline. Build passing. Infrastructure tests `7/7`. Application tests `13/13`. Domain tests `24/24`. Architecture tests `8/8`. Warnings `0`.
+`VERTICAL-SLICE-0.1` is the latest released baseline. Build passing. Desktop end-to-end tests `2/2`. Infrastructure tests `7/7`. Application tests `13/13`. Domain tests `24/24`. Architecture tests `8/8`. Warnings `0`.
 
 Current branch:
 `main`
@@ -10,7 +10,7 @@ Current milestone:
 `Prototype Vertical Slice`
 
 Current baseline:
-`INFRASTRUCTURE-0.1`
+`VERTICAL-SLICE-0.1`
 
 Recent accomplishments:
 
@@ -38,10 +38,17 @@ Recent accomplishments:
 - Verified `dotnet ef migrations has-pending-model-changes` returns no pending changes.
 - Verified `MigrateAsync()` from an empty SQLite database, migration-history recording, and second-run idempotence.
 - Released the local SQLite persistence foundation as `INFRASTRUCTURE-0.1`.
+- Added `AddSpinbusterApplication()` and `AddSpinbusterSqliteInfrastructure()` composition helpers so hosts can wire the existing handlers and SQLite-backed repositories consistently.
+- Added a read-only Application query to reload a persisted `Project` plus `InspectionSession` snapshot, including field notes and audit history, after command commits.
+- Reworked `SPINbuster.Desktop` into a deterministic bootstrap console host that applies migrations, executes Create Project -> Start Inspection Session -> Capture Field Note, reloads persisted state, and prints IDs, lifecycles, and audit history.
+- Added Desktop end-to-end tests proving the workflow runs against a real SQLite file and can be reloaded from a fresh service provider.
+- Corrected `StartInspectionSessionUseCase` so brand-new inspection sessions persist both the creation audit event and the start audit event in the same commit.
+- Switched `SqliteInspectionSessionRepository` collection loads to split queries to avoid EF multiple-collection include runtime warnings during the vertical slice.
+- Released the first local executable vertical slice as `VERTICAL-SLICE-0.1`.
 
 Current architectural decisions:
 
-- `INFRASTRUCTURE-0.1` is the active baseline.
+- `VERTICAL-SLICE-0.1` is the active baseline.
 - `SPINbuster.Desktop` remains a temporary bootstrap host, not a MAUI application yet.
 - `SPINbuster.Shared` is constrained to narrow cross-boundary contracts and primitives.
 - Adapter-to-adapter references are disallowed.
@@ -52,20 +59,23 @@ Current architectural decisions:
 - The local SQLite Infrastructure slice persists Domain aggregates through explicit mapping records rather than implicit EF tracking assumptions.
 - The Infrastructure slice uses staged audit persistence inside the same unit-of-work commit as aggregate state changes.
 - The startup-project and design-time DbContext paths now use aligned SQLite provider configuration for migration tooling.
+- The temporary Desktop host depends only on `SPINbuster.Application` and `SPINbuster.Infrastructure`.
+- The first vertical slice reloads persisted state through an Application query instead of reading EF models directly in the host.
 - `EDR-DOM-001` defers versioned evidence interpretation history; current behavior is single-assignment with no silent replacement.
 - `EDR-APP-001` defers command idempotency until retry and synchronization work begins.
 - `EDR-APP-002` fixes `GenerateReportDraftRequest` as a side-effect-free query that assembles drafting context only.
 
 Next task:
-Application-layer vertical-slice contracts and use cases
+Next implementation package definition
 
 Known issues:
 
 - Most non-architecture test projects are still empty scaffolds and intentionally have no real test cases yet.
 - Evidence interpretation is intentionally single-assignment for `DOMAIN-0.1`; richer interpretation history is deferred by `EDR-DOM-001`.
 - No known blockers remain for the released local SQLite Infrastructure slice.
+- The Desktop host is still a console bootstrapper and should not accumulate broader UI assumptions before the real client direction is chosen.
 
 Requested review:
 
-- Application-layer vertical-slice review
+- Next implementation package review
 - Whether `ICurrentUser` should stay `string` or move to a typed identifier in the next baseline

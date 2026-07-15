@@ -4,7 +4,7 @@ Current milestone:
 Prototype Vertical Slice
 
 Baseline:
-INFRASTRUCTURE-0.1
+VERTICAL-SLICE-0.1
 
 Status:
 Released
@@ -27,27 +27,32 @@ Application tests:
 Infrastructure tests:
 7/7 passing
 
+Desktop end-to-end tests:
+2/2 passing
+
 Current task:
-Application-layer vertical-slice contracts and use cases
+Next implementation package definition
 
 Required outcome:
 
-- Establish the first implementation slice above the released local SQLite Infrastructure foundation.
+- Preserve the released first executable local vertical slice above the released local SQLite Infrastructure foundation.
 - Preserve the approved inward-pointing architecture and the existing minimal `Application -> Domain` dependency surface.
 - Keep EF Core, SQLite, HTTP, Ollama, file-system, and UI details out of the Application layer.
 - Preserve the released audit staging, explicit repository update semantics, and infrastructure transaction guarantees from `INFRASTRUCTURE-0.1`.
-- Add only application-layer orchestration, contracts, and tests needed for the next vertical slice.
+- Maintain the validated temporary Desktop host path:
+  Create Project -> Start Inspection Session -> Capture Field Note -> Commit through SQLite -> Reload persisted state -> Display persisted audit history.
+- Keep the Desktop host deterministic and intentionally narrow until a real MAUI client is introduced.
 - Respect deferred design items `EDR-DOM-001` and `EDR-APP-001`.
 - Preserve accepted drafting-query boundary `EDR-APP-002`.
 
 Next review:
-Application foundation package review
+Next implementation package review
 
 Known blockers:
 None
 
 Last completed:
-Local SQLite persistence foundation released as `INFRASTRUCTURE-0.1`
+First executable local Desktop-to-SQLite vertical slice released as `VERTICAL-SLICE-0.1`
 
 Authoritative context:
 
@@ -63,10 +68,12 @@ Authoritative context:
 - `tests/SPINbuster.Domain.Tests/`
 - `src/SPINbuster.Infrastructure/`
 - `tests/SPINbuster.Infrastructure.Tests/`
+- `src/SPINbuster.Desktop/`
+- `tests/SPINbuster.Desktop.Tests/`
 - `docs/decisions/edr/EDR-DOM-001-versioned-evidence-interpretation-history.md`
 - `docs/decisions/edr/EDR-APP-001-command-idempotency.md`
 - `docs/decisions/edr/EDR-APP-002-draft-generation-ownership.md`
-- Relevant `src/SPINbuster.Application/` and `tests/SPINbuster.Application.Tests/` files for the active vertical slice
+- Relevant `src/SPINbuster.Application/`, `src/SPINbuster.Infrastructure/`, and `src/SPINbuster.Desktop/` files for the active vertical slice
 
 Validation before completion:
 
@@ -75,6 +82,7 @@ Validation before completion:
 - `dotnet build SPINbuster.sln --no-restore`
 - `dotnet test tests/SPINbuster.Application.Tests/SPINbuster.Application.Tests.csproj`
 - `dotnet test tests/SPINbuster.Infrastructure.Tests/SPINbuster.Infrastructure.Tests.csproj`
+- `dotnet test tests/SPINbuster.Desktop.Tests/SPINbuster.Desktop.Tests.csproj`
 - `dotnet test tests/SPINbuster.Domain.Tests/SPINbuster.Domain.Tests.csproj`
 - `dotnet test tests/SPINbuster.Architecture.Tests/SPINbuster.Architecture.Tests.csproj`
 - `dotnet test SPINbuster.sln --no-build -m:1`

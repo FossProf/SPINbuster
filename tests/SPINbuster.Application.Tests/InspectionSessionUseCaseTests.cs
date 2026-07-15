@@ -44,7 +44,10 @@ public sealed class InspectionSessionUseCaseTests
     Assert.Single(projectRepository.UpdatedProjects);
     Assert.Equal(ProjectLifecycle.Active, projectRepository.UpdatedProjects[0].Lifecycle);
     Assert.Equal(1, unitOfWork.CommitCount);
-    Assert.Equal(2, auditRecorder.StagedEvents.Count);
+    Assert.Equal(3, auditRecorder.StagedEvents.Count);
+    Assert.Equal(
+      ["ProjectActivated", "InspectionSessionCreated", "InspectionSessionStarted"],
+      auditRecorder.StagedEvents.Select(auditEvent => auditEvent.EventType));
   }
 
   [Fact]
