@@ -52,6 +52,32 @@ public sealed class InspectionSession : AuditableEntity
 
   public IReadOnlyList<EvidenceAttachment> EvidenceAttachments => _evidenceAttachments.AsReadOnly();
 
+  internal static InspectionSession Rehydrate(
+    InspectionSessionId id,
+    ProjectId projectId,
+    string name,
+    string createdBy,
+    DateTimeOffset createdAtUtc,
+    InspectionSessionLifecycle lifecycle,
+    DateTimeOffset? startedAtUtc,
+    DateTimeOffset? completedAtUtc,
+    IEnumerable<FieldNote> fieldNotes,
+    IEnumerable<EvidenceAttachment> evidenceAttachments,
+    IEnumerable<AuditEvent> auditTrail)
+  {
+    var inspectionSession = new InspectionSession(id, projectId, name, createdBy, createdAtUtc)
+    {
+      Lifecycle = lifecycle,
+      StartedAtUtc = startedAtUtc,
+      CompletedAtUtc = completedAtUtc,
+    };
+
+    inspectionSession._fieldNotes.AddRange(fieldNotes);
+    inspectionSession._evidenceAttachments.AddRange(evidenceAttachments);
+    inspectionSession.RestoreAuditTrail(auditTrail);
+    return inspectionSession;
+  }
+
   public void Start(string actor, DateTimeOffset occurredAtUtc)
   {
     EnsureLifecycle(InspectionSessionLifecycle.Planned, nameof(Start));

@@ -12,4 +12,10 @@ public abstract class AuditableEntity
   {
     _auditTrail.Add(auditEvent);
   }
+
+  internal void RestoreAuditTrail(IEnumerable<AuditEvent> auditTrail)
+  {
+    _auditTrail.Clear();
+    _auditTrail.AddRange(auditTrail);
+  }
 }

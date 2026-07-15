@@ -1,5 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\SPINbuster.Application\SPINbuster.Application.csproj" />
     <ProjectReference Include="..\SPINbuster.Infrastructure\SPINbuster.Infrastructure.csproj" />
     <ProjectReference Include="..\SPINbuster.AI\SPINbuster.AI.csproj" />

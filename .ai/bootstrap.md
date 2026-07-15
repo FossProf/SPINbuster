@@ -10,11 +10,11 @@ SPINbuster is a layered .NET codebase with AI-assisted capabilities, governed by
 
 - Repository scaffold exists and builds successfully.
 - Architecture guardrails are in place and passing.
-- The repository includes the released `APPLICATION-0.1` baseline for the initial Application foundation.
+- The repository includes the released `INFRASTRUCTURE-0.1` baseline with validated local SQLite persistence, migrations, and transaction behavior.
 
 ## Current Baseline
 
-- `APPLICATION-0.1`
+- `INFRASTRUCTURE-0.1`
 
 ## Current Milestone
 
@@ -22,7 +22,7 @@ SPINbuster is a layered .NET codebase with AI-assisted capabilities, governed by
 
 ## Current Active Task
 
-- `Application-to-Infrastructure persistence seam design`
+- `Application-layer vertical-slice contracts and use cases`
 
 ## Authoritative Files
 

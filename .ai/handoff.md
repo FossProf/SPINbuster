@@ -1,7 +1,7 @@
 # Current State
 
 Repository status:
-`APPLICATION-0.1` is now the latest released baseline. Build passing. Application tests `13/13`. Domain tests `24/24`. Architecture tests `8/8`. Warnings `0`.
+`INFRASTRUCTURE-0.1` is the latest released baseline. Build passing. Infrastructure tests `7/7`. Application tests `13/13`. Domain tests `24/24`. Architecture tests `8/8`. Warnings `0`.
 
 Current branch:
 `main`
@@ -10,7 +10,7 @@ Current milestone:
 `Prototype Vertical Slice`
 
 Current baseline:
-`APPLICATION-0.1`
+`INFRASTRUCTURE-0.1`
 
 Recent accomplishments:
 
@@ -30,10 +30,18 @@ Recent accomplishments:
 - Recorded `EDR-APP-001` and `EDR-APP-002` for command idempotency and draft-generation ownership.
 - Expanded Application tests to cover staged audit ordering, commit failure behavior, staging failure behavior, explicit update semantics, and read-only query isolation.
 - Released the initial Application foundation as `APPLICATION-0.1`.
+- Added the local SQLite Infrastructure foundation with EF Core DbContext, entity configurations, strongly typed ID value conversions, repository implementations, staged audit persistence, and a `SqliteUnitOfWork`.
+- Added a scaffolded initial EF Core migration and design-time DbContext factory for the SQLite persistence slice.
+- Added SQLite integration tests proving commit-together behavior, rollback on staged-audit failure, and explicit detached update support for `Project` and `InspectionSession`.
+- Added narrow Domain rehydration hooks so Infrastructure can rebuild released aggregates without reflection or persistence leakage into Application contracts.
+- Aligned `SPINbuster.Server` with the Infrastructure DbContext so the official EF Core startup path can validate migrations.
+- Verified `dotnet ef migrations has-pending-model-changes` returns no pending changes.
+- Verified `MigrateAsync()` from an empty SQLite database, migration-history recording, and second-run idempotence.
+- Released the local SQLite persistence foundation as `INFRASTRUCTURE-0.1`.
 
 Current architectural decisions:
 
-- `SKELETON-0.1` is the active scaffold baseline.
+- `INFRASTRUCTURE-0.1` is the active baseline.
 - `SPINbuster.Desktop` remains a temporary bootstrap host, not a MAUI application yet.
 - `SPINbuster.Shared` is constrained to narrow cross-boundary contracts and primitives.
 - Adapter-to-adapter references are disallowed.
@@ -41,20 +49,23 @@ Current architectural decisions:
 - The Application layer currently depends only on `SPINbuster.Domain` and owns orchestration contracts rather than persistence, transport, or provider implementations.
 - The Application layer stages audit facts before a single unit-of-work commit so state and audit persistence can share one logical transaction.
 - Mutated loaded aggregates require explicit repository `UpdateAsync` calls in Application handlers.
+- The local SQLite Infrastructure slice persists Domain aggregates through explicit mapping records rather than implicit EF tracking assumptions.
+- The Infrastructure slice uses staged audit persistence inside the same unit-of-work commit as aggregate state changes.
+- The startup-project and design-time DbContext paths now use aligned SQLite provider configuration for migration tooling.
 - `EDR-DOM-001` defers versioned evidence interpretation history; current behavior is single-assignment with no silent replacement.
 - `EDR-APP-001` defers command idempotency until retry and synchronization work begins.
 - `EDR-APP-002` fixes `GenerateReportDraftRequest` as a side-effect-free query that assembles drafting context only.
 
 Next task:
-Application-to-Infrastructure persistence seam design
+Application-layer vertical-slice contracts and use cases
 
 Known issues:
 
 - Most non-architecture test projects are still empty scaffolds and intentionally have no real test cases yet.
 - Evidence interpretation is intentionally single-assignment for `DOMAIN-0.1`; richer interpretation history is deferred by `EDR-DOM-001`.
-- Infrastructure implementations do not exist yet; the repository is still at the contract-and-orchestration stage for persistence concerns.
+- No known blockers remain for the released local SQLite Infrastructure slice.
 
 Requested review:
 
-- Application-to-Infrastructure persistence seam before SQLite work begins
+- Application-layer vertical-slice review
 - Whether `ICurrentUser` should stay `string` or move to a typed identifier in the next baseline

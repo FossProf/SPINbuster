@@ -45,6 +45,31 @@ public sealed class SaveTransaction : AuditableEntity
 
   public DateTimeOffset? CompletedAtUtc { get; private set; }
 
+  internal static SaveTransaction Rehydrate(
+    SaveTransactionId id,
+    ReportId reportId,
+    string initiatedBy,
+    DateTimeOffset createdAtUtc,
+    SaveTransactionState state,
+    string? failureReason,
+    DateTimeOffset? preparedAtUtc,
+    DateTimeOffset? persistedAtUtc,
+    DateTimeOffset? completedAtUtc,
+    IEnumerable<AuditEvent> auditTrail)
+  {
+    var saveTransaction = new SaveTransaction(id, reportId, initiatedBy, createdAtUtc)
+    {
+      State = state,
+      FailureReason = failureReason,
+      PreparedAtUtc = preparedAtUtc,
+      PersistedAtUtc = persistedAtUtc,
+      CompletedAtUtc = completedAtUtc,
+    };
+
+    saveTransaction.RestoreAuditTrail(auditTrail);
+    return saveTransaction;
+  }
+
   public void Prepare(string actor, DateTimeOffset occurredAtUtc)
   {
     EnsureState(SaveTransactionState.Created, nameof(Prepare));

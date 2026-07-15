@@ -50,6 +50,30 @@ public sealed class Report : AuditableEntity
 
   public DateTimeOffset? ApprovedAtUtc { get; private set; }
 
+  internal static Report Rehydrate(
+    ReportId id,
+    ProjectId projectId,
+    InspectionSessionId inspectionSessionId,
+    string title,
+    string body,
+    string createdBy,
+    DateTimeOffset createdAtUtc,
+    ReportLifecycle lifecycle,
+    string? approvedBy,
+    DateTimeOffset? approvedAtUtc,
+    IEnumerable<AuditEvent> auditTrail)
+  {
+    var report = new Report(id, projectId, inspectionSessionId, title, body, createdBy, createdAtUtc)
+    {
+      Lifecycle = lifecycle,
+      ApprovedBy = approvedBy,
+      ApprovedAtUtc = approvedAtUtc,
+    };
+
+    report.RestoreAuditTrail(auditTrail);
+    return report;
+  }
+
   public void UpdateDraft(string title, string body, string actor, DateTimeOffset occurredAtUtc)
   {
     EnsureLifecycle(ReportLifecycle.Draft, nameof(UpdateDraft));

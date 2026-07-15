@@ -31,6 +31,25 @@ public sealed class EvidenceAttachment
   // capture data.
   public EvidenceInterpretation? Interpretation { get; private set; }
 
+  internal static EvidenceAttachment Rehydrate(
+    EvidenceAttachmentId id,
+    InspectionSessionId inspectionSessionId,
+    string capturedBy,
+    DateTimeOffset capturedAtUtc,
+    RawEvidenceReference rawEvidence,
+    EvidenceInterpretation? interpretation)
+  {
+    var evidenceAttachment = new EvidenceAttachment(
+      id,
+      inspectionSessionId,
+      capturedBy,
+      capturedAtUtc,
+      rawEvidence);
+
+    evidenceAttachment.Interpretation = interpretation;
+    return evidenceAttachment;
+  }
+
   internal void ApplyInterpretation(EvidenceInterpretation interpretation)
   {
     if (Interpretation is not null)

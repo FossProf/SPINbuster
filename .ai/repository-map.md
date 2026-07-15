@@ -84,3 +84,13 @@ Put lightweight agent instructions in `.ai/`.
 - `src/SPINbuster.Application/Repositories/` defines inward-facing repository interfaces for `Project`, `InspectionSession`, `Report`, and `SaveTransaction`, including explicit update semantics for mutated loaded aggregates.
 - `src/SPINbuster.Application/UseCases/` currently contains `CreateProject`, `StartInspectionSession`, `CaptureFieldNote`, `AttachEvidence`, `AddInterpretation`, `GenerateReportDraftRequest`, and `PrepareTransactionalSave`.
 - `tests/SPINbuster.Application.Tests/` uses in-memory fakes to verify orchestration, lifecycle guards, staged audit ordering, explicit mutation updates, failure handling, ownership boundaries, and draft-request shaping without adding persistence or transport concerns.
+- `src/SPINbuster.Infrastructure/Persistence/` contains the local SQLite DbContext, EF Core entity mappings, migration artifacts, typed-ID value converters, and Domain-to-record mapping helpers.
+- `src/SPINbuster.Infrastructure/Repositories/` contains the local SQLite repository implementations, including explicit detached-update support for mutable loaded aggregates.
+- `src/SPINbuster.Infrastructure/Services/` contains `SqliteAuditRecorder` and `SqliteUnitOfWork` for staged audit persistence inside one logical commit boundary.
+- `tests/SPINbuster.Infrastructure.Tests/` contains SQLite integration tests for commit-together behavior, rollback behavior, detached updates, migration metadata presence, migration application, and migration idempotence.
+
+## Current Released Baseline
+
+- `INFRASTRUCTURE-0.1` is the current released baseline.
+- Migration status: no pending model changes, empty-database migration passes, repeated migration is idempotent, and migration history is verified.
+- Persistence status: aggregate and staged audit changes commit atomically, roll back atomically, and detached updates are verified.

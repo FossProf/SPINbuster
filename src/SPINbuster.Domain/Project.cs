@@ -31,6 +31,23 @@ public sealed class Project : AuditableEntity
 
   public ProjectLifecycle Lifecycle { get; private set; }
 
+  internal static Project Rehydrate(
+    ProjectId id,
+    string name,
+    string createdBy,
+    DateTimeOffset createdAtUtc,
+    ProjectLifecycle lifecycle,
+    IEnumerable<AuditEvent> auditTrail)
+  {
+    var project = new Project(id, name, createdBy, createdAtUtc)
+    {
+      Lifecycle = lifecycle,
+    };
+
+    project.RestoreAuditTrail(auditTrail);
+    return project;
+  }
+
   public void Activate(string actor, DateTimeOffset occurredAtUtc)
   {
     EnsureTransition(ProjectLifecycle.Draft, nameof(Activate));

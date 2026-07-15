@@ -12,7 +12,10 @@ Completed:
 - Application foundation
 - Application hardening pass
 - Application baseline release (`APPLICATION-0.1`)
+- Local SQLite Infrastructure foundation
+- Local SQLite Infrastructure migration validation
+- Infrastructure baseline release (`INFRASTRUCTURE-0.1`)
 
 Next:
 
-- Application-to-Infrastructure persistence seam design
+- Application-layer vertical-slice contracts and use cases
