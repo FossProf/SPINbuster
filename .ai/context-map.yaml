@@ -1,0 +1,21 @@
+tasks:
+  ai:
+    - spec/ai/README.md
+    - spec/ai/model-roles.md
+    - spec/ai/prompt-contracts.md
+  api:
+    - spec/api/README.md
+  architecture:
+    - spec/architecture/README.md
+  database:
+    - spec/database/README.md
+  requirements:
+    - spec/requirements/README.md
+  rules:
+    - spec/rules/README.md
+
+always_read:
+  - .ai/current-priority.md
+  - .ai/coding-rules.md
+  - .ai/repository-map.md
+
