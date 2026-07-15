@@ -10,11 +10,11 @@ SPINbuster is a layered .NET codebase with AI-assisted capabilities, governed by
 
 - Repository scaffold exists and builds successfully.
 - Architecture guardrails are in place and passing.
-- The repository is ready to begin Domain foundation work.
+- The repository now includes the released `DOMAIN-0.1` baseline and is ready for Application layer design.
 
 ## Current Baseline
 
-- `SKELETON-0.1`
+- `DOMAIN-0.1`
 
 ## Current Milestone
 
@@ -22,7 +22,7 @@ SPINbuster is a layered .NET codebase with AI-assisted capabilities, governed by
 
 ## Current Active Task
 
-- `Implement Domain foundation`
+- `Application-layer vertical-slice contracts and use cases`
 
 ## Authoritative Files
 
@@ -60,4 +60,3 @@ Before finishing work:
 - Update `.ai/current-priority.md` if the active baton changed.
 - Update `.ai/handoff.md` after major work sessions.
 - Update `PROJECT_STATE.md` when baseline, milestone, phase, or immediate next task changes.
-

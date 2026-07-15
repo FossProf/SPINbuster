@@ -8,8 +8,8 @@ Completed:
 - Architecture tests
 - AI bootstrap continuity layer
 - Centralized .NET build and package configuration hardening
+- Domain foundation
 
 Next:
 
-- Domain foundation
-
+- Application-layer vertical-slice contracts and use cases

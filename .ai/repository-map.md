@@ -18,11 +18,12 @@ Purpose: Explain how the repository is organized and where different kinds of wo
 - `docs/decisions/edr/` contains engineering and product decision records.
 - `docs/decisions/status/` contains baseline, review, and status records.
 - `docs/03-implementation/IMPLEMENTATION_LOG.md` records completed milestones and the next implementation step.
+- `docs/decisions/edr/EDR-DOM-001-versioned-evidence-interpretation-history.md` records the deferred interpretation-history design item for the Domain layer.
 
 ## Source Projects
 
 - `src/SPINbuster.Shared` contains only narrow cross-boundary contracts, primitives, identifiers, and serialization-safe shared DTO primitives.
-- `src/SPINbuster.Domain` contains core domain types and domain-level policies.
+- `src/SPINbuster.Domain` contains core domain types and domain-level policies, including the initial Project, InspectionSession, FieldNote, EvidenceAttachment, Report, SaveTransaction, and AuditEvent model.
 - `src/SPINbuster.Rules` contains reusable business rule evaluation components that support the core.
 - `src/SPINbuster.Application` contains application-layer orchestration and use-case coordination.
 - `src/SPINbuster.Infrastructure` contains persistence and external system adapters for non-AI concerns.
