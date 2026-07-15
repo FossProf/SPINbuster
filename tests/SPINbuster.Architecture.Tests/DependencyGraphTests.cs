@@ -10,7 +10,7 @@ public sealed class DependencyGraphTests
       ["SPINbuster.Shared"] = [],
       ["SPINbuster.Domain"] = ["SPINbuster.Shared"],
       ["SPINbuster.Rules"] = ["SPINbuster.Domain", "SPINbuster.Shared"],
-      ["SPINbuster.Application"] = ["SPINbuster.Domain", "SPINbuster.Rules", "SPINbuster.Shared"],
+      ["SPINbuster.Application"] = ["SPINbuster.Domain"],
       ["SPINbuster.Infrastructure"] = ["SPINbuster.Application", "SPINbuster.Shared"],
       ["SPINbuster.AI"] = ["SPINbuster.Application", "SPINbuster.Shared"],
       ["SPINbuster.Documents"] = ["SPINbuster.Application", "SPINbuster.Shared"],
@@ -107,6 +107,21 @@ public sealed class DependencyGraphTests
     var actualReferences = LoadProjectReferences(applicationProject);
 
     Assert.DoesNotContain(actualReferences, disallowedReferences.Contains);
+  }
+
+  [Fact]
+  public void ApplicationProjectKeepsOnlyMinimalInwardReferenceSet()
+  {
+    var repoRoot = FindRepositoryRoot();
+    var applicationProject = Path.Combine(repoRoot, "src", "SPINbuster.Application", "SPINbuster.Application.csproj");
+    var allowedReferences = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    {
+      "SPINbuster.Domain",
+    };
+
+    var actualReferences = LoadProjectReferences(applicationProject);
+
+    Assert.All(actualReferences, reference => Assert.Contains(reference, allowedReferences));
   }
 
   [Fact]

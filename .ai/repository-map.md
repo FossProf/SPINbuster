@@ -19,13 +19,15 @@ Purpose: Explain how the repository is organized and where different kinds of wo
 - `docs/decisions/status/` contains baseline, review, and status records.
 - `docs/03-implementation/IMPLEMENTATION_LOG.md` records completed milestones and the next implementation step.
 - `docs/decisions/edr/EDR-DOM-001-versioned-evidence-interpretation-history.md` records the deferred interpretation-history design item for the Domain layer.
+- `docs/decisions/edr/EDR-APP-001-command-idempotency.md` records the deferred command-idempotency design item for the Application layer.
+- `docs/decisions/edr/EDR-APP-002-draft-generation-ownership.md` records the accepted drafting-query boundary for `APPLICATION-0.1`.
 
 ## Source Projects
 
 - `src/SPINbuster.Shared` contains only narrow cross-boundary contracts, primitives, identifiers, and serialization-safe shared DTO primitives.
 - `src/SPINbuster.Domain` contains core domain types and domain-level policies, including the initial Project, InspectionSession, FieldNote, EvidenceAttachment, Report, SaveTransaction, and AuditEvent model.
 - `src/SPINbuster.Rules` contains reusable business rule evaluation components that support the core.
-- `src/SPINbuster.Application` contains application-layer orchestration and use-case coordination.
+- `src/SPINbuster.Application` contains application-layer orchestration, command/query contracts, repository interfaces, transaction boundaries, audit abstractions, identity/time abstractions, and the first vertical-slice use cases.
 - `src/SPINbuster.Infrastructure` contains persistence and external system adapters for non-AI concerns.
 - `src/SPINbuster.AI` contains AI integration adapters and AI-specific orchestration support.
 - `src/SPINbuster.Documents` contains document generation and document workflow support.
@@ -74,3 +76,11 @@ Put lightweight agent instructions in `.ai/`.
 - `.editorconfig` defines formatting and editor conventions.
 - `NuGet.Config` keeps restore behavior self-contained within the repository.
 - `SPINbuster.sln` aggregates all production and test projects.
+
+## Current Application Foundation
+
+- `src/SPINbuster.Application/Contracts/` defines command and query handler contracts.
+- `src/SPINbuster.Application/Abstractions/` defines `IClock`, `ICurrentUser`, `IAuditRecorder`, and `IUnitOfWork`.
+- `src/SPINbuster.Application/Repositories/` defines inward-facing repository interfaces for `Project`, `InspectionSession`, `Report`, and `SaveTransaction`, including explicit update semantics for mutated loaded aggregates.
+- `src/SPINbuster.Application/UseCases/` currently contains `CreateProject`, `StartInspectionSession`, `CaptureFieldNote`, `AttachEvidence`, `AddInterpretation`, `GenerateReportDraftRequest`, and `PrepareTransactionalSave`.
+- `tests/SPINbuster.Application.Tests/` uses in-memory fakes to verify orchestration, lifecycle guards, staged audit ordering, explicit mutation updates, failure handling, ownership boundaries, and draft-request shaping without adding persistence or transport concerns.
