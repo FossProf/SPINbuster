@@ -18,6 +18,7 @@ Completed:
 - First executable local Desktop-to-SQLite vertical slice
 - Desktop end-to-end workflow validation
 - Vertical-slice baseline release (`VERTICAL-SLICE-0.1`)
+- Prototype review milestone for `VERTICAL-SLICE-0.1`
 
 Next:
 

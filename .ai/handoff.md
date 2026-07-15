@@ -45,6 +45,7 @@ Recent accomplishments:
 - Corrected `StartInspectionSessionUseCase` so brand-new inspection sessions persist both the creation audit event and the start audit event in the same commit.
 - Switched `SqliteInspectionSessionRepository` collection loads to split queries to avoid EF multiple-collection include runtime warnings during the vertical slice.
 - Released the first local executable vertical slice as `VERTICAL-SLICE-0.1`.
+- Recorded the post-release prototype review milestone for `VERTICAL-SLICE-0.1`, including validated assumptions, uncovered defects, DI/rehydration/migration/audit/query friction, and the temporary Desktop host assessment.
 
 Current architectural decisions:
 
@@ -74,6 +75,7 @@ Known issues:
 - Evidence interpretation is intentionally single-assignment for `DOMAIN-0.1`; richer interpretation history is deferred by `EDR-DOM-001`.
 - No known blockers remain for the released local SQLite Infrastructure slice.
 - The Desktop host is still a console bootstrapper and should not accumulate broader UI assumptions before the real client direction is chosen.
+- `EDR-APP-001` command idempotency is becoming more urgent now that an executable local vertical slice exists.
 
 Requested review:
 
