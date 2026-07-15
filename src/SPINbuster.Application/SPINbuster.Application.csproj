@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\SPINbuster.Domain\SPINbuster.Domain.csproj" />
+    <ProjectReference Include="..\SPINbuster.Rules\SPINbuster.Rules.csproj" />
+    <ProjectReference Include="..\SPINbuster.Shared\SPINbuster.Shared.csproj" />
+  </ItemGroup>
+</Project>

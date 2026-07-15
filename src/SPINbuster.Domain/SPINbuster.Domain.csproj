@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\SPINbuster.Shared\SPINbuster.Shared.csproj" />
+  </ItemGroup>
+</Project>
