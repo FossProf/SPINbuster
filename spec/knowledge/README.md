@@ -45,6 +45,7 @@ It exists to model stable document identity, immutable historical revisions, gov
 - Load a knowledge document
 - Load revision history
 - Load a bounded knowledge neighborhood graph
+- Persist and reload knowledge records through SQLite Infrastructure adapters
 
 ## Non-goals for the foundation slice
 
@@ -58,3 +59,5 @@ It exists to model stable document identity, immutable historical revisions, gov
 - Multi-current-revision conflict resolution
 
 See `spec/architecture/knowledge-engine-foundation.md` and the deferred EDRs under `docs/decisions/edr/` for the current boundary.
+
+The current persistence boundary is further specified in `spec/database/knowledge-engine-persistence.md`.

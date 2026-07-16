@@ -445,6 +445,165 @@ internal static class InfrastructureMapper
     };
   }
 
+  public static KnowledgeDocument ToDomain(
+    KnowledgeDocumentRecord record,
+    IReadOnlyCollection<AuditEvent> auditTrail)
+  {
+    return KnowledgeDocument.Rehydrate(
+      record.Id,
+      record.ProjectId,
+      record.DocumentType,
+      record.CanonicalTitle,
+      record.ExternalReferenceNumber,
+      record.DisciplineOrCategory,
+      record.CurrentAuthoritativeRevisionId,
+      record.Lifecycle,
+      record.CreatedBy,
+      record.CreatedAtUtc,
+      record.Revisions
+        .OrderBy(revision => revision.CreatedAtUtc)
+        .ThenBy(revision => revision.Id)
+        .Select(ToDomain)
+        .ToArray(),
+      auditTrail);
+  }
+
+  public static KnowledgeDocumentRecord ToRecord(KnowledgeDocument knowledgeDocument)
+  {
+    return new KnowledgeDocumentRecord
+    {
+      Id = knowledgeDocument.Id,
+      ProjectId = knowledgeDocument.ProjectId,
+      DocumentType = knowledgeDocument.DocumentType,
+      CanonicalTitle = knowledgeDocument.CanonicalTitle,
+      ExternalReferenceNumber = knowledgeDocument.ExternalReferenceNumber,
+      DisciplineOrCategory = knowledgeDocument.DisciplineOrCategory,
+      CurrentAuthoritativeRevisionId = knowledgeDocument.CurrentAuthoritativeRevisionId,
+      Lifecycle = knowledgeDocument.Lifecycle,
+      CreatedBy = knowledgeDocument.CreatedBy,
+      CreatedAtUtc = knowledgeDocument.CreatedAtUtc,
+    };
+  }
+
+  public static KnowledgeDocumentRevision ToDomain(KnowledgeDocumentRevisionRecord record)
+  {
+    return KnowledgeDocumentRevision.Rehydrate(
+      record.Id,
+      record.KnowledgeDocumentId,
+      record.KnowledgeSourceId,
+      record.RevisionLabel,
+      record.EffectiveDate,
+      record.ReceivedAtUtc,
+      record.SourceAuthority,
+      record.VerificationStatus,
+      record.ContentHash,
+      record.MetadataHash,
+      record.SupersedesRevisionId,
+      record.SupersededByRevisionId,
+      record.SourceSystemReference,
+      record.DescriptiveNotes,
+      record.CreatedAtUtc,
+      record.IngestionStatus,
+      record.Lifecycle);
+  }
+
+  public static KnowledgeDocumentRevisionRecord ToRecord(KnowledgeDocumentRevision revision)
+  {
+    return new KnowledgeDocumentRevisionRecord
+    {
+      Id = revision.Id,
+      KnowledgeDocumentId = revision.DocumentId,
+      KnowledgeSourceId = revision.KnowledgeSourceId,
+      RevisionLabel = revision.RevisionLabel,
+      EffectiveDate = revision.EffectiveDate,
+      ReceivedAtUtc = revision.ReceivedAtUtc,
+      SourceAuthority = revision.SourceAuthority,
+      VerificationStatus = revision.VerificationStatus,
+      ContentHash = revision.ContentHash,
+      MetadataHash = revision.MetadataHash,
+      SupersedesRevisionId = revision.SupersedesRevisionId,
+      SupersededByRevisionId = revision.SupersededByRevisionId,
+      SourceSystemReference = revision.SourceSystemReference,
+      DescriptiveNotes = revision.DescriptiveNotes,
+      CreatedAtUtc = revision.CreatedAtUtc,
+      IngestionStatus = revision.IngestionStatus,
+      Lifecycle = revision.Lifecycle,
+    };
+  }
+
+  public static KnowledgeRelationship ToDomain(
+    KnowledgeRelationshipRecord record,
+    IReadOnlyCollection<AuditEvent> auditTrail)
+  {
+    return KnowledgeRelationship.Rehydrate(
+      record.Id,
+      record.ProjectId,
+      ToSubjectReference(
+        record.ProjectId,
+        record.SourceKind,
+        record.SourceDocumentId,
+        record.SourceRevisionId),
+      ToSubjectReference(
+        record.ProjectId,
+        record.TargetKind,
+        record.TargetDocumentId,
+        record.TargetRevisionId),
+      record.RelationshipType,
+      record.EvidenceOrRationale,
+      record.CreatedBy,
+      record.CreatedAtUtc,
+      record.VerificationStatus,
+      auditTrail);
+  }
+
+  public static KnowledgeRelationshipRecord ToRecord(KnowledgeRelationship relationship)
+  {
+    return new KnowledgeRelationshipRecord
+    {
+      Id = relationship.Id,
+      ProjectId = relationship.ProjectId,
+      SourceKind = relationship.Source.SubjectKind,
+      SourceKey = relationship.Source.ToStableKey(),
+      SourceDocumentId = relationship.Source.DocumentId,
+      SourceRevisionId = relationship.Source.RevisionId,
+      TargetKind = relationship.Target.SubjectKind,
+      TargetKey = relationship.Target.ToStableKey(),
+      TargetDocumentId = relationship.Target.DocumentId,
+      TargetRevisionId = relationship.Target.RevisionId,
+      RelationshipType = relationship.RelationshipType,
+      EvidenceOrRationale = relationship.EvidenceOrRationale,
+      CreatedBy = relationship.CreatedBy,
+      CreatedAtUtc = relationship.CreatedAtUtc,
+      VerificationStatus = relationship.VerificationStatus,
+    };
+  }
+
+  public static KnowledgeCitation ToDomain(KnowledgeCitationRecord record)
+  {
+    return new KnowledgeCitation(
+      record.Id,
+      record.CitedRevisionId,
+      record.LocatorType,
+      record.LocatorValue,
+      record.RevisionContentHash,
+      record.CreatedAtUtc,
+      record.QuotedOrSummarizedText);
+  }
+
+  public static KnowledgeCitationRecord ToRecord(KnowledgeCitation citation)
+  {
+    return new KnowledgeCitationRecord
+    {
+      Id = citation.Id,
+      CitedRevisionId = citation.CitedRevisionId,
+      LocatorType = citation.LocatorType,
+      LocatorValue = citation.LocatorValue,
+      RevisionContentHash = citation.RevisionContentHash,
+      CreatedAtUtc = citation.CreatedAtUtc,
+      QuotedOrSummarizedText = citation.QuotedOrSummarizedText,
+    };
+  }
+
   private static string SerializeStringArray(IEnumerable<string> values)
   {
     return JsonSerializer.Serialize(
@@ -460,5 +619,21 @@ internal static class InfrastructureMapper
     }
 
     return JsonSerializer.Deserialize<string[]>(json, JsonOptions) ?? [];
+  }
+
+  private static KnowledgeSubjectReference ToSubjectReference(
+    ProjectId projectId,
+    KnowledgeSubjectKind subjectKind,
+    KnowledgeDocumentId? documentId,
+    KnowledgeDocumentRevisionId? revisionId)
+  {
+    return subjectKind switch
+    {
+      KnowledgeSubjectKind.Document when documentId is not null => KnowledgeSubjectReference.ForDocument(projectId, documentId.Value),
+      KnowledgeSubjectKind.Revision when revisionId is not null => KnowledgeSubjectReference.ForRevision(projectId, revisionId.Value),
+      KnowledgeSubjectKind.Document => throw new InvalidOperationException("Knowledge relationship document subjects must include a document ID."),
+      KnowledgeSubjectKind.Revision => throw new InvalidOperationException("Knowledge relationship revision subjects must include a revision ID."),
+      _ => throw new InvalidOperationException($"Unsupported knowledge subject kind {subjectKind}."),
+    };
   }
 }

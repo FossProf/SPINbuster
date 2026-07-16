@@ -3,11 +3,14 @@
 Current milestone:
 Prototype Vertical Slice
 
-Baseline:
-KNOWLEDGE-ENGINE-FOUNDATION-0.1-RC
+Latest released baseline:
+AI-PROPOSAL-EXECUTABLE-SLICE-0.1
+
+Active review candidate:
+KNOWLEDGE-ENGINE-PERSISTENCE-0.1-RC
 
 Status:
-Build and test validated; review pending
+Implemented and locally validated; review pending
 
 Build:
 Passing
@@ -19,13 +22,13 @@ Domain tests:
 48/48 passing
 
 Architecture tests:
-14/14 passing
+16/16 passing
 
 Application tests:
 56/56 passing
 
 Infrastructure tests:
-14/14 passing
+22/22 passing
 
 AI tests:
 6/6 passing
@@ -34,7 +37,7 @@ Desktop end-to-end tests:
 3/3 passing
 
 Current task:
-Review `KNOWLEDGE-ENGINE-FOUNDATION-0.1-RC`
+Review `KNOWLEDGE-ENGINE-PERSISTENCE-0.1-RC`
 
 Required outcome:
 
@@ -46,19 +49,19 @@ Required outcome:
 - Defer parsing, OCR, embeddings, vector search, and automatic authority promotion explicitly through EDRs.
 
 Next review:
-`KNOWLEDGE-ENGINE-FOUNDATION-0.1-RC` architecture and code review
+`KNOWLEDGE-ENGINE-PERSISTENCE-0.1-RC` architecture, migration, and code review
 
 Known blockers:
 None
 
 Last completed:
-Implemented and validated `KNOWLEDGE-ENGINE-FOUNDATION-0.1-RC`
+Implemented and validated `KNOWLEDGE-ENGINE-PERSISTENCE-0.1-RC`
 
 Proposed next direction:
 
-- Persist knowledge infrastructure and query adapters
-- Introduce authoritative storage and migrations for knowledge records
-- Prepare governed retrieval inputs for future AI and reporting slices
+- Review the SQLite Knowledge Engine persistence slice
+- Confirm migration compatibility and durable retrieval boundaries
+- Prepare the next retrieval and knowledge-ingestion package after approval
 
 Current capabilities:
 
@@ -124,14 +127,18 @@ Authoritative context:
 - `docs/decisions/edr/EDR-KE-007-cross-project-knowledge-sharing.md`
 - `docs/decisions/edr/EDR-KE-008-multi-current-revision-conflict-resolution.md`
 - Relevant knowledge foundation files under `src/SPINbuster.Domain/`, `src/SPINbuster.Application/`, and `tests/`
+- `spec/database/README.md`
+- `spec/database/knowledge-engine-persistence.md`
 - Relevant report-draft slice files under `src/SPINbuster.Domain/`, `src/SPINbuster.Application/`, `src/SPINbuster.Infrastructure/`, and `src/SPINbuster.Desktop/`
 
 Validation before completion:
 
 - `dotnet restore SPINbuster.sln --configfile NuGet.Config`
 - `dotnet format SPINbuster.sln --no-restore`
-- `dotnet build SPINbuster.sln --no-restore -m:1 /nodeReuse:false`
+- `dotnet build SPINbuster.sln --no-restore`
+- `dotnet tool run dotnet-ef migrations has-pending-model-changes --no-build --project src/SPINbuster.Infrastructure --startup-project src/SPINbuster.Server --context SPINbuster.Infrastructure.Persistence.SpinbusterDbContext`
 - `dotnet test tests/SPINbuster.Domain.Tests/SPINbuster.Domain.Tests.csproj --no-build`
 - `dotnet test tests/SPINbuster.Application.Tests/SPINbuster.Application.Tests.csproj --no-build`
+- `dotnet test tests/SPINbuster.Infrastructure.Tests/SPINbuster.Infrastructure.Tests.csproj --no-build`
 - `dotnet test tests/SPINbuster.Architecture.Tests/SPINbuster.Architecture.Tests.csproj --no-build`
 - `dotnet test SPINbuster.sln --no-build -m:1`

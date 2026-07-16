@@ -40,7 +40,11 @@ Completed:
 - Deferred Knowledge Engine EDR set and authoritative `spec/knowledge/` specification
 - `KNOWLEDGE-ENGINE-FOUNDATION-0.1-RC` validation
 - Permanent governance layer established under `docs/00-governance/`
+- Knowledge Engine SQLite persistence slice
+- Knowledge Engine EF Core mappings, repositories, migration, and upgrade validation
+- Knowledge Engine Infrastructure and architecture guardrail expansion
+- `KNOWLEDGE-ENGINE-PERSISTENCE-0.1-RC` validation
 
 Next:
 
-- Review `KNOWLEDGE-ENGINE-FOUNDATION-0.1-RC`
+- Review `KNOWLEDGE-ENGINE-PERSISTENCE-0.1-RC`

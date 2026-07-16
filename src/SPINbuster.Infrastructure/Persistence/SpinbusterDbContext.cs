@@ -42,6 +42,14 @@ public sealed class SpinbusterDbContext : DbContext
 
   internal DbSet<AiProposalRecord> AiProposals => Set<AiProposalRecord>();
 
+  internal DbSet<KnowledgeDocumentRecord> KnowledgeDocuments => Set<KnowledgeDocumentRecord>();
+
+  internal DbSet<KnowledgeDocumentRevisionRecord> KnowledgeDocumentRevisions => Set<KnowledgeDocumentRevisionRecord>();
+
+  internal DbSet<KnowledgeRelationshipRecord> KnowledgeRelationships => Set<KnowledgeRelationshipRecord>();
+
+  internal DbSet<KnowledgeCitationRecord> KnowledgeCitations => Set<KnowledgeCitationRecord>();
+
   protected override void OnModelCreating(ModelBuilder modelBuilder)
   {
     SpinbusterModelConfiguration.Configure(modelBuilder);

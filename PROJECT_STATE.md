@@ -1,16 +1,21 @@
 # PROJECT_STATE
 
-## Current Baseline
+## Latest Released Baseline
 
-- `KNOWLEDGE-ENGINE-FOUNDATION-0.1-RC`
-- Status: `Build and test validated; review pending`
+- `AI-PROPOSAL-EXECUTABLE-SLICE-0.1`
+- Status: `Released`
+
+## Active Review Candidate
+
+- `KNOWLEDGE-ENGINE-PERSISTENCE-0.1-RC`
+- Status: `Implemented and locally validated; review pending`
 - Build: `Passing`
 - Warnings: `0`
-- Architecture tests: `14/14 passing`
+- Architecture tests: `16/16 passing`
 - Domain tests: `48/48 passing`
 - Application tests: `56/56 passing`
 - AI tests: `6/6 passing`
-- Infrastructure tests: `14/14 passing`
+- Infrastructure tests: `22/22 passing`
 - Desktop end-to-end tests: `3/3 passing`
 
 ## Current Branch
@@ -26,10 +31,11 @@
 - Governed AI draft proposal substrate released
 - Deterministic executable AI proposal workflow released
 - Knowledge Engine domain and application foundation implemented and validated as a review candidate
+- Knowledge Engine SQLite persistence foundation implemented and validated as a review candidate
 
 ## Current Implementation Phase
 
-- Knowledge Engine foundation review candidate
+- Knowledge Engine persistence review candidate
 
 ## Current Milestone
 
@@ -66,11 +72,11 @@
 - Human-accepted AI proposals do not yet create authoritative report revisions.
 - Concurrent duplicate AI proposal resolution beyond the current `OperationId` replay path remains deferred until live-provider integration.
 - AI provider support remains intentionally limited to the deterministic fixture in this baseline.
-- Knowledge Engine persistence, ingestion, and retrieval infrastructure remain deferred; the current slice is Domain and Application only.
+- Knowledge Engine local SQLite persistence is implemented; ingestion workflows, executable knowledge retrieval, and non-SQLite storage remain deferred.
 
 ## Immediate Next Task
 
-- Review `KNOWLEDGE-ENGINE-FOUNDATION-0.1-RC`
+- Review `KNOWLEDGE-ENGINE-PERSISTENCE-0.1-RC`
 
 ## Fast Context
 
@@ -81,8 +87,8 @@
 - The released vertical slice validates migrations applied at startup, project creation and persistence, inspection-session start and persistence, field-note capture and preservation, successful project/session rehydration, and persisted audit-history reload.
 - The current released report-draft baseline extends that path through evidence attachment, interpretation, draft-context assembly, authoritative report-draft creation, provenance reload, duplicate-safe operation handling, and report audit-history reload.
 - The current released AI baseline adds governed context manifests, deterministic Tier 0 AI proposal generation, structured proposal validation, durable model-run/proposal persistence, and explicit proposal rejection without authoritative report mutation.
-- The current executable AI baseline extends the Desktop host through deterministic proposal request, replay verification, durable model-run history reload, human accept or reject review actions, failure display, and explicit verification that report revisions remain unchanged.
-- The current Knowledge Engine review candidate adds authoritative knowledge documents, immutable revision history, explicit supersession semantics, project-scoped relationships, precise citations, and provider-neutral application contracts.
+- The latest released executable AI baseline extends the Desktop host through deterministic proposal request, replay verification, durable model-run history reload, human accept or reject review actions, failure display, and explicit verification that report revisions remain unchanged.
+- The current Knowledge Engine review candidate adds authoritative knowledge documents, immutable revision history, explicit supersession semantics, project-scoped relationships, precise citations, provider-neutral application contracts, and local SQLite persistence with migration validation.
 - The prototype review is recorded in `docs/decisions/status/VERTICAL-SLICE-0.1-PROTOTYPE-REVIEW.md`.
 - The report-draft prototype review is recorded in `docs/decisions/status/REPORT-DRAFT-SLICE-0.1-PROTOTYPE-REVIEW.md`.
 

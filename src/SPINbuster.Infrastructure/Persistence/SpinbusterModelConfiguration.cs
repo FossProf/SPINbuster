@@ -16,6 +16,7 @@ internal static class SpinbusterModelConfiguration
     ConfigureSaveTransactions(modelBuilder);
     ConfigureAuditEvents(modelBuilder);
     ConfigureAiSubstrate(modelBuilder);
+    ConfigureKnowledgeEngine(modelBuilder);
   }
 
   private static void ConfigureProjects(ModelBuilder modelBuilder)
@@ -300,5 +301,115 @@ internal static class SpinbusterModelConfiguration
     proposalBuilder.Property(record => record.ValidationFailuresJson).HasColumnType("TEXT").IsRequired();
     proposalBuilder.HasIndex(record => record.ModelRunId).IsUnique();
     proposalBuilder.HasIndex(record => record.ReportId);
+  }
+
+  private static void ConfigureKnowledgeEngine(ModelBuilder modelBuilder)
+  {
+    var documentBuilder = modelBuilder.Entity<KnowledgeDocumentRecord>();
+    documentBuilder.ToTable("knowledge_documents");
+    documentBuilder.HasKey(record => record.Id);
+    documentBuilder.Property(record => record.Id).HasConversion(StronglyTypedIdValueConverters.KnowledgeDocumentId).ValueGeneratedNever();
+    documentBuilder.Property(record => record.ProjectId).HasConversion(StronglyTypedIdValueConverters.ProjectId).IsRequired();
+    documentBuilder.Property(record => record.DocumentType).IsRequired();
+    documentBuilder.Property(record => record.CanonicalTitle).HasMaxLength(512).IsRequired();
+    documentBuilder.Property(record => record.ExternalReferenceNumber).HasMaxLength(256);
+    documentBuilder.Property(record => record.DisciplineOrCategory).HasMaxLength(256);
+    documentBuilder.Property(record => record.CurrentAuthoritativeRevisionId).HasConversion(StronglyTypedIdValueConverters.KnowledgeDocumentRevisionId);
+    documentBuilder.Property(record => record.Lifecycle).IsRequired();
+    documentBuilder.Property(record => record.CreatedBy).HasMaxLength(256).IsRequired();
+    documentBuilder.Property(record => record.CreatedAtUtc).IsRequired();
+    documentBuilder.HasIndex(record => record.ProjectId);
+    documentBuilder.HasIndex(record => new { record.ProjectId, record.DocumentType });
+    documentBuilder.HasMany(record => record.Revisions)
+      .WithOne()
+      .HasForeignKey(record => record.KnowledgeDocumentId)
+      .OnDelete(DeleteBehavior.Cascade);
+    documentBuilder.HasOne<ProjectRecord>()
+      .WithMany()
+      .HasForeignKey(record => record.ProjectId)
+      .OnDelete(DeleteBehavior.Restrict);
+
+    var revisionBuilder = modelBuilder.Entity<KnowledgeDocumentRevisionRecord>();
+    revisionBuilder.ToTable("knowledge_document_revisions");
+    revisionBuilder.HasKey(record => record.Id);
+    revisionBuilder.Property(record => record.Id).HasConversion(StronglyTypedIdValueConverters.KnowledgeDocumentRevisionId).ValueGeneratedNever();
+    revisionBuilder.Property(record => record.KnowledgeDocumentId).HasConversion(StronglyTypedIdValueConverters.KnowledgeDocumentId).IsRequired();
+    revisionBuilder.Property(record => record.KnowledgeSourceId).HasConversion(StronglyTypedIdValueConverters.KnowledgeSourceId).IsRequired();
+    revisionBuilder.Property(record => record.RevisionLabel).HasMaxLength(128).UseCollation("NOCASE").IsRequired();
+    revisionBuilder.Property(record => record.EffectiveDate).IsRequired(false);
+    revisionBuilder.Property(record => record.ReceivedAtUtc).IsRequired();
+    revisionBuilder.Property(record => record.SourceAuthority).IsRequired();
+    revisionBuilder.Property(record => record.VerificationStatus).IsRequired();
+    revisionBuilder.Property(record => record.ContentHash).HasMaxLength(256).IsRequired();
+    revisionBuilder.Property(record => record.MetadataHash).HasMaxLength(256).IsRequired();
+    revisionBuilder.Property(record => record.SupersedesRevisionId).HasConversion(StronglyTypedIdValueConverters.KnowledgeDocumentRevisionId);
+    revisionBuilder.Property(record => record.SupersededByRevisionId).HasConversion(StronglyTypedIdValueConverters.KnowledgeDocumentRevisionId);
+    revisionBuilder.Property(record => record.SourceSystemReference).HasMaxLength(256);
+    revisionBuilder.Property(record => record.DescriptiveNotes).HasColumnType("TEXT");
+    revisionBuilder.Property(record => record.CreatedAtUtc).IsRequired();
+    revisionBuilder.Property(record => record.IngestionStatus).IsRequired();
+    revisionBuilder.Property(record => record.Lifecycle).IsRequired();
+    revisionBuilder.HasIndex(record => record.KnowledgeDocumentId);
+    revisionBuilder.HasIndex(record => new { record.KnowledgeDocumentId, record.RevisionLabel }).IsUnique();
+    revisionBuilder.HasIndex(record => new { record.KnowledgeDocumentId, record.Lifecycle });
+    revisionBuilder.HasIndex(record => record.SupersedesRevisionId);
+    revisionBuilder.HasIndex(record => record.SupersededByRevisionId);
+    revisionBuilder.HasMany(record => record.Citations)
+      .WithOne()
+      .HasForeignKey(record => record.CitedRevisionId)
+      .OnDelete(DeleteBehavior.Cascade);
+
+    var relationshipBuilder = modelBuilder.Entity<KnowledgeRelationshipRecord>();
+    relationshipBuilder.ToTable("knowledge_relationships");
+    relationshipBuilder.HasKey(record => record.Id);
+    relationshipBuilder.Property(record => record.Id).HasConversion(StronglyTypedIdValueConverters.KnowledgeRelationshipId).ValueGeneratedNever();
+    relationshipBuilder.Property(record => record.ProjectId).HasConversion(StronglyTypedIdValueConverters.ProjectId).IsRequired();
+    relationshipBuilder.Property(record => record.SourceKind).IsRequired();
+    relationshipBuilder.Property(record => record.SourceKey).HasMaxLength(128).IsRequired();
+    relationshipBuilder.Property(record => record.SourceDocumentId).HasConversion(StronglyTypedIdValueConverters.KnowledgeDocumentId);
+    relationshipBuilder.Property(record => record.SourceRevisionId).HasConversion(StronglyTypedIdValueConverters.KnowledgeDocumentRevisionId);
+    relationshipBuilder.Property(record => record.TargetKind).IsRequired();
+    relationshipBuilder.Property(record => record.TargetKey).HasMaxLength(128).IsRequired();
+    relationshipBuilder.Property(record => record.TargetDocumentId).HasConversion(StronglyTypedIdValueConverters.KnowledgeDocumentId);
+    relationshipBuilder.Property(record => record.TargetRevisionId).HasConversion(StronglyTypedIdValueConverters.KnowledgeDocumentRevisionId);
+    relationshipBuilder.Property(record => record.RelationshipType).IsRequired();
+    relationshipBuilder.Property(record => record.EvidenceOrRationale).HasColumnType("TEXT").IsRequired();
+    relationshipBuilder.Property(record => record.CreatedBy).HasMaxLength(256).IsRequired();
+    relationshipBuilder.Property(record => record.CreatedAtUtc).IsRequired();
+    relationshipBuilder.Property(record => record.VerificationStatus).IsRequired();
+    relationshipBuilder.HasIndex(record => new
+    {
+      record.ProjectId,
+      record.SourceKey,
+      record.TargetKey,
+      record.RelationshipType,
+    }).IsUnique();
+    relationshipBuilder.HasIndex(record => new
+    {
+      record.ProjectId,
+      record.SourceKey,
+    });
+    relationshipBuilder.HasIndex(record => new
+    {
+      record.ProjectId,
+      record.TargetKey,
+    });
+    relationshipBuilder.HasOne<ProjectRecord>()
+      .WithMany()
+      .HasForeignKey(record => record.ProjectId)
+      .OnDelete(DeleteBehavior.Restrict);
+
+    var citationBuilder = modelBuilder.Entity<KnowledgeCitationRecord>();
+    citationBuilder.ToTable("knowledge_citations");
+    citationBuilder.HasKey(record => record.Id);
+    citationBuilder.Property(record => record.Id).HasConversion(StronglyTypedIdValueConverters.KnowledgeCitationId).ValueGeneratedNever();
+    citationBuilder.Property(record => record.CitedRevisionId).HasConversion(StronglyTypedIdValueConverters.KnowledgeDocumentRevisionId).IsRequired();
+    citationBuilder.Property(record => record.LocatorType).IsRequired();
+    citationBuilder.Property(record => record.LocatorValue).HasMaxLength(512).IsRequired();
+    citationBuilder.Property(record => record.RevisionContentHash).HasMaxLength(256).IsRequired();
+    citationBuilder.Property(record => record.CreatedAtUtc).IsRequired();
+    citationBuilder.Property(record => record.QuotedOrSummarizedText).HasColumnType("TEXT");
+    citationBuilder.HasIndex(record => record.CitedRevisionId);
+    citationBuilder.HasIndex(record => new { record.CitedRevisionId, record.LocatorType, record.LocatorValue });
   }
 }

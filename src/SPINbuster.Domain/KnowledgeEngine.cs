@@ -663,6 +663,33 @@ public sealed class KnowledgeRelationship : AuditableEntity
 
   public KnowledgeVerificationStatus VerificationStatus { get; private set; }
 
+  internal static KnowledgeRelationship Rehydrate(
+    KnowledgeRelationshipId id,
+    ProjectId projectId,
+    KnowledgeSubjectReference source,
+    KnowledgeSubjectReference target,
+    KnowledgeRelationshipType relationshipType,
+    string evidenceOrRationale,
+    string createdBy,
+    DateTimeOffset createdAtUtc,
+    KnowledgeVerificationStatus verificationStatus,
+    IEnumerable<AuditEvent> auditTrail)
+  {
+    var relationship = new KnowledgeRelationship(
+      id,
+      projectId,
+      source,
+      target,
+      relationshipType,
+      evidenceOrRationale,
+      createdBy,
+      createdAtUtc,
+      verificationStatus);
+
+    relationship.RestoreAuditTrail(auditTrail);
+    return relationship;
+  }
+
   public void UpdateVerificationStatus(KnowledgeVerificationStatus verificationStatus)
   {
     VerificationStatus = verificationStatus;

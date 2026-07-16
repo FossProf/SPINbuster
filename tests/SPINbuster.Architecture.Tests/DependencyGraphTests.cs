@@ -274,6 +274,43 @@ public sealed class DependencyGraphTests
     }
   }
 
+  [Fact]
+  public void DocumentsProjectDoesNotAccessInfrastructureDbContextDirectly()
+  {
+    var repoRoot = FindRepositoryRoot();
+    var documentsFiles = Directory
+      .EnumerateFiles(Path.Combine(repoRoot, "src", "SPINbuster.Documents"), "*.cs", SearchOption.AllDirectories)
+      .ToArray();
+
+    foreach (var documentsFile in documentsFiles)
+    {
+      var contents = File.ReadAllText(documentsFile);
+      Assert.DoesNotContain("DbContext", contents, StringComparison.Ordinal);
+      Assert.DoesNotContain("SpinbusterDbContext", contents, StringComparison.Ordinal);
+    }
+  }
+
+  [Fact]
+  public void NonInfrastructureProjectsDoNotReferenceInfrastructurePersistenceRecords()
+  {
+    var repoRoot = FindRepositoryRoot();
+    var productionRoots = Directory
+      .EnumerateDirectories(Path.Combine(repoRoot, "src"))
+      .Where(path => !path.EndsWith("SPINbuster.Infrastructure", StringComparison.OrdinalIgnoreCase))
+      .ToArray();
+
+    foreach (var productionRoot in productionRoots)
+    {
+      foreach (var sourceFile in Directory.EnumerateFiles(productionRoot, "*.cs", SearchOption.AllDirectories))
+      {
+        var contents = File.ReadAllText(sourceFile);
+        Assert.DoesNotContain("SPINbuster.Infrastructure.Persistence.Records", contents, StringComparison.Ordinal);
+        Assert.DoesNotContain("KnowledgeDocumentRecord", contents, StringComparison.Ordinal);
+        Assert.DoesNotContain("KnowledgeRelationshipRecord", contents, StringComparison.Ordinal);
+      }
+    }
+  }
+
   private static string[] LoadPackageReferences(string projectPath)
   {
     return XDocument

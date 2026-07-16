@@ -50,6 +50,26 @@ internal static class StronglyTypedIdValueConverters
     value => value.Value,
     value => new ProposalId(value));
 
+  public static readonly ValueConverter<KnowledgeDocumentId, Guid> KnowledgeDocumentId = new(
+    value => value.Value,
+    value => new KnowledgeDocumentId(value));
+
+  public static readonly ValueConverter<KnowledgeDocumentRevisionId, Guid> KnowledgeDocumentRevisionId = new(
+    value => value.Value,
+    value => new KnowledgeDocumentRevisionId(value));
+
+  public static readonly ValueConverter<KnowledgeSourceId, Guid> KnowledgeSourceId = new(
+    value => value.Value,
+    value => new KnowledgeSourceId(value));
+
+  public static readonly ValueConverter<KnowledgeRelationshipId, Guid> KnowledgeRelationshipId = new(
+    value => value.Value,
+    value => new KnowledgeRelationshipId(value));
+
+  public static readonly ValueConverter<KnowledgeCitationId, Guid> KnowledgeCitationId = new(
+    value => value.Value,
+    value => new KnowledgeCitationId(value));
+
   public static readonly ValueConverter<OperationId, Guid> OperationId = new(
     value => value.Value,
     value => new OperationId(value));

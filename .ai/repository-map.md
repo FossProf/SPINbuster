@@ -38,7 +38,7 @@ Purpose: Explain how the repository is organized and where different kinds of wo
 - `src/SPINbuster.Domain` contains core domain types and domain-level policies, including the current Project, InspectionSession, FieldNote, EvidenceAttachment, Report, SaveTransaction, AuditEvent, and the first Knowledge Engine model for authoritative documents, revisions, relationships, and citations.
 - `src/SPINbuster.Rules` contains reusable business rule evaluation components that support the core.
 - `src/SPINbuster.Application` contains application-layer orchestration, command/query contracts, repository interfaces, transaction boundaries, audit abstractions, typed application identity and operation contracts, the current vertical-slice use cases, and the provider-neutral Knowledge Engine orchestration contracts.
-- `src/SPINbuster.Infrastructure` contains persistence and external system adapters for non-AI concerns, including the durable AI substrate records required by the current review candidate.
+- `src/SPINbuster.Infrastructure` contains persistence and external system adapters for non-AI concerns, including the durable AI substrate records and the current Knowledge Engine SQLite persistence adapters.
 - `src/SPINbuster.AI` contains AI integration adapters and AI-specific orchestration support, currently limited to a deterministic Tier 0 provider and prompt-package registry.
 - `src/SPINbuster.Documents` contains document generation and document workflow support.
 - `src/SPINbuster.Reporting` contains reporting composition and report output support.
@@ -105,15 +105,16 @@ Put lightweight agent instructions in `.ai/`.
 - `src/SPINbuster.Application/Internal/` now contains the governed report-proposal context assembly path, AI audit-event shaping helpers, and the JSON-backed structured proposal validator.
 - `tests/SPINbuster.Application.Tests/` uses in-memory fakes to verify orchestration, lifecycle guards, staged audit ordering, explicit mutation updates, failure handling, ownership boundaries, draft-request shaping, two-phase AI request persistence, prompt-package contract enforcement, and canonical proposal payload storage without adding persistence or transport concerns.
 - `tests/SPINbuster.Application.Tests/` now also verifies Knowledge Engine registration, revision supersession, verification, contradiction recording, bounded neighborhood loading, query isolation, and cancellation-token flow.
-- `src/SPINbuster.Infrastructure/Persistence/` contains the local SQLite DbContext, EF Core entity mappings, migration artifacts, typed-ID value converters, and Domain-to-record mapping helpers for reports, report sections, source references, report-draft operation mappings, context manifests, model runs, model-run attempts, and advisory AI proposals.
-- `src/SPINbuster.Infrastructure/Repositories/` contains the local SQLite repository implementations, including explicit detached-update support for mutable loaded aggregates, authoritative report-draft persistence, durable AI substrate persistence, and audit-history query support for AI workflow reloads.
+- `src/SPINbuster.Infrastructure/Persistence/` contains the local SQLite DbContext, EF Core entity mappings, migration artifacts, typed-ID value converters, and Domain-to-record mapping helpers for reports, report sections, source references, report-draft operation mappings, context manifests, model runs, model-run attempts, advisory AI proposals, and Knowledge Engine persistence records.
+- `src/SPINbuster.Infrastructure/Repositories/` contains the local SQLite repository implementations, including explicit detached-update support for mutable loaded aggregates, authoritative report-draft persistence, durable AI substrate persistence, Knowledge document/revision/relationship/citation persistence, and audit-history query support for AI and Knowledge workflow reloads.
 - `src/SPINbuster.Infrastructure/Services/` contains `SqliteAuditRecorder` and `SqliteUnitOfWork` for staged audit persistence inside one logical commit boundary.
 - `src/SPINbuster.AI/` currently contains the deterministic `IAiGenerationProvider` implementation, prompt-package registry, and Tier 0 scenario controls used to validate the advisory AI path without live services.
 - `schemas/ai/` currently contains the authoritative `report-draft-proposal` schema.
-- `tests/SPINbuster.Infrastructure.Tests/` contains SQLite integration tests for commit-together behavior, rollback behavior, detached updates, migration metadata presence, migration application, migration idempotence, report persistence, report-draft idempotency enforcement, AI substrate persistence, AI migration compatibility, and atomic AI-state plus audit rollback.
+- `tests/SPINbuster.Infrastructure.Tests/` contains SQLite integration tests for commit-together behavior, rollback behavior, detached updates, migration metadata presence, migration application, migration idempotence, report persistence, report-draft idempotency enforcement, AI substrate persistence, AI migration compatibility, Knowledge Engine persistence, bounded relationship traversal, citation reload, duplicate-rejection constraints, and atomic AI-state or Knowledge-state plus audit rollback.
 - `tests/SPINbuster.AI.Tests/` now contains deterministic provider, failure-classification, and prompt-registry tests for the Tier 0 AI path.
 - `spec/knowledge/README.md` defines the authoritative Knowledge Engine foundation boundary.
 - `spec/architecture/knowledge-engine-foundation.md` records the foundational architecture and ownership rules for the first Knowledge Engine slice.
+- `spec/database/README.md` and `spec/database/knowledge-engine-persistence.md` define the authoritative local SQLite persistence boundary for the Knowledge Engine review candidate.
 - `src/SPINbuster.Desktop/` now contains the temporary deterministic console bootstrap host, its narrow composition root, and the local vertical-slice workflow runner for the inspection, report-draft, and deterministic AI proposal paths.
 - `tests/SPINbuster.Desktop.Tests/` contains SQLite-backed end-to-end tests for the Desktop workflow, including replay, review action, and failure cases for deterministic AI proposals.
 
@@ -122,7 +123,7 @@ Put lightweight agent instructions in `.ai/`.
 - `REPORT-DRAFT-SLICE-0.1` is the latest released baseline.
 - `AI-DRAFT-PROPOSAL-SLICE-0.1` is the latest released AI baseline.
 - `AI-PROPOSAL-EXECUTABLE-SLICE-0.1` is the latest released executable AI baseline.
-- `KNOWLEDGE-ENGINE-FOUNDATION-0.1-RC` is the current review-candidate Knowledge Engine baseline.
+- `KNOWLEDGE-ENGINE-PERSISTENCE-0.1-RC` is the current review-candidate Knowledge Engine baseline.
 - Migration status: no pending model changes, empty-database migration passes, repeated migration is idempotent, and migration history is verified.
 - Persistence status: aggregate and staged audit changes commit atomically, roll back atomically, and detached updates are verified.
 - Validated vertical-slice path: migrations applied at startup, project created and persisted, inspection session started and persisted, field note captured and preserved, project/session rehydration succeeds, and audit history persists and reloads.

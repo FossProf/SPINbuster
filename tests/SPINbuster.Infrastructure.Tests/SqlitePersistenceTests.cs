@@ -255,6 +255,9 @@ public sealed class SqlitePersistenceTests : IDisposable
     Assert.Contains(
       migrationsAssembly.Migrations.Keys,
       migration => migration.EndsWith("AiDraftProposalSlice", StringComparison.Ordinal));
+    Assert.Contains(
+      migrationsAssembly.Migrations.Keys,
+      migration => migration.EndsWith("KnowledgeEnginePersistenceRc", StringComparison.Ordinal));
   }
 
   [Fact]
@@ -266,11 +269,12 @@ public sealed class SqlitePersistenceTests : IDisposable
 
     var appliedMigrations = (await dbContext.Database.GetAppliedMigrationsAsync()).ToArray();
 
-    Assert.Equal(3, appliedMigrations.Length);
+    Assert.Equal(4, appliedMigrations.Length);
     Assert.Contains(appliedMigrations, migration => migration.EndsWith("InitialSqlite", StringComparison.Ordinal));
     Assert.Contains(appliedMigrations, migration => migration.EndsWith("ReportDraftSlice", StringComparison.Ordinal));
     Assert.Contains(appliedMigrations, migration => migration.EndsWith("AiDraftProposalSlice", StringComparison.Ordinal));
-    Assert.Equal(3L, await QueryCountAsync(dbContext, "SELECT COUNT(*) FROM __EFMigrationsHistory"));
+    Assert.Contains(appliedMigrations, migration => migration.EndsWith("KnowledgeEnginePersistenceRc", StringComparison.Ordinal));
+    Assert.Equal(4L, await QueryCountAsync(dbContext, "SELECT COUNT(*) FROM __EFMigrationsHistory"));
   }
 
   [Fact]
@@ -283,11 +287,12 @@ public sealed class SqlitePersistenceTests : IDisposable
 
     var appliedMigrations = (await dbContext.Database.GetAppliedMigrationsAsync()).ToArray();
 
-    Assert.Equal(3, appliedMigrations.Length);
+    Assert.Equal(4, appliedMigrations.Length);
     Assert.Contains(appliedMigrations, migration => migration.EndsWith("InitialSqlite", StringComparison.Ordinal));
     Assert.Contains(appliedMigrations, migration => migration.EndsWith("ReportDraftSlice", StringComparison.Ordinal));
     Assert.Contains(appliedMigrations, migration => migration.EndsWith("AiDraftProposalSlice", StringComparison.Ordinal));
-    Assert.Equal(3L, await QueryCountAsync(dbContext, "SELECT COUNT(*) FROM __EFMigrationsHistory"));
+    Assert.Contains(appliedMigrations, migration => migration.EndsWith("KnowledgeEnginePersistenceRc", StringComparison.Ordinal));
+    Assert.Equal(4L, await QueryCountAsync(dbContext, "SELECT COUNT(*) FROM __EFMigrationsHistory"));
   }
 
   private static void StageAuditEvents(SqliteAuditRecorder auditRecorder, IEnumerable<AuditEvent> auditEvents)

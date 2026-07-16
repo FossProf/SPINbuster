@@ -1,7 +1,7 @@
 # Current State
 
 Repository status:
-`KNOWLEDGE-ENGINE-FOUNDATION-0.1-RC` is implemented and validated locally, with review still pending. Build passing. Desktop end-to-end tests `3/3`. Infrastructure tests `14/14`. Application tests `56/56`. Domain tests `48/48`. AI tests `6/6`. Architecture tests `14/14`. Warnings `0`.
+`KNOWLEDGE-ENGINE-PERSISTENCE-0.1-RC` is implemented and validated locally, with review still pending. Build passing. Desktop end-to-end tests `3/3`. Infrastructure tests `22/22`. Application tests `56/56`. Domain tests `48/48`. AI tests `6/6`. Architecture tests `16/16`. Warnings `0`.
 
 Current branch:
 `main`
@@ -9,8 +9,11 @@ Current branch:
 Current milestone:
 `Prototype Vertical Slice`
 
-Current baseline:
-`KNOWLEDGE-ENGINE-FOUNDATION-0.1-RC`
+Latest released baseline:
+`AI-PROPOSAL-EXECUTABLE-SLICE-0.1`
+
+Active review candidate:
+`KNOWLEDGE-ENGINE-PERSISTENCE-0.1-RC`
 
 Recent accomplishments:
 
@@ -66,14 +69,17 @@ Recent accomplishments:
 - Added the first Knowledge Engine Domain foundation with authoritative knowledge documents, immutable revisions, explicit supersession, project-scoped relationships, and precise citations.
 - Added provider-neutral Knowledge Engine Application repository contracts and orchestration use cases for registration, revision lifecycle, verification, relationships, and bounded neighborhood loading.
 - Added deferred EDRs and the first authoritative Knowledge Engine specifications under `spec/knowledge/` and `spec/architecture/`.
-- Validated the Knowledge Engine review candidate with zero build warnings plus updated Domain, Application, Architecture, and full solution test coverage.
+- Added the first Knowledge Engine SQLite persistence slice with EF Core records, mappings, repositories, strongly typed ID conversions, detached updates, citations, and relationship uniqueness hardened through stable subject keys.
+- Added SQLite migration coverage from the released AI executable baseline and extended Infrastructure verification for atomic commit, rollback, duplicate rejection, citations, revision reload, and bounded relationship traversal.
+- Added database specifications under `spec/database/` and expanded architecture guardrails to keep Knowledge persistence concerns inside Infrastructure.
+- Validated the Knowledge Engine persistence review candidate with zero build warnings plus updated Infrastructure, Architecture, and full solution test coverage.
 
 Current architectural decisions:
 
 - `REPORT-DRAFT-SLICE-0.1` is the active released baseline.
 - `AI-DRAFT-PROPOSAL-SLICE-0.1` is the active released AI baseline.
 - `AI-PROPOSAL-EXECUTABLE-SLICE-0.1` is the active released executable AI baseline.
-- `KNOWLEDGE-ENGINE-FOUNDATION-0.1-RC` is the active review-candidate knowledge baseline.
+- `KNOWLEDGE-ENGINE-PERSISTENCE-0.1-RC` is the active review-candidate knowledge baseline.
 - `SPINbuster.Desktop` remains a temporary bootstrap host, not a MAUI application yet.
 - `SPINbuster.Shared` is constrained to narrow cross-boundary contracts and primitives.
 - Adapter-to-adapter references are disallowed.
@@ -97,7 +103,7 @@ Current architectural decisions:
 - AI proposals, model runs, run attempts, and governed context manifests commit through the existing unit-of-work boundary alongside audit records.
 
 Next task:
-Review `KNOWLEDGE-ENGINE-FOUNDATION-0.1-RC` before starting persistence or ingestion work
+Review `KNOWLEDGE-ENGINE-PERSISTENCE-0.1-RC` before starting ingestion, retrieval expansion, or executable knowledge workflows
 
 Known issues:
 
@@ -108,7 +114,7 @@ Known issues:
 - Human-accepted AI proposals still do not create authoritative report revisions; that boundary is intentionally deferred by `EDR-AI-001`.
 - Advanced retry orchestration and crash recovery remain intentionally deferred by `EDR-AI-002`.
 - The Desktop host now references `SPINbuster.AI` as a composition-root dependency so it can execute the deterministic provider path; adapter projects still do not reference each other.
-- Knowledge Engine persistence, parsing, OCR, embeddings, and cross-project sharing remain intentionally deferred in this slice.
+- Knowledge Engine local SQLite persistence is now implemented; parsing, OCR, embeddings, executable retrieval flows, and cross-project sharing remain intentionally deferred.
 
 Requested review:
 
@@ -116,6 +122,7 @@ Requested review:
 - Whether prompt-package registry metadata should remain repository-owned or later become persisted configuration
 - How the future `Knowledge Engine` should be bounded relative to `Domain`, `Documents`, `Reporting`, and `AI`
 - Whether `KnowledgeDocumentRevision` should remain aggregate-owned through persistence or later be promoted to a separate aggregate boundary
+- Whether the stable-subject-key approach for relationship uniqueness should remain the long-term enforcement mechanism beyond local SQLite
 
 Current capabilities:
 

@@ -48,12 +48,14 @@ EDR required:
 - deferred-scope declarations
 - implementation-boundary decisions
 - release-boundary clarifications
+- substantive governance-document changes
 
 ADR required:
 
 - architectural responsibility shifts
 - layer-boundary changes
 - major persistence or hosting strategy changes
+- durable constitutional or authority-hierarchy changes
 
 Migration review required:
 

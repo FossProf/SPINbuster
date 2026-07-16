@@ -17,7 +17,8 @@ SPINbuster is designed so the repository, tests, and specifications carry projec
 
 ## Current Status
 
-- Current baseline: `KNOWLEDGE-ENGINE-FOUNDATION-0.1-RC`
+- Latest released baseline: `AI-PROPOSAL-EXECUTABLE-SLICE-0.1`
+- Active review candidate: `KNOWLEDGE-ENGINE-FOUNDATION-0.1-RC`
 - Current milestone: `Prototype Vertical Slice`
 - Next active subsystem: `Knowledge Engine`
 - Current local persistence provider: SQLite
