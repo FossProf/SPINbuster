@@ -4,13 +4,13 @@ Current milestone:
 Prototype Vertical Slice
 
 Latest released baseline:
-AI-PROPOSAL-EXECUTABLE-SLICE-0.1
+KNOWLEDGE-ENGINE-PERSISTENCE-0.1
 
-Active review candidate:
-KNOWLEDGE-ENGINE-PERSISTENCE-0.1-RC
+Next active package:
+KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1-RC
 
 Status:
-Implemented and locally validated; review pending
+Released
 
 Build:
 Passing
@@ -25,10 +25,10 @@ Architecture tests:
 16/16 passing
 
 Application tests:
-56/56 passing
+57/57 passing
 
 Infrastructure tests:
-22/22 passing
+23/23 passing
 
 AI tests:
 6/6 passing
@@ -37,7 +37,7 @@ Desktop end-to-end tests:
 3/3 passing
 
 Current task:
-Review `KNOWLEDGE-ENGINE-PERSISTENCE-0.1-RC`
+Implement `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1-RC`
 
 Required outcome:
 
@@ -49,19 +49,19 @@ Required outcome:
 - Defer parsing, OCR, embeddings, vector search, and automatic authority promotion explicitly through EDRs.
 
 Next review:
-`KNOWLEDGE-ENGINE-PERSISTENCE-0.1-RC` architecture, migration, and code review
+`KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1-RC` end-to-end workflow, reload, and audit review
 
 Known blockers:
 None
 
 Last completed:
-Implemented and validated `KNOWLEDGE-ENGINE-PERSISTENCE-0.1-RC`
+Released `KNOWLEDGE-ENGINE-PERSISTENCE-0.1`
 
 Proposed next direction:
 
-- Review the SQLite Knowledge Engine persistence slice
-- Confirm migration compatibility and durable retrieval boundaries
-- Prepare the next retrieval and knowledge-ingestion package after approval
+- Wire the persisted Knowledge Engine workflow through the temporary Desktop host
+- Validate revision chains, graph edges, citations, and audit history end to end
+- Prepare the next prompt-driven Knowledge Engine package after executable validation
 
 Current capabilities:
 

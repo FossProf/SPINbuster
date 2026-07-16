@@ -32,5 +32,9 @@ internal sealed class KnowledgeRelationshipRecord
 
   public DateTimeOffset CreatedAtUtc { get; set; }
 
+  // SQLite cannot translate DateTimeOffset ordering directly, so a primitive
+  // sort key keeps bounded relationship traversal on the server side.
+  public long CreatedAtUtcTicks { get; set; }
+
   public KnowledgeVerificationStatus VerificationStatus { get; set; }
 }

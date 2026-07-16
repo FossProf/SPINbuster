@@ -574,6 +574,7 @@ internal static class InfrastructureMapper
       EvidenceOrRationale = relationship.EvidenceOrRationale,
       CreatedBy = relationship.CreatedBy,
       CreatedAtUtc = relationship.CreatedAtUtc,
+      CreatedAtUtcTicks = relationship.CreatedAtUtc.UtcDateTime.Ticks,
       VerificationStatus = relationship.VerificationStatus,
     };
   }

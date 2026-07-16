@@ -7,6 +7,7 @@ namespace SPINbuster.Infrastructure.Repositories;
 
 public sealed class SqliteKnowledgeRelationshipRepository : IKnowledgeRelationshipRepository
 {
+  private const int MaxRelationshipQueryLimit = 512;
   private readonly SpinbusterDbContext _dbContext;
 
   public SqliteKnowledgeRelationshipRepository(SpinbusterDbContext dbContext)
@@ -62,30 +63,38 @@ public sealed class SqliteKnowledgeRelationshipRepository : IKnowledgeRelationsh
     int maxResults,
     CancellationToken cancellationToken = default)
   {
+    if (maxResults < 1)
+    {
+      throw new DomainInvariantException($"{nameof(maxResults)} must be at least 1.");
+    }
+
+    if (maxResults > MaxRelationshipQueryLimit)
+    {
+      throw new DomainInvariantException($"{nameof(maxResults)} must not exceed {MaxRelationshipQueryLimit}.");
+    }
+
+    var subjectKey = subject.ToStableKey();
     var records = await _dbContext.KnowledgeRelationships
       .AsNoTracking()
       .Where(relationship => relationship.ProjectId == projectId
-        && (relationship.SourceKey == subject.ToStableKey()
-            || relationship.TargetKey == subject.ToStableKey()))
-      .ToArrayAsync(cancellationToken);
-
-    var orderedRecords = records
-      .OrderBy(relationship => relationship.CreatedAtUtc)
+        && (relationship.SourceKey == subjectKey
+            || relationship.TargetKey == subjectKey))
+      .OrderBy(relationship => relationship.CreatedAtUtcTicks)
       .ThenBy(relationship => relationship.Id)
       .Take(maxResults)
-      .ToArray();
+      .ToArrayAsync(cancellationToken);
 
-    if (orderedRecords.Length == 0)
+    if (records.Length == 0)
     {
       return [];
     }
 
     var auditTrailBySubjectId = await LoadAuditTrailMapAsync(
       nameof(KnowledgeRelationship),
-      orderedRecords.Select(record => record.Id.ToString()).ToArray(),
+      records.Select(record => record.Id.ToString()).ToArray(),
       cancellationToken);
 
-    return orderedRecords
+    return records
       .Select(record => InfrastructureMapper.ToDomain(
         record,
         auditTrailBySubjectId.TryGetValue(record.Id.ToString(), out var auditTrail)

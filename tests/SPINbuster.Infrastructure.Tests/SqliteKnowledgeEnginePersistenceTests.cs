@@ -394,6 +394,59 @@ public sealed class SqliteKnowledgeEnginePersistenceTests : IDisposable
   }
 
   [Fact]
+  public async Task DatabaseRejectsSecondCurrentAuthoritativeRevisionForSameDocument()
+  {
+    var seededDocument = await SeedKnowledgeDocumentAsync();
+    var firstRevision = CreateRevision(
+      seededDocument.Document.Id,
+      "A",
+      seededDocument.CreatedAtUtc.AddMinutes(11),
+      seededDocument.CreatedAtUtc.AddMinutes(12),
+      supersedesRevisionId: null);
+
+    seededDocument.Document.AddInitialRevision(
+      firstRevision,
+      "author@example.invalid",
+      seededDocument.CreatedAtUtc.AddMinutes(12));
+
+    await using (var seedContext = CreateDbContext())
+    {
+      var auditRecorder = new SqliteAuditRecorder();
+      var unitOfWork = new SqliteUnitOfWork(seedContext, auditRecorder);
+      await new SqliteKnowledgeDocumentRepository(seedContext).UpdateAsync(seededDocument.Document);
+      await new SqliteKnowledgeRevisionRepository(seedContext).AddAsync(firstRevision);
+      StageAuditEvents(auditRecorder, seededDocument.Document.AuditTrail.Skip(seededDocument.InitialAuditCount));
+      await unitOfWork.CommitAsync();
+    }
+
+    await using var duplicateContext = CreateDbContext();
+    var duplicateRevision = new KnowledgeDocumentRevisionRecord
+    {
+      Id = KnowledgeDocumentRevisionId.New(),
+      KnowledgeDocumentId = seededDocument.Document.Id,
+      KnowledgeSourceId = KnowledgeSourceId.New(),
+      RevisionLabel = "B",
+      EffectiveDate = DateOnly.FromDateTime(seededDocument.CreatedAtUtc.UtcDateTime.AddDays(1)),
+      ReceivedAtUtc = seededDocument.CreatedAtUtc.AddDays(1),
+      SourceAuthority = KnowledgeSourceAuthorityLevel.EngineerIssued,
+      VerificationStatus = KnowledgeVerificationStatus.Verified,
+      ContentHash = "content-hash-b",
+      MetadataHash = "metadata-hash-b",
+      SupersedesRevisionId = null,
+      SupersededByRevisionId = null,
+      SourceSystemReference = "source-B",
+      DescriptiveNotes = "Bypass-domain duplicate current revision.",
+      CreatedAtUtc = seededDocument.CreatedAtUtc.AddDays(1),
+      IngestionStatus = KnowledgeIngestionStatus.Processed,
+      Lifecycle = KnowledgeRevisionLifecycle.CurrentAuthoritative,
+    };
+
+    duplicateContext.KnowledgeDocumentRevisions.Add(duplicateRevision);
+
+    await Assert.ThrowsAsync<DbUpdateException>(() => duplicateContext.SaveChangesAsync());
+  }
+
+  [Fact]
   public async Task MigrationMetadataAndRepeatedMigrationIncludeKnowledgeSlice()
   {
     await using var dbContext = CreateDbContext();
@@ -401,16 +454,20 @@ public sealed class SqliteKnowledgeEnginePersistenceTests : IDisposable
 
     Assert.Contains(
       migrationsAssembly.Migrations.Keys,
-      migration => migration.EndsWith("KnowledgeEnginePersistenceRc", StringComparison.Ordinal));
+      migration => migration.EndsWith("KnowledgeEnginePersistenceRc2", StringComparison.Ordinal));
+    Assert.Contains(
+      migrationsAssembly.Migrations.Keys,
+      migration => migration.EndsWith("KnowledgeEnginePersistenceSnapshotAlignment", StringComparison.Ordinal));
 
     await dbContext.Database.MigrateAsync();
     await dbContext.Database.MigrateAsync();
 
     var appliedMigrations = (await dbContext.Database.GetAppliedMigrationsAsync()).ToArray();
 
-    Assert.Equal(4, appliedMigrations.Length);
-    Assert.Contains(appliedMigrations, migration => migration.EndsWith("KnowledgeEnginePersistenceRc", StringComparison.Ordinal));
-    Assert.Equal(4L, await QueryCountAsync(dbContext, "SELECT COUNT(*) FROM __EFMigrationsHistory"));
+    Assert.Equal(5, appliedMigrations.Length);
+    Assert.Contains(appliedMigrations, migration => migration.EndsWith("KnowledgeEnginePersistenceRc2", StringComparison.Ordinal));
+    Assert.Contains(appliedMigrations, migration => migration.EndsWith("KnowledgeEnginePersistenceSnapshotAlignment", StringComparison.Ordinal));
+    Assert.Equal(5L, await QueryCountAsync(dbContext, "SELECT COUNT(*) FROM __EFMigrationsHistory"));
   }
 
   [Fact]
@@ -430,7 +487,7 @@ public sealed class SqliteKnowledgeEnginePersistenceTests : IDisposable
     await migratedContext.Database.MigrateAsync();
 
     var appliedMigrations = (await migratedContext.Database.GetAppliedMigrationsAsync()).ToArray();
-    Assert.Equal(4, appliedMigrations.Length);
+    Assert.Equal(5, appliedMigrations.Length);
 
     var storedProject = await new SqliteProjectRepository(migratedContext).GetByIdAsync(seededState.ProjectId);
     var storedInspectionSession = await new SqliteInspectionSessionRepository(migratedContext).GetByIdAsync(seededState.InspectionSessionId);

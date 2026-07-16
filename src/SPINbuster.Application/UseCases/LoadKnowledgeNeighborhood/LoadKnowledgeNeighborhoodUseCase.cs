@@ -7,6 +7,7 @@ namespace SPINbuster.Application.UseCases.LoadKnowledgeNeighborhood;
 public sealed class LoadKnowledgeNeighborhoodUseCase
   : IQueryHandler<LoadKnowledgeNeighborhoodQuery, LoadKnowledgeNeighborhoodResult>
 {
+  public const int MaxRelationshipLimit = 512;
   private readonly IKnowledgeDocumentRepository _knowledgeDocumentRepository;
   private readonly IKnowledgeRelationshipRepository _knowledgeRelationshipRepository;
   private readonly IKnowledgeRevisionRepository _knowledgeRevisionRepository;
@@ -33,6 +34,11 @@ public sealed class LoadKnowledgeNeighborhoodUseCase
     if (query.MaxRelationships < 1)
     {
       throw new DomainInvariantException($"{nameof(query.MaxRelationships)} must be at least 1.");
+    }
+
+    if (query.MaxRelationships > MaxRelationshipLimit)
+    {
+      throw new DomainInvariantException($"{nameof(query.MaxRelationships)} must not exceed {MaxRelationshipLimit}.");
     }
 
     var relationships = new List<KnowledgeRelationship>();

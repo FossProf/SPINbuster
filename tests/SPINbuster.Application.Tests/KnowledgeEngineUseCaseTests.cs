@@ -272,6 +272,25 @@ public sealed class KnowledgeEngineUseCaseTests
   }
 
   [Fact]
+  public async Task LoadKnowledgeNeighborhoodRejectsUnreasonableRelationshipLimit()
+  {
+    var fixture = CreateFixture();
+    var documentId = await RegisterDocumentWithInitialRevisionAsync(fixture, "Drawing A", "DWG-A");
+    var loadUseCase = new LoadKnowledgeNeighborhoodUseCase(
+      fixture.KnowledgeDocumentRepository,
+      fixture.KnowledgeRevisionRepository,
+      fixture.KnowledgeRelationshipRepository);
+
+    var exception = await Assert.ThrowsAsync<DomainInvariantException>(() => loadUseCase.HandleAsync(new LoadKnowledgeNeighborhoodQuery(
+      fixture.ProjectId,
+      KnowledgeSubjectReference.ForDocument(fixture.ProjectId, documentId),
+      MaxDepth: 1,
+      MaxRelationships: LoadKnowledgeNeighborhoodUseCase.MaxRelationshipLimit + 1)));
+
+    Assert.Contains("must not exceed", exception.Message, StringComparison.Ordinal);
+  }
+
+  [Fact]
   public async Task CommitFailureIsNotReportedAsSuccessForKnowledgeRegistration()
   {
     var fixture = CreateFixture();

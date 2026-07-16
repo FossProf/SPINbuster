@@ -2,20 +2,20 @@
 
 ## Latest Released Baseline
 
-- `AI-PROPOSAL-EXECUTABLE-SLICE-0.1`
+- `KNOWLEDGE-ENGINE-PERSISTENCE-0.1`
 - Status: `Released`
 
-## Active Review Candidate
+## Next Active Package
 
-- `KNOWLEDGE-ENGINE-PERSISTENCE-0.1-RC`
-- Status: `Implemented and locally validated; review pending`
+- `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1-RC`
+- Status: `Ready to implement`
 - Build: `Passing`
 - Warnings: `0`
 - Architecture tests: `16/16 passing`
 - Domain tests: `48/48 passing`
-- Application tests: `56/56 passing`
+- Application tests: `57/57 passing`
 - AI tests: `6/6 passing`
-- Infrastructure tests: `22/22 passing`
+- Infrastructure tests: `23/23 passing`
 - Desktop end-to-end tests: `3/3 passing`
 
 ## Current Branch
@@ -31,11 +31,11 @@
 - Governed AI draft proposal substrate released
 - Deterministic executable AI proposal workflow released
 - Knowledge Engine domain and application foundation implemented and validated as a review candidate
-- Knowledge Engine SQLite persistence foundation implemented and validated as a review candidate
+- Knowledge Engine SQLite persistence foundation released
 
 ## Current Implementation Phase
 
-- Knowledge Engine persistence review candidate
+- Knowledge Engine executable slice planning
 
 ## Current Milestone
 
@@ -76,7 +76,7 @@
 
 ## Immediate Next Task
 
-- Review `KNOWLEDGE-ENGINE-PERSISTENCE-0.1-RC`
+- Implement `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1-RC`
 
 ## Fast Context
 
@@ -88,7 +88,7 @@
 - The current released report-draft baseline extends that path through evidence attachment, interpretation, draft-context assembly, authoritative report-draft creation, provenance reload, duplicate-safe operation handling, and report audit-history reload.
 - The current released AI baseline adds governed context manifests, deterministic Tier 0 AI proposal generation, structured proposal validation, durable model-run/proposal persistence, and explicit proposal rejection without authoritative report mutation.
 - The latest released executable AI baseline extends the Desktop host through deterministic proposal request, replay verification, durable model-run history reload, human accept or reject review actions, failure display, and explicit verification that report revisions remain unchanged.
-- The current Knowledge Engine review candidate adds authoritative knowledge documents, immutable revision history, explicit supersession semantics, project-scoped relationships, precise citations, provider-neutral application contracts, and local SQLite persistence with migration validation.
+- The current released Knowledge Engine persistence baseline adds authoritative knowledge documents, immutable revision history, explicit supersession semantics, project-scoped relationships, precise citations, provider-neutral application contracts, and local SQLite persistence with migration validation.
 - The prototype review is recorded in `docs/decisions/status/VERTICAL-SLICE-0.1-PROTOTYPE-REVIEW.md`.
 - The report-draft prototype review is recorded in `docs/decisions/status/REPORT-DRAFT-SLICE-0.1-PROTOTYPE-REVIEW.md`.
 

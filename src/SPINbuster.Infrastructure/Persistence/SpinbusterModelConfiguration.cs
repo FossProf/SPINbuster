@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using SPINbuster.Domain;
 using SPINbuster.Infrastructure.Persistence.Records;
 
 namespace SPINbuster.Infrastructure.Persistence;
@@ -320,6 +321,7 @@ internal static class SpinbusterModelConfiguration
     documentBuilder.Property(record => record.CreatedAtUtc).IsRequired();
     documentBuilder.HasIndex(record => record.ProjectId);
     documentBuilder.HasIndex(record => new { record.ProjectId, record.DocumentType });
+    documentBuilder.HasIndex(record => record.CurrentAuthoritativeRevisionId).IsUnique();
     documentBuilder.HasMany(record => record.Revisions)
       .WithOne()
       .HasForeignKey(record => record.KnowledgeDocumentId)
@@ -327,6 +329,10 @@ internal static class SpinbusterModelConfiguration
     documentBuilder.HasOne<ProjectRecord>()
       .WithMany()
       .HasForeignKey(record => record.ProjectId)
+      .OnDelete(DeleteBehavior.Restrict);
+    documentBuilder.HasOne<KnowledgeDocumentRevisionRecord>()
+      .WithMany()
+      .HasForeignKey(record => record.CurrentAuthoritativeRevisionId)
       .OnDelete(DeleteBehavior.Restrict);
 
     var revisionBuilder = modelBuilder.Entity<KnowledgeDocumentRevisionRecord>();
@@ -349,9 +355,11 @@ internal static class SpinbusterModelConfiguration
     revisionBuilder.Property(record => record.CreatedAtUtc).IsRequired();
     revisionBuilder.Property(record => record.IngestionStatus).IsRequired();
     revisionBuilder.Property(record => record.Lifecycle).IsRequired();
-    revisionBuilder.HasIndex(record => record.KnowledgeDocumentId);
+    revisionBuilder.HasIndex(record => record.KnowledgeDocumentId)
+      .HasDatabaseName("IX_knowledge_document_revisions_KnowledgeDocumentId_CurrentAuthoritative")
+      .HasFilter($"{nameof(KnowledgeDocumentRevisionRecord.Lifecycle)} = {(int)KnowledgeRevisionLifecycle.CurrentAuthoritative}")
+      .IsUnique();
     revisionBuilder.HasIndex(record => new { record.KnowledgeDocumentId, record.RevisionLabel }).IsUnique();
-    revisionBuilder.HasIndex(record => new { record.KnowledgeDocumentId, record.Lifecycle });
     revisionBuilder.HasIndex(record => record.SupersedesRevisionId);
     revisionBuilder.HasIndex(record => record.SupersededByRevisionId);
     revisionBuilder.HasMany(record => record.Citations)
@@ -376,6 +384,7 @@ internal static class SpinbusterModelConfiguration
     relationshipBuilder.Property(record => record.EvidenceOrRationale).HasColumnType("TEXT").IsRequired();
     relationshipBuilder.Property(record => record.CreatedBy).HasMaxLength(256).IsRequired();
     relationshipBuilder.Property(record => record.CreatedAtUtc).IsRequired();
+    relationshipBuilder.Property(record => record.CreatedAtUtcTicks).IsRequired();
     relationshipBuilder.Property(record => record.VerificationStatus).IsRequired();
     relationshipBuilder.HasIndex(record => new
     {

@@ -31,6 +31,7 @@ This slice excludes:
 - `KnowledgeDocumentRevision` persists immutable authored metadata plus explicit lifecycle, verification, and supersession links.
 - `KnowledgeRelationship` persists as an independent durable record and uses stable subject keys to enforce duplicate prevention under SQLite.
 - `KnowledgeCitation` persists as a revision-scoped locator record and does not own document content.
+- Relationship endpoint referential integrity remains primarily Domain/Application enforced in this slice; SQLite enforces project-scoped duplicate prevention and durable endpoint keys, but not full document-to-revision ownership semantics.
 
 ## Query boundary
 

@@ -123,7 +123,7 @@ Put lightweight agent instructions in `.ai/`.
 - `REPORT-DRAFT-SLICE-0.1` is the latest released baseline.
 - `AI-DRAFT-PROPOSAL-SLICE-0.1` is the latest released AI baseline.
 - `AI-PROPOSAL-EXECUTABLE-SLICE-0.1` is the latest released executable AI baseline.
-- `KNOWLEDGE-ENGINE-PERSISTENCE-0.1-RC` is the current review-candidate Knowledge Engine baseline.
+- `KNOWLEDGE-ENGINE-PERSISTENCE-0.1` is the latest released Knowledge Engine baseline.
 - Migration status: no pending model changes, empty-database migration passes, repeated migration is idempotent, and migration history is verified.
 - Persistence status: aggregate and staged audit changes commit atomically, roll back atomically, and detached updates are verified.
 - Validated vertical-slice path: migrations applied at startup, project created and persisted, inspection session started and persisted, field note captured and preserved, project/session rehydration succeeds, and audit history persists and reloads.

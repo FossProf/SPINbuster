@@ -43,8 +43,8 @@ Completed:
 - Knowledge Engine SQLite persistence slice
 - Knowledge Engine EF Core mappings, repositories, migration, and upgrade validation
 - Knowledge Engine Infrastructure and architecture guardrail expansion
-- `KNOWLEDGE-ENGINE-PERSISTENCE-0.1-RC` validation
+- Released baseline `KNOWLEDGE-ENGINE-PERSISTENCE-0.1`
 
 Next:
 
-- Review `KNOWLEDGE-ENGINE-PERSISTENCE-0.1-RC`
+- Implement `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1-RC`
