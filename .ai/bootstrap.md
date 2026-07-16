@@ -10,11 +10,11 @@ SPINbuster is a layered .NET codebase with AI-assisted capabilities, governed by
 
 - Repository scaffold exists and builds successfully.
 - Architecture guardrails are in place and passing.
-- The repository includes the released `AI-DRAFT-PROPOSAL-SLICE-0.1` baseline and the released `AI-PROPOSAL-EXECUTABLE-SLICE-0.1` Desktop executable workflow.
+- The repository includes the released `AI-DRAFT-PROPOSAL-SLICE-0.1` baseline, the released `AI-PROPOSAL-EXECUTABLE-SLICE-0.1` Desktop executable workflow, and the validated `KNOWLEDGE-ENGINE-FOUNDATION-0.1-RC` foundation slice.
 
 ## Current Baseline
 
-- `AI-PROPOSAL-EXECUTABLE-SLICE-0.1`
+- `KNOWLEDGE-ENGINE-FOUNDATION-0.1-RC`
 
 ## Current Milestone
 
@@ -22,7 +22,7 @@ SPINbuster is a layered .NET codebase with AI-assisted capabilities, governed by
 
 ## Current Active Task
 
-- `Await the next implementation package after AI-PROPOSAL-EXECUTABLE-SLICE-0.1`
+- `Review KNOWLEDGE-ENGINE-FOUNDATION-0.1-RC`
 
 ## Authoritative Files
 
@@ -31,6 +31,7 @@ SPINbuster is a layered .NET codebase with AI-assisted capabilities, governed by
 - `.ai/handoff.md`
 - `.ai/coding-rules.md`
 - `.ai/repository-map.md`
+- `docs/00-governance/AI_BOOTSTRAP.md`
 - Relevant `spec/` documents for the subsystem being changed
 
 ## Bootstrap Reading Order
@@ -40,9 +41,10 @@ SPINbuster is a layered .NET codebase with AI-assisted capabilities, governed by
 3. `.ai/handoff.md`
 4. `.ai/coding-rules.md`
 5. `.ai/repository-map.md`
-6. Relevant `spec/` documents only
-7. Relevant tests
-8. Existing implementation files
+6. `docs/00-governance/AI_BOOTSTRAP.md`
+7. Relevant `spec/` documents only
+8. Relevant tests
+9. Existing implementation files
 
 ## Session Start Directive
 
@@ -60,3 +62,4 @@ Before finishing work:
 - Update `.ai/current-priority.md` if the active baton changed.
 - Update `.ai/handoff.md` after major work sessions.
 - Update `PROJECT_STATE.md` when baseline, milestone, phase, or immediate next task changes.
+- Keep `docs/00-governance/` aligned with durable repository authority when governance rules change.

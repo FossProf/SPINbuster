@@ -228,6 +228,52 @@ public sealed class DependencyGraphTests
     }
   }
 
+  [Fact]
+  public void ApplicationKnowledgeContractsDoNotReferenceEfCoreOrFileSystemTypes()
+  {
+    var repoRoot = FindRepositoryRoot();
+    var knowledgeFiles = Directory
+      .EnumerateFiles(Path.Combine(repoRoot, "src", "SPINbuster.Application"), "*.cs", SearchOption.AllDirectories)
+      .Where(path =>
+        path.Contains("Knowledge", StringComparison.OrdinalIgnoreCase)
+        || path.Contains($"{Path.DirectorySeparatorChar}Repositories{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+      .ToArray();
+
+    foreach (var knowledgeFile in knowledgeFiles)
+    {
+      var contents = File.ReadAllText(knowledgeFile);
+      Assert.DoesNotContain("IQueryable", contents, StringComparison.Ordinal);
+      Assert.DoesNotContain("DbContext", contents, StringComparison.Ordinal);
+      Assert.DoesNotContain("DbSet", contents, StringComparison.Ordinal);
+      Assert.DoesNotContain("FileInfo", contents, StringComparison.Ordinal);
+      Assert.DoesNotContain("DirectoryInfo", contents, StringComparison.Ordinal);
+      Assert.DoesNotContain("FileStream", contents, StringComparison.Ordinal);
+    }
+  }
+
+  [Fact]
+  public void AiAndDocumentsProjectsDoNotUseKnowledgeMutationRepositoriesDirectly()
+  {
+    var repoRoot = FindRepositoryRoot();
+    var adapterRoots = new[]
+    {
+      Path.Combine(repoRoot, "src", "SPINbuster.AI"),
+      Path.Combine(repoRoot, "src", "SPINbuster.Documents"),
+    };
+
+    foreach (var adapterRoot in adapterRoots)
+    {
+      foreach (var sourceFile in Directory.EnumerateFiles(adapterRoot, "*.cs", SearchOption.AllDirectories))
+      {
+        var contents = File.ReadAllText(sourceFile);
+        Assert.DoesNotContain("IKnowledgeDocumentRepository", contents, StringComparison.Ordinal);
+        Assert.DoesNotContain("IKnowledgeRevisionRepository", contents, StringComparison.Ordinal);
+        Assert.DoesNotContain("IKnowledgeRelationshipRepository", contents, StringComparison.Ordinal);
+        Assert.DoesNotContain("IKnowledgeCitationRepository", contents, StringComparison.Ordinal);
+      }
+    }
+  }
+
   private static string[] LoadPackageReferences(string projectPath)
   {
     return XDocument

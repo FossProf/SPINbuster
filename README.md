@@ -2,6 +2,12 @@
 
 SPINbuster is organized as a layered .NET solution scaffold with implementation projects under `src/`, matching test projects under `tests/`, engineering specifications under `spec/`, and lightweight agent operating guidance under `.ai/`.
 
+## Start Here
+
+- `.ai/bootstrap.md`
+- `docs/00-governance/AI_BOOTSTRAP.md`
+- `PROJECT_STATE.md`
+
 ## Solution Layout
 
 - `SPINbuster.sln` is the root solution file.

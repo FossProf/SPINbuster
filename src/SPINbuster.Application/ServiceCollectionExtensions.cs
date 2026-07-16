@@ -11,11 +11,19 @@ using SPINbuster.Application.UseCases.GenerateReportDraftRequest;
 using SPINbuster.Application.UseCases.LoadAiProposal;
 using SPINbuster.Application.UseCases.LoadAiProposalWorkflowSnapshot;
 using SPINbuster.Application.UseCases.LoadInspectionWorkflowSnapshot;
+using SPINbuster.Application.UseCases.LoadKnowledgeDocument;
+using SPINbuster.Application.UseCases.LoadKnowledgeNeighborhood;
+using SPINbuster.Application.UseCases.LoadKnowledgeRevisionHistory;
 using SPINbuster.Application.UseCases.LoadReportDraftSnapshot;
 using SPINbuster.Application.UseCases.PrepareTransactionalSave;
 using SPINbuster.Application.UseCases.RejectAiProposal;
+using SPINbuster.Application.UseCases.RegisterKnowledgeDocument;
 using SPINbuster.Application.UseCases.RequestReportDraftProposal;
 using SPINbuster.Application.UseCases.StartInspectionSession;
+using SPINbuster.Application.UseCases.AddKnowledgeDocumentRevision;
+using SPINbuster.Application.UseCases.CreateKnowledgeRelationship;
+using SPINbuster.Application.UseCases.SupersedeKnowledgeRevision;
+using SPINbuster.Application.UseCases.VerifyKnowledgeRevision;
 
 namespace SPINbuster.Application;
 
@@ -30,15 +38,23 @@ public static class ServiceCollectionExtensions
     services.AddScoped<ICommandHandler<AttachEvidenceCommand, AttachEvidenceResult>, AttachEvidenceUseCase>();
     services.AddScoped<ICommandHandler<AddInterpretationCommand, AddInterpretationResult>, AddInterpretationUseCase>();
     services.AddScoped<ICommandHandler<AcceptAiProposalCommand, AcceptAiProposalResult>, AcceptAiProposalUseCase>();
+    services.AddScoped<ICommandHandler<AddKnowledgeDocumentRevisionCommand, AddKnowledgeDocumentRevisionResult>, AddKnowledgeDocumentRevisionUseCase>();
     services.AddScoped<ICommandHandler<CreateReportDraftCommand, CreateReportDraftResult>, CreateReportDraftUseCase>();
+    services.AddScoped<ICommandHandler<CreateKnowledgeRelationshipCommand, CreateKnowledgeRelationshipResult>, CreateKnowledgeRelationshipUseCase>();
     services.AddScoped<ICommandHandler<PrepareTransactionalSaveCommand, PrepareTransactionalSaveResult>, PrepareTransactionalSaveUseCase>();
+    services.AddScoped<ICommandHandler<RegisterKnowledgeDocumentCommand, RegisterKnowledgeDocumentResult>, RegisterKnowledgeDocumentUseCase>();
     services.AddScoped<ICommandHandler<RequestReportDraftProposalCommand, RequestReportDraftProposalResult>, RequestReportDraftProposalUseCase>();
     services.AddScoped<ICommandHandler<RejectAiProposalCommand, RejectAiProposalResult>, RejectAiProposalUseCase>();
+    services.AddScoped<ICommandHandler<SupersedeKnowledgeRevisionCommand, SupersedeKnowledgeRevisionResult>, SupersedeKnowledgeRevisionUseCase>();
+    services.AddScoped<ICommandHandler<VerifyKnowledgeRevisionCommand, VerifyKnowledgeRevisionResult>, VerifyKnowledgeRevisionUseCase>();
     services.AddScoped<IQueryHandler<BuildReportProposalContextQuery, BuildReportProposalContextResult>, BuildReportProposalContextUseCase>();
     services.AddScoped<IQueryHandler<GenerateReportDraftRequestQuery, GenerateReportDraftRequestResult>, GenerateReportDraftRequestUseCase>();
     services.AddScoped<IQueryHandler<LoadAiProposalQuery, LoadAiProposalResult>, LoadAiProposalUseCase>();
     services.AddScoped<IQueryHandler<LoadAiProposalWorkflowSnapshotQuery, LoadAiProposalWorkflowSnapshotResult>, LoadAiProposalWorkflowSnapshotUseCase>();
     services.AddScoped<IQueryHandler<LoadInspectionWorkflowSnapshotQuery, LoadInspectionWorkflowSnapshotResult>, LoadInspectionWorkflowSnapshotUseCase>();
+    services.AddScoped<IQueryHandler<LoadKnowledgeDocumentQuery, LoadKnowledgeDocumentResult>, LoadKnowledgeDocumentUseCase>();
+    services.AddScoped<IQueryHandler<LoadKnowledgeNeighborhoodQuery, LoadKnowledgeNeighborhoodResult>, LoadKnowledgeNeighborhoodUseCase>();
+    services.AddScoped<IQueryHandler<LoadKnowledgeRevisionHistoryQuery, LoadKnowledgeRevisionHistoryResult>, LoadKnowledgeRevisionHistoryUseCase>();
     services.AddScoped<IQueryHandler<LoadReportDraftSnapshotQuery, LoadReportDraftSnapshotResult>, LoadReportDraftSnapshotUseCase>();
     return services;
   }

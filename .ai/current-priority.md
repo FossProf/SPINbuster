@@ -4,10 +4,10 @@ Current milestone:
 Prototype Vertical Slice
 
 Baseline:
-AI-PROPOSAL-EXECUTABLE-SLICE-0.1
+KNOWLEDGE-ENGINE-FOUNDATION-0.1-RC
 
 Status:
-Released
+Build and test validated; review pending
 
 Build:
 Passing
@@ -16,13 +16,13 @@ Warnings:
 0
 
 Domain tests:
-36/36 passing
+48/48 passing
 
 Architecture tests:
-12/12 passing
+14/14 passing
 
 Application tests:
-45/45 passing
+56/56 passing
 
 Infrastructure tests:
 14/14 passing
@@ -34,36 +34,31 @@ Desktop end-to-end tests:
 3/3 passing
 
 Current task:
-Record the released deterministic executable AI proposal baseline and await the next implementation package
+Review `KNOWLEDGE-ENGINE-FOUNDATION-0.1-RC`
 
 Required outcome:
 
-- Preserve the released authoritative report-draft baseline while adding the first local AI-assisted proposal path.
-- Keep AI output non-authoritative until explicit human acceptance creates a new authoritative report revision.
-- Preserve the current `Draft` ownership boundary, provenance rules, and `OperationId` retry guarantees.
-- Introduce governed AI context assembly and structured proposal validation without adding HTTP, MAUI, or cloud-provider dependencies.
-- Keep the Desktop host deterministic and intentionally narrow until a real MAUI client is introduced.
-- Keep AI provider integration limited to the deterministic fixture until the next slice intentionally broadens it.
-- Validate deterministic executable AI proposal request, replay, review action, failure display, and no-report-mutation behavior through the Desktop host.
-- Preserve the released deterministic fixture boundary until the next package intentionally broadens provider integration.
+- Preserve the released report-draft and executable AI baselines while introducing the first authoritative Knowledge Engine foundation.
+- Keep knowledge records authoritative and project-scoped.
+- Preserve immutable historical revisions and explicit supersession semantics.
+- Keep repository contracts provider-neutral and free of EF Core, file-system, transport, or UI leakage.
+- Keep the Knowledge Engine usable without AI.
+- Defer parsing, OCR, embeddings, vector search, and automatic authority promotion explicitly through EDRs.
 
 Next review:
-Define and review the next package after `AI-PROPOSAL-EXECUTABLE-SLICE-0.1`
+`KNOWLEDGE-ENGINE-FOUNDATION-0.1-RC` architecture and code review
 
 Known blockers:
 None
 
 Last completed:
-Released `AI-PROPOSAL-EXECUTABLE-SLICE-0.1`
+Implemented and validated `KNOWLEDGE-ENGINE-FOUNDATION-0.1-RC`
 
 Proposed next direction:
 
-- Persisted field material
-- Assemble governed context manifest
-- Invoke local AI provider
-- Validate structured proposal
-- Present proposal for human review
-- Explicitly accept into a new authoritative report revision
+- Persist knowledge infrastructure and query adapters
+- Introduce authoritative storage and migrations for knowledge records
+- Prepare governed retrieval inputs for future AI and reporting slices
 
 Current capabilities:
 
@@ -85,6 +80,9 @@ Current capabilities:
 - Replay deterministic AI proposal requests safely through the Desktop host
 - Reload durable model-run, proposal, attempt, and audit history through an application snapshot query
 - Persist explicit AI lifecycle audit markers for request, provider attempt, validation, completion, and review disposition
+- Register authoritative knowledge documents and immutable revisions
+- Record explicit knowledge supersession, verification, relationship, and contradiction audit facts
+- Load bounded knowledge neighborhoods through application snapshots
 
 Authoritative context:
 
@@ -115,18 +113,25 @@ Authoritative context:
 - `spec/ai/prompt-contracts.md`
 - `spec/ai/confidence-and-uncertainty.md`
 - `spec/ai/model-run-lifecycle.md`
+- `spec/knowledge/README.md`
+- `spec/architecture/knowledge-engine-foundation.md`
+- `docs/decisions/edr/EDR-KE-001-binary-file-storage-ownership.md`
+- `docs/decisions/edr/EDR-KE-002-document-parsing-and-chunking.md`
+- `docs/decisions/edr/EDR-KE-003-ocr-boundary.md`
+- `docs/decisions/edr/EDR-KE-004-embeddings-and-vector-search.md`
+- `docs/decisions/edr/EDR-KE-005-automatic-authority-classification.md`
+- `docs/decisions/edr/EDR-KE-006-ai-generated-relationship-promotion.md`
+- `docs/decisions/edr/EDR-KE-007-cross-project-knowledge-sharing.md`
+- `docs/decisions/edr/EDR-KE-008-multi-current-revision-conflict-resolution.md`
+- Relevant knowledge foundation files under `src/SPINbuster.Domain/`, `src/SPINbuster.Application/`, and `tests/`
 - Relevant report-draft slice files under `src/SPINbuster.Domain/`, `src/SPINbuster.Application/`, `src/SPINbuster.Infrastructure/`, and `src/SPINbuster.Desktop/`
 
 Validation before completion:
 
 - `dotnet restore SPINbuster.sln --configfile NuGet.Config`
 - `dotnet format SPINbuster.sln --no-restore`
-- `dotnet build SPINbuster.sln --no-restore`
-- `dotnet tool run dotnet-ef migrations has-pending-model-changes --no-build --project src/SPINbuster.Infrastructure --startup-project src/SPINbuster.Server --context SPINbuster.Infrastructure.Persistence.SpinbusterDbContext`
-- `dotnet test tests/SPINbuster.AI.Tests/SPINbuster.AI.Tests.csproj --no-build`
-- `dotnet test tests/SPINbuster.Application.Tests/SPINbuster.Application.Tests.csproj`
-- `dotnet test tests/SPINbuster.Infrastructure.Tests/SPINbuster.Infrastructure.Tests.csproj`
-- `dotnet test tests/SPINbuster.Desktop.Tests/SPINbuster.Desktop.Tests.csproj`
-- `dotnet test tests/SPINbuster.Domain.Tests/SPINbuster.Domain.Tests.csproj`
-- `dotnet test tests/SPINbuster.Architecture.Tests/SPINbuster.Architecture.Tests.csproj`
+- `dotnet build SPINbuster.sln --no-restore -m:1 /nodeReuse:false`
+- `dotnet test tests/SPINbuster.Domain.Tests/SPINbuster.Domain.Tests.csproj --no-build`
+- `dotnet test tests/SPINbuster.Application.Tests/SPINbuster.Application.Tests.csproj --no-build`
+- `dotnet test tests/SPINbuster.Architecture.Tests/SPINbuster.Architecture.Tests.csproj --no-build`
 - `dotnet test SPINbuster.sln --no-build -m:1`

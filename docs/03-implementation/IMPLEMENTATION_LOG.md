@@ -34,7 +34,13 @@ Completed:
 - Deterministic executable AI proposal workflow through the Desktop host
 - AI proposal replay, review-action, failure-display, and no-report-mutation validation
 - Released baseline `AI-PROPOSAL-EXECUTABLE-SLICE-0.1`
+- Knowledge Engine Domain and Application foundation
+- Knowledge document, revision, relationship, and citation model
+- Knowledge Engine repository contracts, use cases, and architecture guardrails
+- Deferred Knowledge Engine EDR set and authoritative `spec/knowledge/` specification
+- `KNOWLEDGE-ENGINE-FOUNDATION-0.1-RC` validation
+- Permanent governance layer established under `docs/00-governance/`
 
 Next:
 
-- Define the first authoritative `Knowledge Engine` package after the executable AI checkpoint
+- Review `KNOWLEDGE-ENGINE-FOUNDATION-0.1-RC`

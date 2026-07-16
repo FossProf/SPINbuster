@@ -1,7 +1,7 @@
 # Current State
 
 Repository status:
-`AI-PROPOSAL-EXECUTABLE-SLICE-0.1` is released. Build passing. Desktop end-to-end tests `3/3`. Infrastructure tests `14/14`. Application tests `45/45`. Domain tests `36/36`. AI tests `6/6`. Architecture tests `12/12`. Warnings `0`.
+`KNOWLEDGE-ENGINE-FOUNDATION-0.1-RC` is implemented and validated locally, with review still pending. Build passing. Desktop end-to-end tests `3/3`. Infrastructure tests `14/14`. Application tests `56/56`. Domain tests `48/48`. AI tests `6/6`. Architecture tests `14/14`. Warnings `0`.
 
 Current branch:
 `main`
@@ -10,7 +10,7 @@ Current milestone:
 `Prototype Vertical Slice`
 
 Current baseline:
-`AI-PROPOSAL-EXECUTABLE-SLICE-0.1`
+`KNOWLEDGE-ENGINE-FOUNDATION-0.1-RC`
 
 Recent accomplishments:
 
@@ -63,12 +63,17 @@ Recent accomplishments:
 - Hardened the executable AI slice with explicit audit markers for model-run request, provider attempt, validation outcome, and review disposition.
 - Added replay and review-idempotency regression coverage plus explicit authoritative report isolation assertions.
 - Released the deterministic executable AI proposal workflow as `AI-PROPOSAL-EXECUTABLE-SLICE-0.1`.
+- Added the first Knowledge Engine Domain foundation with authoritative knowledge documents, immutable revisions, explicit supersession, project-scoped relationships, and precise citations.
+- Added provider-neutral Knowledge Engine Application repository contracts and orchestration use cases for registration, revision lifecycle, verification, relationships, and bounded neighborhood loading.
+- Added deferred EDRs and the first authoritative Knowledge Engine specifications under `spec/knowledge/` and `spec/architecture/`.
+- Validated the Knowledge Engine review candidate with zero build warnings plus updated Domain, Application, Architecture, and full solution test coverage.
 
 Current architectural decisions:
 
 - `REPORT-DRAFT-SLICE-0.1` is the active released baseline.
 - `AI-DRAFT-PROPOSAL-SLICE-0.1` is the active released AI baseline.
 - `AI-PROPOSAL-EXECUTABLE-SLICE-0.1` is the active released executable AI baseline.
+- `KNOWLEDGE-ENGINE-FOUNDATION-0.1-RC` is the active review-candidate knowledge baseline.
 - `SPINbuster.Desktop` remains a temporary bootstrap host, not a MAUI application yet.
 - `SPINbuster.Shared` is constrained to narrow cross-boundary contracts and primitives.
 - Adapter-to-adapter references are disallowed.
@@ -87,12 +92,12 @@ Current architectural decisions:
 - `EDR-AI-001` defers authoritative report revision creation from human-accepted AI proposals; the current slice persists human review disposition without mutating authoritative reports.
 - `EDR-AI-002` defers concurrent duplicate-resolution and crash-recovery rules for AI proposal requests until live-provider integration.
 - AI provider support remains intentionally limited to the deterministic fixture in this baseline.
-- A distinct future `Knowledge Engine` subsystem is now part of the project direction and should be treated as separate from the AI subsystem.
+- A distinct `Knowledge Engine` subsystem now has a concrete Domain and Application foundation and remains separate from the AI subsystem.
 - AI remains operationally optional; the deterministic Tier 0 provider exercises the full proposal pipeline without any live AI dependency.
 - AI proposals, model runs, run attempts, and governed context manifests commit through the existing unit-of-work boundary alongside audit records.
 
 Next task:
-Define the next implementation package after `AI-PROPOSAL-EXECUTABLE-SLICE-0.1`, expected to begin the first Knowledge Engine work
+Review `KNOWLEDGE-ENGINE-FOUNDATION-0.1-RC` before starting persistence or ingestion work
 
 Known issues:
 
@@ -103,13 +108,14 @@ Known issues:
 - Human-accepted AI proposals still do not create authoritative report revisions; that boundary is intentionally deferred by `EDR-AI-001`.
 - Advanced retry orchestration and crash recovery remain intentionally deferred by `EDR-AI-002`.
 - The Desktop host now references `SPINbuster.AI` as a composition-root dependency so it can execute the deterministic provider path; adapter projects still do not reference each other.
-- The eventual architecture is expected to place AI after a richer knowledge-model layer rather than using AI as the primary source of engineering intelligence.
+- Knowledge Engine persistence, parsing, OCR, embeddings, and cross-project sharing remain intentionally deferred in this slice.
 
 Requested review:
 
 - Whether human-accepted advisory proposals should create a new authoritative report revision in Domain or Application first
 - Whether prompt-package registry metadata should remain repository-owned or later become persisted configuration
 - How the future `Knowledge Engine` should be bounded relative to `Domain`, `Documents`, `Reporting`, and `AI`
+- Whether `KnowledgeDocumentRevision` should remain aggregate-owned through persistence or later be promoted to a separate aggregate boundary
 
 Current capabilities:
 
@@ -127,3 +133,7 @@ Current capabilities:
 - Persist model runs, run attempts, and advisory proposal manifests
 - Reject advisory AI proposals through explicit review workflow
 - Execute deterministic AI proposal request/replay/review flows through the Desktop host
+- Register authoritative knowledge documents
+- Add, supersede, and verify knowledge revisions explicitly
+- Create project-scoped knowledge relationships with contradiction visibility
+- Load bounded knowledge neighborhoods through Application queries
