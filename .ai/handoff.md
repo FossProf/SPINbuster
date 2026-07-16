@@ -1,7 +1,7 @@
 # Current State
 
 Repository status:
-`REPORT-DRAFT-SLICE-0.1` is the latest released baseline. Build passing. Desktop end-to-end tests `2/2`. Infrastructure tests `10/10`. Application tests `17/17`. Domain tests `25/25`. Architecture tests `8/8`. Warnings `0`.
+`AI-DRAFT-PROPOSAL-SLICE-0.1` is released. Build passing. Desktop end-to-end tests `2/2`. Infrastructure tests `14/14`. Application tests `32/32`. Domain tests `36/36`. AI tests `6/6`. Architecture tests `12/12`. Warnings `0`.
 
 Current branch:
 `main`
@@ -10,7 +10,7 @@ Current milestone:
 `Prototype Vertical Slice`
 
 Current baseline:
-`REPORT-DRAFT-SLICE-0.1`
+`AI-DRAFT-PROPOSAL-SLICE-0.1`
 
 Recent accomplishments:
 
@@ -55,10 +55,15 @@ Recent accomplishments:
 - Validated the executable slice against a fresh SQLite file after migrations.
 - Released the authoritative report-draft vertical slice as `REPORT-DRAFT-SLICE-0.1`.
 - Recorded the post-release prototype review milestone for `REPORT-DRAFT-SLICE-0.1`, including migration behavior, idempotency, provenance validation, and report-section revisioning assessment.
+- Released the governed AI draft proposal substrate with governed context manifests, provider-neutral generation contracts, deterministic Tier 0 provider adapters, structured proposal validation, durable model-run and proposal persistence, and AI-specific architecture guardrails.
+- Added a report-draft proposal JSON Schema under `schemas/ai/` and updated the authoritative AI subsystem specifications under `spec/ai/`.
+- Added AI-focused Domain, Application, AI, Infrastructure, and Architecture tests and validated the full solution with zero warnings.
+- Hardened the AI review candidate so human proposal disposition is separate from technical model-run closure, requested runs persist before provider execution, and canonical proposal payloads are stored for review.
 
 Current architectural decisions:
 
 - `REPORT-DRAFT-SLICE-0.1` is the active released baseline.
+- `AI-DRAFT-PROPOSAL-SLICE-0.1` is the active released AI baseline.
 - `SPINbuster.Desktop` remains a temporary bootstrap host, not a MAUI application yet.
 - `SPINbuster.Shared` is constrained to narrow cross-boundary contracts and primitives.
 - Adapter-to-adapter references are disallowed.
@@ -74,9 +79,14 @@ Current architectural decisions:
 - `EDR-DOM-001` defers versioned evidence interpretation history; current behavior is single-assignment with no silent replacement.
 - `EDR-APP-001` is now accepted for the report-draft slice: `CreateReportDraftCommand` uses `OperationId`, and Infrastructure enforces uniqueness for that authoritative outcome.
 - `EDR-APP-002` fixes `GenerateReportDraftRequest` as a side-effect-free query that assembles drafting context only.
+- `EDR-AI-001` defers authoritative report revision creation from human-accepted AI proposals; the current slice persists human review disposition without mutating authoritative reports.
+- `EDR-AI-002` defers concurrent duplicate-resolution and crash-recovery rules for AI proposal requests until live-provider integration.
+- AI provider support remains intentionally limited to the deterministic fixture in this baseline.
+- AI remains operationally optional; the deterministic Tier 0 provider exercises the full proposal pipeline without any live AI dependency.
+- AI proposals, model runs, run attempts, and governed context manifests commit through the existing unit-of-work boundary alongside audit records.
 
 Next task:
-Define `AI-DRAFT-PROPOSAL-SLICE-0.1`
+Define and review the next authoritative AI acceptance slice
 
 Known issues:
 
@@ -84,11 +94,13 @@ Known issues:
 - Evidence interpretation is intentionally single-assignment for `DOMAIN-0.1`; richer interpretation history is deferred by `EDR-DOM-001`.
 - The Desktop host is still a console bootstrapper and should not accumulate broader UI assumptions before the real client direction is chosen.
 - The SQLite report migration emits EF's expected non-transactional SQLite table-rebuild warning because the released report table shape changed from the earlier baseline; the migrated workflow still completes successfully from a fresh database.
+- Human-accepted AI proposals still do not create authoritative report revisions; that boundary is intentionally deferred by `EDR-AI-001`.
+- Advanced retry orchestration and crash recovery remain intentionally deferred by `EDR-AI-002`.
 
 Requested review:
 
-- `AI-DRAFT-PROPOSAL-SLICE-0.1` package review
-- How proposal storage, governed context manifests, and explicit human acceptance should relate to authoritative report revisioning
+- Whether human-accepted advisory proposals should create a new authoritative report revision in Domain or Application first
+- Whether prompt-package registry metadata should remain repository-owned or later become persisted configuration
 
 Current capabilities:
 
@@ -101,3 +113,7 @@ Current capabilities:
 - Create authoritative revision-1 report drafts
 - Persist provenance and audit history
 - Retry draft creation safely through `OperationId`
+- Build governed report-proposal context manifests
+- Generate deterministic advisory AI proposals with no live provider dependency
+- Persist model runs, run attempts, and advisory proposal manifests
+- Reject advisory AI proposals through explicit review workflow

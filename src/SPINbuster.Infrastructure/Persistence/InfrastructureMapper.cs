@@ -1,3 +1,4 @@
+using System.Text.Json;
 using SPINbuster.Domain;
 using SPINbuster.Infrastructure.Persistence.Records;
 
@@ -5,6 +6,8 @@ namespace SPINbuster.Infrastructure.Persistence;
 
 internal static class InfrastructureMapper
 {
+  private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+
   public static Project ToDomain(ProjectRecord record, IReadOnlyCollection<AuditEvent> auditTrail)
   {
     return Project.Rehydrate(
@@ -223,5 +226,239 @@ internal static class InfrastructureMapper
       OccurredAtUtc = auditEvent.OccurredAtUtc,
       Description = auditEvent.Description,
     };
+  }
+
+  public static ContextManifest ToDomain(ContextManifestRecord record)
+  {
+    return new ContextManifest(
+      record.Id,
+      record.ProjectId,
+      record.InspectionSessionId,
+      record.ContextPolicyVersion,
+      record.Entries
+        .OrderBy(entry => entry.Order)
+        .Select(entry => new ContextManifestSourceEntry(
+          entry.Order,
+          entry.ProjectId,
+          entry.SourceType,
+          entry.SourceId,
+          entry.SourceVersion,
+          entry.ContentHash,
+          entry.AuthorityClassification,
+          entry.InclusionReason,
+          entry.LimitationNotes,
+          entry.IsSuperseded,
+          DeserializeStringArray(entry.ConflictCodesJson)))
+        .ToArray(),
+      DeserializeStringArray(record.IncompleteReasonsJson),
+      record.CreatedAtUtc);
+  }
+
+  public static ContextManifestRecord ToRecord(ContextManifest contextManifest)
+  {
+    var record = new ContextManifestRecord
+    {
+      Id = contextManifest.Id,
+      ProjectId = contextManifest.ProjectId,
+      InspectionSessionId = contextManifest.InspectionSessionId,
+      ContextPolicyVersion = contextManifest.ContextPolicyVersion,
+      Status = contextManifest.Status,
+      ManifestHash = contextManifest.ManifestHash,
+      IncompleteReasonsJson = SerializeStringArray(contextManifest.IncompleteReasons),
+      CreatedAtUtc = contextManifest.CreatedAtUtc,
+    };
+
+    record.Entries.AddRange(contextManifest.Entries.Select(entry => new ContextManifestSourceEntryRecord
+    {
+      ContextManifestId = contextManifest.Id,
+      Order = entry.Order,
+      ProjectId = entry.ProjectId,
+      SourceType = entry.SourceType,
+      SourceId = entry.SourceId,
+      SourceVersion = entry.SourceVersion,
+      ContentHash = entry.ContentHash,
+      AuthorityClassification = entry.AuthorityClassification,
+      InclusionReason = entry.InclusionReason,
+      LimitationNotes = entry.LimitationNotes,
+      IsSuperseded = entry.IsSuperseded,
+      ConflictCodesJson = SerializeStringArray(entry.ConflictCodes),
+    }));
+
+    return record;
+  }
+
+  public static ModelRun ToDomain(ModelRunRecord record)
+  {
+    return ModelRun.Rehydrate(
+      record.Id,
+      record.ProjectId,
+      record.InspectionSessionId,
+      record.ReportId,
+      record.InitiatedBy,
+      record.ContextManifestId,
+      record.ContextManifestHash,
+      record.ProviderId,
+      record.ModelName,
+      record.ModelDigest,
+      record.PromptPackageId,
+      record.PromptPackageVersion,
+      record.OutputSchemaId,
+      record.OutputSchemaVersion,
+      record.CorrelationId,
+      record.RequestFingerprintHash,
+      record.RequestedAtUtc,
+      record.State,
+      record.FailureClassification,
+      record.FailureMessage);
+  }
+
+  public static ModelRunRecord ToRecord(ModelRun modelRun)
+  {
+    return new ModelRunRecord
+    {
+      Id = modelRun.Id,
+      ProjectId = modelRun.ProjectId,
+      InspectionSessionId = modelRun.InspectionSessionId,
+      ReportId = modelRun.ReportId,
+      InitiatedBy = modelRun.InitiatedBy,
+      ContextManifestId = modelRun.ContextManifestId,
+      ContextManifestHash = modelRun.ContextManifestHash,
+      ProviderId = modelRun.ProviderId,
+      ModelName = modelRun.ModelName,
+      ModelDigest = modelRun.ModelDigest,
+      PromptPackageId = modelRun.PromptPackageId,
+      PromptPackageVersion = modelRun.PromptPackageVersion,
+      OutputSchemaId = modelRun.OutputSchemaId,
+      OutputSchemaVersion = modelRun.OutputSchemaVersion,
+      CorrelationId = modelRun.CorrelationId,
+      RequestFingerprintHash = modelRun.RequestFingerprintHash,
+      RequestedAtUtc = modelRun.RequestedAtUtc,
+      State = modelRun.State,
+      FailureClassification = modelRun.FailureClassification,
+      FailureMessage = modelRun.FailureMessage,
+    };
+  }
+
+  public static ModelRunAttempt ToDomain(ModelRunAttemptRecord record)
+  {
+    return new ModelRunAttempt(
+      record.Id,
+      record.ModelRunId,
+      record.AttemptNumber,
+      record.InputHash,
+      record.StartedAtUtc,
+      record.CompletedAtUtc,
+      record.LatencyMilliseconds,
+      record.InputTokenCount,
+      record.OutputTokenCount,
+      record.RawOutput,
+      record.RawOutputHash,
+      record.OutcomeClassification,
+      record.FailureMessage);
+  }
+
+  public static ModelRunAttemptRecord ToRecord(ModelRunAttempt attempt)
+  {
+    return new ModelRunAttemptRecord
+    {
+      Id = attempt.Id,
+      ModelRunId = attempt.ModelRunId,
+      AttemptNumber = attempt.AttemptNumber,
+      InputHash = attempt.InputHash,
+      StartedAtUtc = attempt.StartedAtUtc,
+      CompletedAtUtc = attempt.CompletedAtUtc,
+      LatencyMilliseconds = attempt.LatencyMilliseconds,
+      InputTokenCount = attempt.InputTokenCount,
+      OutputTokenCount = attempt.OutputTokenCount,
+      RawOutput = attempt.RawOutput,
+      RawOutputHash = attempt.RawOutputHash,
+      OutcomeClassification = attempt.OutcomeClassification,
+      FailureMessage = attempt.FailureMessage,
+    };
+  }
+
+  public static AiProposal ToDomain(AiProposalRecord record)
+  {
+    return AiProposal.Rehydrate(
+      record.Id,
+      record.ModelRunId,
+      record.ProjectId,
+      record.InspectionSessionId,
+      record.ReportId,
+      record.ProviderId,
+      record.ModelName,
+      record.ModelDigest,
+      record.PromptPackageId,
+      record.PromptPackageVersion,
+      record.OutputSchemaId,
+      record.OutputSchemaVersion,
+      record.ContextManifestId,
+      record.ContextManifestHash,
+      record.GeneratedAtUtc,
+      record.LatencyMilliseconds,
+      record.InputTokenCount,
+      record.OutputTokenCount,
+      record.Temperature,
+      DeserializeStringArray(record.ReferencedSourceIdsJson),
+      record.StructuredPayloadJson,
+      record.Status,
+      record.ConfidenceBand,
+      record.AbstentionReason,
+      record.ReviewDispositionNotes,
+      DeserializeStringArray(record.UncertaintyCodesJson),
+      DeserializeStringArray(record.WarningsJson),
+      DeserializeStringArray(record.ValidationFailuresJson));
+  }
+
+  public static AiProposalRecord ToRecord(AiProposal proposal)
+  {
+    return new AiProposalRecord
+    {
+      Id = proposal.Id,
+      ModelRunId = proposal.ModelRunId,
+      ProjectId = proposal.ProjectId,
+      InspectionSessionId = proposal.InspectionSessionId,
+      ReportId = proposal.ReportId,
+      ProviderId = proposal.ProviderId,
+      ModelName = proposal.ModelName,
+      ModelDigest = proposal.ModelDigest,
+      PromptPackageId = proposal.PromptPackageId,
+      PromptPackageVersion = proposal.PromptPackageVersion,
+      OutputSchemaId = proposal.OutputSchemaId,
+      OutputSchemaVersion = proposal.OutputSchemaVersion,
+      ContextManifestId = proposal.ContextManifestId,
+      ContextManifestHash = proposal.ContextManifestHash,
+      GeneratedAtUtc = proposal.GeneratedAtUtc,
+      LatencyMilliseconds = proposal.LatencyMilliseconds,
+      InputTokenCount = proposal.InputTokenCount,
+      OutputTokenCount = proposal.OutputTokenCount,
+      Temperature = proposal.Temperature,
+      ReferencedSourceIdsJson = SerializeStringArray(proposal.ReferencedSourceIds),
+      StructuredPayloadJson = proposal.StructuredPayloadJson,
+      Status = proposal.Status,
+      ConfidenceBand = proposal.ConfidenceBand,
+      AbstentionReason = proposal.AbstentionReason,
+      ReviewDispositionNotes = proposal.ReviewDispositionNotes,
+      UncertaintyCodesJson = SerializeStringArray(proposal.UncertaintyCodes),
+      WarningsJson = SerializeStringArray(proposal.Warnings),
+      ValidationFailuresJson = SerializeStringArray(proposal.ValidationFailures),
+    };
+  }
+
+  private static string SerializeStringArray(IEnumerable<string> values)
+  {
+    return JsonSerializer.Serialize(
+      values.Distinct(StringComparer.Ordinal).OrderBy(value => value, StringComparer.Ordinal).ToArray(),
+      JsonOptions);
+  }
+
+  private static string[] DeserializeStringArray(string? json)
+  {
+    if (string.IsNullOrWhiteSpace(json))
+    {
+      return [];
+    }
+
+    return JsonSerializer.Deserialize<string[]>(json, JsonOptions) ?? [];
   }
 }

@@ -4,7 +4,7 @@ Current milestone:
 Prototype Vertical Slice
 
 Baseline:
-REPORT-DRAFT-SLICE-0.1
+AI-DRAFT-PROPOSAL-SLICE-0.1
 
 Status:
 Released
@@ -16,22 +16,25 @@ Warnings:
 0
 
 Domain tests:
-25/25 passing
+36/36 passing
 
 Architecture tests:
-8/8 passing
+12/12 passing
 
 Application tests:
-17/17 passing
+32/32 passing
 
 Infrastructure tests:
-10/10 passing
+14/14 passing
+
+AI tests:
+6/6 passing
 
 Desktop end-to-end tests:
 2/2 passing
 
 Current task:
-Define `AI-DRAFT-PROPOSAL-SLICE-0.1`
+Define the next authoritative AI acceptance slice
 
 Required outcome:
 
@@ -40,15 +43,16 @@ Required outcome:
 - Preserve the current `Draft` ownership boundary, provenance rules, and `OperationId` retry guarantees.
 - Introduce governed AI context assembly and structured proposal validation without adding HTTP, MAUI, or cloud-provider dependencies.
 - Keep the Desktop host deterministic and intentionally narrow until a real MAUI client is introduced.
+- Keep AI provider integration limited to the deterministic fixture until the next slice intentionally broadens it.
 
 Next review:
-`AI-DRAFT-PROPOSAL-SLICE-0.1` package review
+Next authoritative AI acceptance slice design review
 
 Known blockers:
 None
 
 Last completed:
-Prototype review recorded for `REPORT-DRAFT-SLICE-0.1`
+Governed AI draft proposal substrate released
 
 Proposed next direction:
 
@@ -70,6 +74,12 @@ Current capabilities:
 - Create authoritative revision-1 report drafts
 - Persist provenance and audit history
 - Retry draft creation safely through `OperationId`
+- Build governed report-proposal context manifests
+- Run deterministic Tier 0 AI proposal generation without live AI services
+- Persist model runs, run attempts, and advisory AI proposals
+- Validate structured AI proposal output before review
+- Load and reject advisory AI proposals without mutating authoritative reports
+- Record human acceptance as review intent only
 
 Authoritative context:
 
@@ -90,18 +100,28 @@ Authoritative context:
 - `docs/decisions/edr/EDR-DOM-001-versioned-evidence-interpretation-history.md`
 - `docs/decisions/edr/EDR-APP-001-command-idempotency.md`
 - `docs/decisions/edr/EDR-APP-002-draft-generation-ownership.md`
+- `docs/decisions/edr/EDR-AI-001-authoritative-report-revision-acceptance.md`
+- `docs/decisions/edr/EDR-AI-002-ai-proposal-request-idempotency-and-recovery.md`
 - `docs/decisions/status/REPORT-DRAFT-SLICE-0.1-PROTOTYPE-REVIEW.md`
+- `schemas/ai/report-draft-proposal.schema.json`
+- `spec/ai/context-manifest.md`
+- `spec/ai/json-schemas.md`
+- `spec/ai/provider-adapters.md`
+- `spec/ai/prompt-contracts.md`
+- `spec/ai/confidence-and-uncertainty.md`
+- `spec/ai/model-run-lifecycle.md`
 - Relevant report-draft slice files under `src/SPINbuster.Domain/`, `src/SPINbuster.Application/`, `src/SPINbuster.Infrastructure/`, and `src/SPINbuster.Desktop/`
 
 Validation before completion:
 
 - `dotnet restore SPINbuster.sln --configfile NuGet.Config`
-- `dotnet format SPINbuster.sln`
+- `dotnet format SPINbuster.sln --no-restore`
 - `dotnet build SPINbuster.sln --no-restore`
+- `dotnet tool run dotnet-ef migrations has-pending-model-changes --no-build --project src/SPINbuster.Infrastructure --startup-project src/SPINbuster.Server --context SPINbuster.Infrastructure.Persistence.SpinbusterDbContext`
+- `dotnet test tests/SPINbuster.AI.Tests/SPINbuster.AI.Tests.csproj --no-build`
 - `dotnet test tests/SPINbuster.Application.Tests/SPINbuster.Application.Tests.csproj`
 - `dotnet test tests/SPINbuster.Infrastructure.Tests/SPINbuster.Infrastructure.Tests.csproj`
 - `dotnet test tests/SPINbuster.Desktop.Tests/SPINbuster.Desktop.Tests.csproj`
 - `dotnet test tests/SPINbuster.Domain.Tests/SPINbuster.Domain.Tests.csproj`
 - `dotnet test tests/SPINbuster.Architecture.Tests/SPINbuster.Architecture.Tests.csproj`
 - `dotnet test SPINbuster.sln --no-build -m:1`
-- `dotnet src/SPINbuster.Desktop/bin/Release/net9.0/SPINbuster.Desktop.dll --ConnectionStrings:Spinbuster="Data Source=tmp/report-draft-slice-validation.sqlite"`

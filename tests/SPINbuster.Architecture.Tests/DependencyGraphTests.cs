@@ -176,6 +176,58 @@ public sealed class DependencyGraphTests
     Assert.Empty(violations);
   }
 
+  [Fact]
+  public void AiProjectDoesNotReferenceCompositionRoots()
+  {
+    var repoRoot = FindRepositoryRoot();
+    var aiProject = Path.Combine(repoRoot, "src", "SPINbuster.AI", "SPINbuster.AI.csproj");
+    var actualReferences = LoadProjectReferences(aiProject);
+
+    Assert.DoesNotContain("SPINbuster.Server", actualReferences, StringComparer.OrdinalIgnoreCase);
+    Assert.DoesNotContain("SPINbuster.Desktop", actualReferences, StringComparer.OrdinalIgnoreCase);
+  }
+
+  [Fact]
+  public void AiProjectDoesNotReferenceInfrastructureProject()
+  {
+    var repoRoot = FindRepositoryRoot();
+    var aiProject = Path.Combine(repoRoot, "src", "SPINbuster.AI", "SPINbuster.AI.csproj");
+    var actualReferences = LoadProjectReferences(aiProject);
+
+    Assert.DoesNotContain("SPINbuster.Infrastructure", actualReferences, StringComparer.OrdinalIgnoreCase);
+  }
+
+  [Fact]
+  public void ApplicationProjectDoesNotReferenceProviderSpecificPackages()
+  {
+    var repoRoot = FindRepositoryRoot();
+    var applicationProject = Path.Combine(repoRoot, "src", "SPINbuster.Application", "SPINbuster.Application.csproj");
+    var packageReferences = LoadPackageReferences(applicationProject);
+
+    Assert.DoesNotContain(packageReferences, reference =>
+      reference.Contains("Ollama", StringComparison.OrdinalIgnoreCase)
+      || reference.Contains("OpenAI", StringComparison.OrdinalIgnoreCase)
+      || reference.Contains("Azure.AI", StringComparison.OrdinalIgnoreCase));
+  }
+
+  [Fact]
+  public void AiProjectCannotCallInfrastructureRepositoriesDirectly()
+  {
+    var repoRoot = FindRepositoryRoot();
+    var aiSourceFiles = Directory
+      .EnumerateFiles(Path.Combine(repoRoot, "src", "SPINbuster.AI"), "*.cs", SearchOption.AllDirectories)
+      .ToArray();
+
+    foreach (var aiSourceFile in aiSourceFiles)
+    {
+      var contents = File.ReadAllText(aiSourceFile);
+      Assert.DoesNotContain("SqliteReportRepository", contents, StringComparison.Ordinal);
+      Assert.DoesNotContain("SqliteProjectRepository", contents, StringComparison.Ordinal);
+      Assert.DoesNotContain("SqliteInspectionSessionRepository", contents, StringComparison.Ordinal);
+      Assert.DoesNotContain("SpinbusterDbContext", contents, StringComparison.Ordinal);
+    }
+  }
+
   private static string[] LoadPackageReferences(string projectPath)
   {
     return XDocument

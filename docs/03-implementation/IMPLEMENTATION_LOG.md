@@ -23,7 +23,15 @@ Completed:
 - Authoritative report-draft creation and SQLite provenance persistence
 - Report-draft executable workflow validation
 - Prototype review milestone for `REPORT-DRAFT-SLICE-0.1`
+- First AI substrate foundation
+- Governed context manifests and advisory AI proposal persistence
+- Deterministic Tier 0 AI provider and prompt-package registry
+- Structured AI proposal schema and validation pipeline
+- AI substrate SQLite migration validation
+- `AI-DRAFT-PROPOSAL-SLICE-0.1-RC` review-candidate validation
+- AI review hardening pass for lifecycle semantics, pre-inference run persistence, and canonical proposal payload storage
+- Released baseline `AI-DRAFT-PROPOSAL-SLICE-0.1`
 
 Next:
 
-- `AI-DRAFT-PROPOSAL-SLICE-0.1` package definition
+- Next authoritative AI acceptance slice design

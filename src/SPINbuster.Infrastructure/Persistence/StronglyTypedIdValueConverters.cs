@@ -34,6 +34,22 @@ internal static class StronglyTypedIdValueConverters
     value => value.Value,
     value => new AuditEventId(value));
 
+  public static readonly ValueConverter<ContextManifestId, Guid> ContextManifestId = new(
+    value => value.Value,
+    value => new ContextManifestId(value));
+
+  public static readonly ValueConverter<ModelRunId, Guid> ModelRunId = new(
+    value => value.Value,
+    value => new ModelRunId(value));
+
+  public static readonly ValueConverter<ModelRunAttemptId, Guid> ModelRunAttemptId = new(
+    value => value.Value,
+    value => new ModelRunAttemptId(value));
+
+  public static readonly ValueConverter<ProposalId, Guid> ProposalId = new(
+    value => value.Value,
+    value => new ProposalId(value));
+
   public static readonly ValueConverter<OperationId, Guid> OperationId = new(
     value => value.Value,
     value => new OperationId(value));

@@ -32,6 +32,16 @@ public sealed class SpinbusterDbContext : DbContext
 
   internal DbSet<AuditEventRecord> AuditEvents => Set<AuditEventRecord>();
 
+  internal DbSet<ContextManifestRecord> ContextManifests => Set<ContextManifestRecord>();
+
+  internal DbSet<ContextManifestSourceEntryRecord> ContextManifestSourceEntries => Set<ContextManifestSourceEntryRecord>();
+
+  internal DbSet<ModelRunRecord> ModelRuns => Set<ModelRunRecord>();
+
+  internal DbSet<ModelRunAttemptRecord> ModelRunAttempts => Set<ModelRunAttemptRecord>();
+
+  internal DbSet<AiProposalRecord> AiProposals => Set<AiProposalRecord>();
+
   protected override void OnModelCreating(ModelBuilder modelBuilder)
   {
     SpinbusterModelConfiguration.Configure(modelBuilder);

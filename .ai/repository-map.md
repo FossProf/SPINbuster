@@ -23,6 +23,7 @@ Purpose: Explain how the repository is organized and where different kinds of wo
 - `docs/decisions/edr/EDR-DOM-001-versioned-evidence-interpretation-history.md` records the deferred interpretation-history design item for the Domain layer.
 - `docs/decisions/edr/EDR-APP-001-command-idempotency.md` records the accepted command-idempotency rule for authoritative report-draft creation.
 - `docs/decisions/edr/EDR-APP-002-draft-generation-ownership.md` records the accepted drafting-query boundary for `APPLICATION-0.1`.
+- `docs/decisions/edr/EDR-AI-002-ai-proposal-request-idempotency-and-recovery.md` records deferred duplicate-resolution and recovery work for live AI proposal execution.
 
 ## Source Projects
 
@@ -30,8 +31,8 @@ Purpose: Explain how the repository is organized and where different kinds of wo
 - `src/SPINbuster.Domain` contains core domain types and domain-level policies, including the current Project, InspectionSession, FieldNote, EvidenceAttachment, Report, SaveTransaction, and AuditEvent model with structured report-draft sections, revisioning, and source provenance.
 - `src/SPINbuster.Rules` contains reusable business rule evaluation components that support the core.
 - `src/SPINbuster.Application` contains application-layer orchestration, command/query contracts, repository interfaces, transaction boundaries, audit abstractions, typed application identity and operation contracts, and the current vertical-slice use cases.
-- `src/SPINbuster.Infrastructure` contains persistence and external system adapters for non-AI concerns.
-- `src/SPINbuster.AI` contains AI integration adapters and AI-specific orchestration support.
+- `src/SPINbuster.Infrastructure` contains persistence and external system adapters for non-AI concerns, including the durable AI substrate records required by the current review candidate.
+- `src/SPINbuster.AI` contains AI integration adapters and AI-specific orchestration support, currently limited to a deterministic Tier 0 provider and prompt-package registry.
 - `src/SPINbuster.Documents` contains document generation and document workflow support.
 - `src/SPINbuster.Reporting` contains reporting composition and report output support.
 - `src/SPINbuster.Server` contains the server host and composition root.
@@ -85,22 +86,29 @@ Put lightweight agent instructions in `.ai/`.
 - `src/SPINbuster.Application/Abstractions/` defines `IClock`, `ICurrentUser`, `IAuditRecorder`, and `IUnitOfWork`.
 - `src/SPINbuster.Application/ApplicationIdentity.cs` defines `ApplicationUserId` and `OperationId`.
 - `src/SPINbuster.Application/Repositories/` defines inward-facing repository interfaces for `Project`, `InspectionSession`, `Report`, and `SaveTransaction`, including explicit update semantics for mutated loaded aggregates and operation-aware report persistence.
-- `src/SPINbuster.Application/UseCases/` currently contains `CreateProject`, `StartInspectionSession`, `CaptureFieldNote`, `AttachEvidence`, `AddInterpretation`, `GenerateReportDraftRequest`, `CreateReportDraft`, and `PrepareTransactionalSave`.
+- `src/SPINbuster.Application/Repositories/` also now defines inward-facing persistence contracts for `ContextManifest`, `ModelRun`, and `AiProposal`.
+- `src/SPINbuster.Application/Abstractions/` now also defines provider-neutral AI contracts, prompt-package resolution, and structured proposal validation contracts.
+- `src/SPINbuster.Application/UseCases/` currently contains `CreateProject`, `StartInspectionSession`, `CaptureFieldNote`, `AttachEvidence`, `AddInterpretation`, `GenerateReportDraftRequest`, `CreateReportDraft`, `PrepareTransactionalSave`, `BuildReportProposalContext`, `RequestReportDraftProposal`, `LoadAiProposal`, and `RejectAiProposal`.
 - `src/SPINbuster.Application/UseCases/LoadInspectionWorkflowSnapshot/` reloads persisted project and inspection-session state for the first executable local vertical slice, including field notes and audit history.
 - `src/SPINbuster.Application/UseCases/LoadReportDraftSnapshot/` reloads persisted report drafts, structured sections, provenance, and report audit history through the Application boundary.
-- `tests/SPINbuster.Application.Tests/` uses in-memory fakes to verify orchestration, lifecycle guards, staged audit ordering, explicit mutation updates, failure handling, ownership boundaries, and draft-request shaping without adding persistence or transport concerns.
-- `src/SPINbuster.Infrastructure/Persistence/` contains the local SQLite DbContext, EF Core entity mappings, migration artifacts, typed-ID value converters, and Domain-to-record mapping helpers for reports, report sections, source references, and report-draft operation mappings.
-- `src/SPINbuster.Infrastructure/Repositories/` contains the local SQLite repository implementations, including explicit detached-update support for mutable loaded aggregates and authoritative report-draft persistence.
+- `src/SPINbuster.Application/Internal/` now contains the governed report-proposal context assembly path, AI audit-event shaping helpers, and the JSON-backed structured proposal validator.
+- `tests/SPINbuster.Application.Tests/` uses in-memory fakes to verify orchestration, lifecycle guards, staged audit ordering, explicit mutation updates, failure handling, ownership boundaries, draft-request shaping, two-phase AI request persistence, prompt-package contract enforcement, and canonical proposal payload storage without adding persistence or transport concerns.
+- `src/SPINbuster.Infrastructure/Persistence/` contains the local SQLite DbContext, EF Core entity mappings, migration artifacts, typed-ID value converters, and Domain-to-record mapping helpers for reports, report sections, source references, report-draft operation mappings, context manifests, model runs, model-run attempts, and advisory AI proposals.
+- `src/SPINbuster.Infrastructure/Repositories/` contains the local SQLite repository implementations, including explicit detached-update support for mutable loaded aggregates, authoritative report-draft persistence, and durable AI substrate persistence.
 - `src/SPINbuster.Infrastructure/Services/` contains `SqliteAuditRecorder` and `SqliteUnitOfWork` for staged audit persistence inside one logical commit boundary.
-- `tests/SPINbuster.Infrastructure.Tests/` contains SQLite integration tests for commit-together behavior, rollback behavior, detached updates, migration metadata presence, migration application, migration idempotence, report persistence, and report-draft idempotency enforcement.
+- `src/SPINbuster.AI/` currently contains the deterministic `IAiGenerationProvider` implementation, prompt-package registry, and Tier 0 scenario controls used to validate the advisory AI path without live services.
+- `schemas/ai/` currently contains the authoritative `report-draft-proposal` schema.
+- `tests/SPINbuster.Infrastructure.Tests/` contains SQLite integration tests for commit-together behavior, rollback behavior, detached updates, migration metadata presence, migration application, migration idempotence, report persistence, report-draft idempotency enforcement, AI substrate persistence, AI migration compatibility, and atomic AI-state plus audit rollback.
+- `tests/SPINbuster.AI.Tests/` now contains deterministic provider, failure-classification, and prompt-registry tests for the Tier 0 AI path.
 - `src/SPINbuster.Desktop/` now contains the temporary deterministic console bootstrap host, its narrow composition root, and the local vertical-slice workflow runner for both the inspection and report-draft paths.
 - `tests/SPINbuster.Desktop.Tests/` contains SQLite-backed end-to-end tests for the Desktop workflow.
 
 ## Current Released Baseline
 
-- `VERTICAL-SLICE-0.1` is the current released baseline.
-- `REPORT-DRAFT-SLICE-0.1` is the current released baseline.
+- `REPORT-DRAFT-SLICE-0.1` is the latest released baseline.
+- `AI-DRAFT-PROPOSAL-SLICE-0.1-RC` is the current review-candidate baseline.
 - Migration status: no pending model changes, empty-database migration passes, repeated migration is idempotent, and migration history is verified.
 - Persistence status: aggregate and staged audit changes commit atomically, roll back atomically, and detached updates are verified.
 - Validated vertical-slice path: migrations applied at startup, project created and persisted, inspection session started and persisted, field note captured and preserved, project/session rehydration succeeds, and audit history persists and reloads.
 - Validated report-draft path: evidence persists and reloads, interpretation remains separate from raw evidence, authoritative report drafts persist in `Draft`, provenance reload succeeds, duplicate operation IDs do not create a second draft, and report plus audit changes commit atomically.
+- Validated AI substrate path: governed report-proposal context manifests persist and reload, deterministic provider output is validated before review, malformed or fabricated output is retained as non-reviewable failure, advisory proposals and audit records commit atomically, repeated migrations are safe, and populated report-draft databases upgrade without losing existing state.

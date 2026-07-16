@@ -19,6 +19,123 @@ namespace SPINbuster.Infrastructure.Persistence.Migrations
                 .HasAnnotation("ProductVersion", "9.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
+            modelBuilder.Entity("SPINbuster.Infrastructure.Persistence.Records.AiProposalRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AbstentionReason")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ConfidenceBand")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ContextManifestHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ContextManifestId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("GeneratedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("InputTokenCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid?>("InspectionSessionId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long?>("LatencyMilliseconds")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ModelDigest")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ModelName")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ModelRunId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("OutputSchemaId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("OutputSchemaVersion")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("OutputTokenCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PromptPackageId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PromptPackageVersion")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ProviderId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ReferencedSourceIdsJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ReportId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ReviewDispositionNotes")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("StructuredPayloadJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal?>("Temperature")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UncertaintyCodesJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ValidationFailuresJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("WarningsJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ModelRunId")
+                        .IsUnique();
+
+                    b.HasIndex("ReportId");
+
+                    b.ToTable("ai_proposals", (string)null);
+                });
+
             modelBuilder.Entity("SPINbuster.Infrastructure.Persistence.Records.AuditEventRecord", b =>
                 {
                     b.Property<Guid>("Id")
@@ -56,6 +173,100 @@ namespace SPINbuster.Infrastructure.Persistence.Migrations
                     b.HasIndex("SubjectType", "SubjectId", "OccurredAtUtc");
 
                     b.ToTable("audit_events", (string)null);
+                });
+
+            modelBuilder.Entity("SPINbuster.Infrastructure.Persistence.Records.ContextManifestRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ContextPolicyVersion")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("IncompleteReasonsJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("InspectionSessionId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ManifestHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ManifestHash")
+                        .IsUnique();
+
+                    b.HasIndex("ProjectId");
+
+                    b.ToTable("context_manifests", (string)null);
+                });
+
+            modelBuilder.Entity("SPINbuster.Infrastructure.Persistence.Records.ContextManifestSourceEntryRecord", b =>
+                {
+                    b.Property<Guid>("ContextManifestId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("AuthorityClassification")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ConflictCodesJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ContentHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("InclusionReason")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsSuperseded")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LimitationNotes")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SourceId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SourceType")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("SourceVersion")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("ContextManifestId", "Order");
+
+                    b.HasIndex("ProjectId", "SourceType", "SourceId");
+
+                    b.ToTable("context_manifest_source_entries", (string)null);
                 });
 
             modelBuilder.Entity("SPINbuster.Infrastructure.Persistence.Records.EvidenceAttachmentRecord", b =>
@@ -173,6 +384,152 @@ namespace SPINbuster.Infrastructure.Persistence.Migrations
                     b.HasIndex("ProjectId");
 
                     b.ToTable("inspection_sessions", (string)null);
+                });
+
+            modelBuilder.Entity("SPINbuster.Infrastructure.Persistence.Records.ModelRunAttemptRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("AttemptNumber")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTimeOffset?>("CompletedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FailureMessage")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("InputHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("InputTokenCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long?>("LatencyMilliseconds")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("ModelRunId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("OutcomeClassification")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("OutputTokenCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("RawOutput")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RawOutputHash")
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("StartedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ModelRunId", "AttemptNumber")
+                        .IsUnique();
+
+                    b.ToTable("model_run_attempts", (string)null);
+                });
+
+            modelBuilder.Entity("SPINbuster.Infrastructure.Persistence.Records.ModelRunRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ContextManifestHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ContextManifestId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CorrelationId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("FailureClassification")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("FailureMessage")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("InitiatedBy")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("InspectionSessionId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ModelDigest")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ModelName")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("OutputSchemaId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("OutputSchemaVersion")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PromptPackageId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PromptPackageVersion")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ProviderId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ReportId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RequestFingerprintHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("RequestedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("State")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContextManifestId");
+
+                    b.HasIndex("CorrelationId")
+                        .IsUnique();
+
+                    b.ToTable("model_runs", (string)null);
                 });
 
             modelBuilder.Entity("SPINbuster.Infrastructure.Persistence.Records.ProjectRecord", b =>
@@ -353,6 +710,15 @@ namespace SPINbuster.Infrastructure.Persistence.Migrations
                     b.ToTable("save_transactions", (string)null);
                 });
 
+            modelBuilder.Entity("SPINbuster.Infrastructure.Persistence.Records.ContextManifestSourceEntryRecord", b =>
+                {
+                    b.HasOne("SPINbuster.Infrastructure.Persistence.Records.ContextManifestRecord", null)
+                        .WithMany("Entries")
+                        .HasForeignKey("ContextManifestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("SPINbuster.Infrastructure.Persistence.Records.EvidenceAttachmentRecord", b =>
                 {
                     b.HasOne("SPINbuster.Infrastructure.Persistence.Records.InspectionSessionRecord", null)
@@ -377,6 +743,15 @@ namespace SPINbuster.Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("SPINbuster.Infrastructure.Persistence.Records.ModelRunAttemptRecord", b =>
+                {
+                    b.HasOne("SPINbuster.Infrastructure.Persistence.Records.ModelRunRecord", null)
+                        .WithMany("Attempts")
+                        .HasForeignKey("ModelRunId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
@@ -440,11 +815,21 @@ namespace SPINbuster.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("SPINbuster.Infrastructure.Persistence.Records.ContextManifestRecord", b =>
+                {
+                    b.Navigation("Entries");
+                });
+
             modelBuilder.Entity("SPINbuster.Infrastructure.Persistence.Records.InspectionSessionRecord", b =>
                 {
                     b.Navigation("EvidenceAttachments");
 
                     b.Navigation("FieldNotes");
+                });
+
+            modelBuilder.Entity("SPINbuster.Infrastructure.Persistence.Records.ModelRunRecord", b =>
+                {
+                    b.Navigation("Attempts");
                 });
 
             modelBuilder.Entity("SPINbuster.Infrastructure.Persistence.Records.ReportRecord", b =>

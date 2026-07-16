@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spinbuster.local/schemas/ai/report-draft-proposal.schema.json",
+  "title": "SPINbuster Report Draft Proposal",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "sections",
+    "reasoningSummary",
+    "confidenceBand",
+    "sourceReferences",
+    "missingInformation",
+    "openQuestions",
+    "warnings",
+    "uncertaintyCodes"
+  ],
+  "properties": {
+    "sections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "heading",
+          "content"
+        ],
+        "properties": {
+          "heading": {
+            "type": "string",
+            "minLength": 1
+          },
+          "content": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "reasoningSummary": {
+      "type": "string"
+    },
+    "confidenceBand": {
+      "type": "string",
+      "enum": [
+        "None",
+        "Low",
+        "Medium",
+        "High"
+      ]
+    },
+    "sourceReferences": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sourceType",
+          "sourceId"
+        ],
+        "properties": {
+          "sourceType": {
+            "type": "string",
+            "enum": [
+              "Report",
+              "ReportSection",
+              "FieldNote",
+              "EvidenceAttachment",
+              "EvidenceInterpretation"
+            ]
+          },
+          "sourceId": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "missingInformation": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "openQuestions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "uncertaintyCodes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "abstentionReason": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

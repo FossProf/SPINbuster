@@ -22,6 +22,9 @@ public static class ServiceCollectionExtensions
     services.AddScoped<IInspectionSessionRepository, SqliteInspectionSessionRepository>();
     services.AddScoped<IReportRepository, SqliteReportRepository>();
     services.AddScoped<ISaveTransactionRepository, SqliteSaveTransactionRepository>();
+    services.AddScoped<IContextManifestRepository, SqliteContextManifestRepository>();
+    services.AddScoped<IModelRunRepository, SqliteModelRunRepository>();
+    services.AddScoped<IAiProposalRepository, SqliteAiProposalRepository>();
     return services;
   }
 }
