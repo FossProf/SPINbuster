@@ -43,7 +43,7 @@ public sealed class AddInterpretationUseCase
     var interpretedAtUtc = _clock.UtcNow;
     var interpretation = new EvidenceInterpretation(
       command.Summary,
-      _currentUser.UserId,
+      _currentUser.UserId.Value,
       interpretedAtUtc);
 
     var auditStart = inspectionSession.AuditTrail.Count;

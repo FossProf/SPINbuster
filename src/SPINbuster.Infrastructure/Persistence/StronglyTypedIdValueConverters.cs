@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using SPINbuster.Application;
 using SPINbuster.Domain;
 
 namespace SPINbuster.Infrastructure.Persistence;
@@ -32,4 +33,8 @@ internal static class StronglyTypedIdValueConverters
   public static readonly ValueConverter<AuditEventId, Guid> AuditEventId = new(
     value => value.Value,
     value => new AuditEventId(value));
+
+  public static readonly ValueConverter<OperationId, Guid> OperationId = new(
+    value => value.Value,
+    value => new OperationId(value));
 }

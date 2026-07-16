@@ -4,6 +4,14 @@ namespace SPINbuster.Infrastructure.Persistence.Records;
 
 internal sealed class ReportRecord
 {
+  public List<ReportSectionRecord> Sections { get; } = [];
+
+  public List<ReportFieldNoteSourceRecord> FieldNoteSources { get; } = [];
+
+  public List<ReportEvidenceSourceRecord> EvidenceSources { get; } = [];
+
+  public List<ReportDraftOperationRecord> Operations { get; } = [];
+
   public ReportId Id { get; set; }
 
   public ProjectId ProjectId { get; set; }
@@ -12,7 +20,7 @@ internal sealed class ReportRecord
 
   public string Title { get; set; } = string.Empty;
 
-  public string Body { get; set; } = string.Empty;
+  public int RevisionNumber { get; set; }
 
   public string CreatedBy { get; set; } = string.Empty;
 

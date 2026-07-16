@@ -43,7 +43,7 @@ public sealed class AttachEvidenceUseCase
     var auditStart = inspectionSession.AuditTrail.Count;
     var evidenceAttachment = inspectionSession.AttachEvidence(
       EvidenceAttachmentId.New(),
-      _currentUser.UserId,
+      _currentUser.UserId.Value,
       _clock.UtcNow,
       new RawEvidenceReference(
         command.FileName,

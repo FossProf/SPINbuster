@@ -20,6 +20,14 @@ public sealed class SpinbusterDbContext : DbContext
 
   internal DbSet<ReportRecord> Reports => Set<ReportRecord>();
 
+  internal DbSet<ReportSectionRecord> ReportSections => Set<ReportSectionRecord>();
+
+  internal DbSet<ReportFieldNoteSourceRecord> ReportFieldNoteSources => Set<ReportFieldNoteSourceRecord>();
+
+  internal DbSet<ReportEvidenceSourceRecord> ReportEvidenceSources => Set<ReportEvidenceSourceRecord>();
+
+  internal DbSet<ReportDraftOperationRecord> ReportDraftOperations => Set<ReportDraftOperationRecord>();
+
   internal DbSet<SaveTransactionRecord> SaveTransactions => Set<SaveTransactionRecord>();
 
   internal DbSet<AuditEventRecord> AuditEvents => Set<AuditEventRecord>();

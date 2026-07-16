@@ -130,7 +130,17 @@ internal static class InfrastructureMapper
       record.ProjectId,
       record.InspectionSessionId,
       record.Title,
-      record.Body,
+      record.RevisionNumber,
+      record.Sections
+        .OrderBy(section => section.Position)
+        .Select(section => new ReportDraftSection(section.Heading, section.Content))
+        .ToArray(),
+      record.FieldNoteSources
+        .Select(source => source.FieldNoteId)
+        .ToArray(),
+      record.EvidenceSources
+        .Select(source => source.EvidenceAttachmentId)
+        .ToArray(),
       record.CreatedBy,
       record.CreatedAtUtc,
       record.Lifecycle,
@@ -146,8 +156,8 @@ internal static class InfrastructureMapper
       Id = report.Id,
       ProjectId = report.ProjectId,
       InspectionSessionId = report.InspectionSessionId,
-      Title = report.Title,
-      Body = report.Body,
+      Title = report.Title.Value,
+      RevisionNumber = report.RevisionNumber,
       CreatedBy = report.CreatedBy,
       CreatedAtUtc = report.CreatedAtUtc,
       Lifecycle = report.Lifecycle,

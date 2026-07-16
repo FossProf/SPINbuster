@@ -1,3 +1,4 @@
+using SPINbuster.Application;
 using SPINbuster.Application.Tests.Fakes;
 using SPINbuster.Application.UseCases.PrepareTransactionalSave;
 using SPINbuster.Domain;
@@ -19,11 +20,13 @@ public sealed class PrepareTransactionalSaveUseCaseTests
       ReportId.New(),
       ProjectId.New(),
       InspectionSessionId.New(),
-      "Draft Report",
-      "Findings pending review.",
+      new ReportTitle("Draft Report"),
+      [new ReportDraftSection("Summary", "Findings pending review.")],
+      [FieldNoteId.New()],
+      [],
       "author@example.invalid",
       new DateTimeOffset(2026, 7, 15, 11, 0, 0, TimeSpan.Zero));
-    await reportRepository.AddAsync(report);
+    await reportRepository.AddAsync(report, OperationId.New());
 
     var useCase = new PrepareTransactionalSaveUseCase(
       reportRepository,

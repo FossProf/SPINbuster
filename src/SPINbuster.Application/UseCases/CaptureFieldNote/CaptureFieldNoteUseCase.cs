@@ -43,7 +43,7 @@ public sealed class CaptureFieldNoteUseCase
     var auditStart = inspectionSession.AuditTrail.Count;
     var fieldNote = inspectionSession.RecordFieldNote(
       FieldNoteId.New(),
-      _currentUser.UserId,
+      _currentUser.UserId.Value,
       _clock.UtcNow,
       new FieldNoteRawText(command.RawText));
 

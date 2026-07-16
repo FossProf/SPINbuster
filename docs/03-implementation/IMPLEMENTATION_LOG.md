@@ -19,7 +19,10 @@ Completed:
 - Desktop end-to-end workflow validation
 - Vertical-slice baseline release (`VERTICAL-SLICE-0.1`)
 - Prototype review milestone for `VERTICAL-SLICE-0.1`
+- Second local report-draft vertical slice
+- Authoritative report-draft creation and SQLite provenance persistence
+- Report-draft executable workflow validation
 
 Next:
 
-- Next implementation package definition
+- Release review and baseline cut for `REPORT-DRAFT-SLICE-0.1`

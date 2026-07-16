@@ -263,9 +263,10 @@ public sealed class SqlitePersistenceTests : IDisposable
 
     var appliedMigrations = (await dbContext.Database.GetAppliedMigrationsAsync()).ToArray();
 
-    Assert.Single(appliedMigrations);
+    Assert.Equal(2, appliedMigrations.Length);
     Assert.Contains(appliedMigrations, migration => migration.EndsWith("InitialSqlite", StringComparison.Ordinal));
-    Assert.Equal(1L, await QueryCountAsync(dbContext, "SELECT COUNT(*) FROM __EFMigrationsHistory"));
+    Assert.Contains(appliedMigrations, migration => migration.EndsWith("ReportDraftSlice", StringComparison.Ordinal));
+    Assert.Equal(2L, await QueryCountAsync(dbContext, "SELECT COUNT(*) FROM __EFMigrationsHistory"));
   }
 
   [Fact]
@@ -278,8 +279,10 @@ public sealed class SqlitePersistenceTests : IDisposable
 
     var appliedMigrations = (await dbContext.Database.GetAppliedMigrationsAsync()).ToArray();
 
-    Assert.Single(appliedMigrations);
-    Assert.Equal(1L, await QueryCountAsync(dbContext, "SELECT COUNT(*) FROM __EFMigrationsHistory"));
+    Assert.Equal(2, appliedMigrations.Length);
+    Assert.Contains(appliedMigrations, migration => migration.EndsWith("InitialSqlite", StringComparison.Ordinal));
+    Assert.Contains(appliedMigrations, migration => migration.EndsWith("ReportDraftSlice", StringComparison.Ordinal));
+    Assert.Equal(2L, await QueryCountAsync(dbContext, "SELECT COUNT(*) FROM __EFMigrationsHistory"));
   }
 
   private static void StageAuditEvents(SqliteAuditRecorder auditRecorder, IEnumerable<AuditEvent> auditEvents)

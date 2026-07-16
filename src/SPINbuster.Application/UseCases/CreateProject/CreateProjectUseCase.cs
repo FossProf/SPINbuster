@@ -35,7 +35,7 @@ public sealed class CreateProjectUseCase : ICommandHandler<CreateProjectCommand,
     var project = new Project(
       ProjectId.New(),
       command.Name,
-      _currentUser.UserId,
+      _currentUser.UserId.Value,
       _clock.UtcNow);
 
     await _projectRepository.AddAsync(project, cancellationToken);

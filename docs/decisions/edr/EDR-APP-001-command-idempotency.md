@@ -2,7 +2,7 @@
 
 Title: Application command idempotency
 
-Status: Deferred
+Status: Accepted for REPORT-DRAFT-SLICE-0.1
 
 Required before:
 
@@ -12,25 +12,31 @@ Required before:
 
 Context:
 
-The current Application baseline executes commands without request identifiers or
-deduplication keys. This is acceptable for the local single-user baseline but is
-not sufficient once retries or eventually connected clients are introduced.
+The Application baseline originally executed commands without request identifiers
+or deduplication keys. That was acceptable for the first local single-user
+baseline but is not sufficient once authoritative report creation and retryable
+command paths are introduced.
 
 Current rule:
 
-- `CreateProject`
-- `StartInspectionSession`
-- `CaptureFieldNote`
-- `PrepareTransactionalSave`
-
-do not yet accept explicit idempotency identifiers.
+- `CreateReportDraftCommand` accepts an explicit `OperationId`.
+- The report repository persists an operation-to-report mapping.
+- Infrastructure enforces uniqueness of that operation mapping so duplicate
+  retries do not create a second authoritative draft.
+- Earlier commands such as `CreateProject`, `StartInspectionSession`,
+  `CaptureFieldNote`, and `PrepareTransactionalSave` do not yet accept explicit
+  idempotency identifiers.
 
 Decision:
 
-Defer command idempotency until the first synchronization or mobile-retry slice.
+Adopt command idempotency first at the authoritative report-draft boundary, then
+extend the pattern to earlier commands before synchronization or mobile retry
+work begins.
 
 Consequences:
 
-- Command handlers remain simpler for `APPLICATION-0.1`.
-- Infrastructure and transport contracts must not assume duplicate-safe retries yet.
-- Idempotency must be designed before synchronization-aware workflows are added.
+- `CreateReportDraftCommand` is safe to retry using the same `OperationId`.
+- Application contracts now have a concrete idempotency pattern that later
+  commands can follow consistently.
+- Infrastructure and transport contracts must not yet assume duplicate-safe
+  retries for commands that still lack an `OperationId`.

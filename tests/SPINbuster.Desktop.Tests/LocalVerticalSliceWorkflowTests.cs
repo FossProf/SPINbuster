@@ -18,6 +18,17 @@ public sealed class LocalVerticalSliceWorkflowTests
       "Local Vertical Slice",
       "Initial Inspection Session",
       "Observed deterministic bootstrap workflow note.",
+      "photo-01.jpg",
+      "image/jpeg",
+      "evidence/photo-01.jpg",
+      "sha256:deterministic",
+      "Deterministic interpretation summary.",
+      "Initial Draft Report",
+      "Summary",
+      "Deterministic report summary.",
+      "Observations",
+      "Deterministic report observations.",
+      Guid.Parse("0f74d133-75a0-4cf3-9d80-1f66144d96ac"),
       new DateTimeOffset(2026, 7, 15, 14, 0, 0, TimeSpan.Zero));
 
     try
@@ -27,18 +38,24 @@ public sealed class LocalVerticalSliceWorkflowTests
         var result = await DesktopWorkflowBootstrapper.RunAsync(serviceProvider);
 
         Assert.True(File.Exists(databasePath));
-        Assert.Equal(ProjectLifecycle.Active, result.PersistedSnapshot.Project.Lifecycle);
-        Assert.Equal(InspectionSessionLifecycle.InProgress, result.PersistedSnapshot.InspectionSession.Lifecycle);
-        Assert.Single(result.PersistedSnapshot.InspectionSession.FieldNotes);
+        Assert.Equal(ProjectLifecycle.Active, result.PersistedInspectionSnapshot.Project.Lifecycle);
+        Assert.Equal(InspectionSessionLifecycle.InProgress, result.PersistedInspectionSnapshot.InspectionSession.Lifecycle);
+        Assert.Single(result.PersistedInspectionSnapshot.InspectionSession.FieldNotes);
         Assert.Equal(
           settings.FieldNoteText,
-          result.PersistedSnapshot.InspectionSession.FieldNotes.Single().RawText);
+          result.PersistedInspectionSnapshot.InspectionSession.FieldNotes.Single().RawText);
         Assert.Equal(
           ["ProjectCreated", "ProjectActivated"],
-          result.PersistedSnapshot.Project.AuditHistory.Select(entry => entry.EventType));
+          result.PersistedInspectionSnapshot.Project.AuditHistory.Select(entry => entry.EventType));
         Assert.Equal(
-          ["InspectionSessionCreated", "InspectionSessionStarted", "FieldNoteRecorded"],
-          result.PersistedSnapshot.InspectionSession.AuditHistory.Select(entry => entry.EventType));
+          ["InspectionSessionCreated", "InspectionSessionStarted", "FieldNoteRecorded", "EvidenceAttached", "EvidenceInterpreted"],
+          result.PersistedInspectionSnapshot.InspectionSession.AuditHistory.Select(entry => entry.EventType));
+        Assert.Equal(ReportLifecycle.Draft, result.PersistedReportSnapshot.Lifecycle);
+        Assert.Equal(settings.DraftTitle, result.PersistedReportSnapshot.Title);
+        Assert.Equal(["Summary", "Observations"], result.PersistedReportSnapshot.Sections.Select(section => section.Heading));
+        Assert.Single(result.PersistedReportSnapshot.FieldNotes);
+        Assert.Single(result.PersistedReportSnapshot.EvidenceAttachments);
+        Assert.Equal("ReportCreated", result.PersistedReportSnapshot.AuditHistory.Single().EventType);
       }
     }
     finally
@@ -57,6 +74,17 @@ public sealed class LocalVerticalSliceWorkflowTests
       "Fresh Provider Validation",
       "Reloadable Session",
       "Persist this note across providers.",
+      "photo-01.jpg",
+      "image/jpeg",
+      "evidence/photo-01.jpg",
+      "sha256:deterministic",
+      "Deterministic interpretation summary.",
+      "Initial Draft Report",
+      "Summary",
+      "Deterministic report summary.",
+      "Observations",
+      "Deterministic report observations.",
+      Guid.Parse("11111111-2222-3333-4444-555555555555"),
       new DateTimeOffset(2026, 7, 15, 15, 0, 0, TimeSpan.Zero));
 
     try
@@ -79,18 +107,28 @@ public sealed class LocalVerticalSliceWorkflowTests
         await using var scope = secondProvider.CreateAsyncScope();
         var queryHandler = scope.ServiceProvider.GetRequiredService<
           IQueryHandler<LoadInspectionWorkflowSnapshotQuery, LoadInspectionWorkflowSnapshotResult>>();
-        var reloadedSnapshot = await queryHandler.HandleAsync(
+        var reloadedInspectionSnapshot = await queryHandler.HandleAsync(
           new LoadInspectionWorkflowSnapshotQuery(
             result.CreatedProject.ProjectId,
             result.StartedInspectionSession.InspectionSessionId));
+        var reportQueryHandler = scope.ServiceProvider.GetRequiredService<
+          IQueryHandler<SPINbuster.Application.UseCases.LoadReportDraftSnapshot.LoadReportDraftSnapshotQuery, SPINbuster.Application.UseCases.LoadReportDraftSnapshot.LoadReportDraftSnapshotResult>>();
+        var reloadedReportSnapshot = await reportQueryHandler.HandleAsync(
+          new SPINbuster.Application.UseCases.LoadReportDraftSnapshot.LoadReportDraftSnapshotQuery(
+            result.CreatedReportDraft.ReportId));
 
-        Assert.Equal(result.CreatedProject.ProjectId, reloadedSnapshot.Project.ProjectId);
-        Assert.Equal(result.StartedInspectionSession.InspectionSessionId, reloadedSnapshot.InspectionSession.InspectionSessionId);
-        Assert.Equal(firstSettings.ProjectName, reloadedSnapshot.Project.Name);
-        Assert.Equal(firstSettings.FieldNoteText, reloadedSnapshot.InspectionSession.FieldNotes.Single().RawText);
+        Assert.Equal(result.CreatedProject.ProjectId, reloadedInspectionSnapshot.Project.ProjectId);
+        Assert.Equal(result.StartedInspectionSession.InspectionSessionId, reloadedInspectionSnapshot.InspectionSession.InspectionSessionId);
+        Assert.Equal(firstSettings.ProjectName, reloadedInspectionSnapshot.Project.Name);
+        Assert.Equal(firstSettings.FieldNoteText, reloadedInspectionSnapshot.InspectionSession.FieldNotes.Single().RawText);
         Assert.Equal(
-          result.PersistedSnapshot.InspectionSession.AuditHistory.Select(entry => entry.AuditEventId),
-          reloadedSnapshot.InspectionSession.AuditHistory.Select(entry => entry.AuditEventId));
+          result.PersistedInspectionSnapshot.InspectionSession.AuditHistory.Select(entry => entry.AuditEventId),
+          reloadedInspectionSnapshot.InspectionSession.AuditHistory.Select(entry => entry.AuditEventId));
+        Assert.Equal(result.CreatedReportDraft.ReportId, reloadedReportSnapshot.ReportId);
+        Assert.Equal(firstSettings.DraftTitle, reloadedReportSnapshot.Title);
+        Assert.Equal(
+          result.PersistedReportSnapshot.AuditHistory.Select(entry => entry.AuditEventId),
+          reloadedReportSnapshot.AuditHistory.Select(entry => entry.AuditEventId));
       }
     }
     finally

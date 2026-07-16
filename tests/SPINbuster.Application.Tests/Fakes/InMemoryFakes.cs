@@ -1,3 +1,4 @@
+using SPINbuster.Application;
 using SPINbuster.Application.Abstractions;
 using SPINbuster.Application.Repositories;
 using SPINbuster.Domain;
@@ -18,10 +19,10 @@ internal sealed class FakeCurrentUser : ICurrentUser
 {
   public FakeCurrentUser(string userId)
   {
-    UserId = userId;
+    UserId = new ApplicationUserId(userId);
   }
 
-  public string UserId { get; }
+  public ApplicationUserId UserId { get; }
 }
 
 internal sealed class FakeAuditRecorder : IAuditRecorder
@@ -142,6 +143,9 @@ internal sealed class FakeInspectionSessionRepository : IInspectionSessionReposi
 internal sealed class FakeReportRepository : IReportRepository
 {
   private readonly Dictionary<ReportId, Report> _reports = [];
+  private readonly Dictionary<OperationId, ReportId> _operationToReportIds = [];
+
+  public List<Report> AddedReports { get; } = [];
 
   public Task<Report?> GetByIdAsync(ReportId reportId, CancellationToken cancellationToken = default)
   {
@@ -149,9 +153,19 @@ internal sealed class FakeReportRepository : IReportRepository
     return Task.FromResult(report);
   }
 
-  public Task AddAsync(Report report, CancellationToken cancellationToken = default)
+  public Task<Report?> GetByOperationIdAsync(OperationId operationId, CancellationToken cancellationToken = default)
+  {
+    return Task.FromResult(
+      _operationToReportIds.TryGetValue(operationId, out var reportId) && _reports.TryGetValue(reportId, out var report)
+        ? report
+        : null);
+  }
+
+  public Task AddAsync(Report report, OperationId operationId, CancellationToken cancellationToken = default)
   {
     _reports[report.Id] = report;
+    _operationToReportIds[operationId] = report.Id;
+    AddedReports.Add(report);
     return Task.CompletedTask;
   }
 }

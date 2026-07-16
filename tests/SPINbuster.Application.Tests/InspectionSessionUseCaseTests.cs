@@ -128,8 +128,8 @@ public sealed class InspectionSessionUseCaseTests
       "Project Falcon",
       "owner@example.invalid",
       new DateTimeOffset(2026, 7, 15, 9, 0, 0, TimeSpan.Zero));
-    project.Activate(currentUser.UserId, clock.UtcNow);
-    project.Complete(currentUser.UserId, clock.UtcNow.AddMinutes(1));
+    project.Activate(currentUser.UserId.Value, clock.UtcNow);
+    project.Complete(currentUser.UserId.Value, clock.UtcNow.AddMinutes(1));
     await projectRepository.AddAsync(project);
 
     var useCase = new StartInspectionSessionUseCase(
@@ -254,14 +254,14 @@ public sealed class InspectionSessionUseCaseTests
         "Project Falcon",
         "owner@example.invalid",
         new DateTimeOffset(2026, 7, 15, 9, 0, 0, TimeSpan.Zero));
-      project.Activate(currentUser.UserId, clock.UtcNow);
+      project.Activate(currentUser.UserId.Value, clock.UtcNow);
       var inspectionSession = new InspectionSession(
         InspectionSessionId.New(),
         project.Id,
         "Initial Walkdown",
-        currentUser.UserId,
+        currentUser.UserId.Value,
         clock.UtcNow);
-      inspectionSession.Start(currentUser.UserId, clock.UtcNow);
+      inspectionSession.Start(currentUser.UserId.Value, clock.UtcNow);
 
       await projectRepository.AddAsync(project);
       await inspectionSessionRepository.AddAsync(inspectionSession);

@@ -9,25 +9,44 @@ public enum ReportLifecycle
 
 public sealed class Report : AuditableEntity
 {
+  private readonly List<ReportDraftSection> _sections = [];
+  private readonly List<FieldNoteId> _sourceFieldNoteIds = [];
+  private readonly List<EvidenceAttachmentId> _sourceEvidenceAttachmentIds = [];
+
   public Report(
     ReportId id,
     ProjectId projectId,
     InspectionSessionId inspectionSessionId,
-    string title,
-    string body,
+    ReportTitle title,
+    IEnumerable<ReportDraftSection> sections,
+    IEnumerable<FieldNoteId> sourceFieldNoteIds,
+    IEnumerable<EvidenceAttachmentId> sourceEvidenceAttachmentIds,
     string createdBy,
     DateTimeOffset createdAtUtc)
   {
     Id = id;
     ProjectId = projectId;
     InspectionSessionId = inspectionSessionId;
-    Title = DomainGuards.NotNullOrWhiteSpace(title, nameof(title));
-    Body = DomainGuards.NotNullOrWhiteSpace(body, nameof(body));
+    Title = title ?? throw new DomainInvariantException($"{nameof(title)} must be provided.");
     CreatedBy = DomainGuards.NotNullOrWhiteSpace(createdBy, nameof(createdBy));
     CreatedAtUtc = DomainGuards.NotDefault(createdAtUtc, nameof(createdAtUtc));
     Lifecycle = ReportLifecycle.Draft;
+    RevisionNumber = 1;
 
-    AppendAuditEvent(CreateAuditEvent("ReportCreated", createdBy, createdAtUtc, "Report created as draft."));
+    _sections.AddRange(CreateSections(sections));
+    _sourceFieldNoteIds.AddRange(CreateUniqueFieldNoteSourceIds(sourceFieldNoteIds));
+    _sourceEvidenceAttachmentIds.AddRange(CreateUniqueEvidenceSourceIds(sourceEvidenceAttachmentIds));
+
+    if (_sourceFieldNoteIds.Count == 0 && _sourceEvidenceAttachmentIds.Count == 0)
+    {
+      throw new DomainInvariantException("A report draft must reference at least one field note or evidence attachment.");
+    }
+
+    AppendAuditEvent(CreateAuditEvent(
+      "ReportCreated",
+      createdBy,
+      createdAtUtc,
+      $"Report created as draft revision {RevisionNumber}."));
   }
 
   public ReportId Id { get; }
@@ -36,9 +55,15 @@ public sealed class Report : AuditableEntity
 
   public InspectionSessionId InspectionSessionId { get; }
 
-  public string Title { get; private set; }
+  public ReportTitle Title { get; private set; }
 
-  public string Body { get; private set; }
+  public int RevisionNumber { get; private set; }
+
+  public IReadOnlyList<ReportDraftSection> Sections => _sections.AsReadOnly();
+
+  public IReadOnlyList<FieldNoteId> SourceFieldNoteIds => _sourceFieldNoteIds.AsReadOnly();
+
+  public IReadOnlyList<EvidenceAttachmentId> SourceEvidenceAttachmentIds => _sourceEvidenceAttachmentIds.AsReadOnly();
 
   public string CreatedBy { get; }
 
@@ -55,7 +80,10 @@ public sealed class Report : AuditableEntity
     ProjectId projectId,
     InspectionSessionId inspectionSessionId,
     string title,
-    string body,
+    int revisionNumber,
+    IEnumerable<ReportDraftSection> sections,
+    IEnumerable<FieldNoteId> sourceFieldNoteIds,
+    IEnumerable<EvidenceAttachmentId> sourceEvidenceAttachmentIds,
     string createdBy,
     DateTimeOffset createdAtUtc,
     ReportLifecycle lifecycle,
@@ -63,9 +91,24 @@ public sealed class Report : AuditableEntity
     DateTimeOffset? approvedAtUtc,
     IEnumerable<AuditEvent> auditTrail)
   {
-    var report = new Report(id, projectId, inspectionSessionId, title, body, createdBy, createdAtUtc)
+    if (revisionNumber < 1)
+    {
+      throw new DomainInvariantException("Report revision number must be at least 1.");
+    }
+
+    var report = new Report(
+      id,
+      projectId,
+      inspectionSessionId,
+      new ReportTitle(title),
+      sections,
+      sourceFieldNoteIds,
+      sourceEvidenceAttachmentIds,
+      createdBy,
+      createdAtUtc)
     {
       Lifecycle = lifecycle,
+      RevisionNumber = revisionNumber,
       ApprovedBy = approvedBy,
       ApprovedAtUtc = approvedAtUtc,
     };
@@ -74,13 +117,23 @@ public sealed class Report : AuditableEntity
     return report;
   }
 
-  public void UpdateDraft(string title, string body, string actor, DateTimeOffset occurredAtUtc)
+  public void UpdateDraft(
+    ReportTitle title,
+    IEnumerable<ReportDraftSection> sections,
+    string actor,
+    DateTimeOffset occurredAtUtc)
   {
     EnsureLifecycle(ReportLifecycle.Draft, nameof(UpdateDraft));
 
-    Title = DomainGuards.NotNullOrWhiteSpace(title, nameof(title));
-    Body = DomainGuards.NotNullOrWhiteSpace(body, nameof(body));
-    AppendAuditEvent(CreateAuditEvent("ReportDraftUpdated", actor, occurredAtUtc, "Report draft updated."));
+    Title = title ?? throw new DomainInvariantException($"{nameof(title)} must be provided.");
+    _sections.Clear();
+    _sections.AddRange(CreateSections(sections));
+    RevisionNumber++;
+    AppendAuditEvent(CreateAuditEvent(
+      "ReportDraftUpdated",
+      actor,
+      occurredAtUtc,
+      $"Report draft updated to revision {RevisionNumber}."));
   }
 
   public void SubmitForReview(string actor, DateTimeOffset occurredAtUtc)
@@ -117,6 +170,45 @@ public sealed class Report : AuditableEntity
     {
       throw new LifecycleTransitionException(nameof(Report), Lifecycle.ToString(), transitionName);
     }
+  }
+
+  private static ReportDraftSection[] CreateSections(IEnumerable<ReportDraftSection> sections)
+  {
+    var materializedSections = sections?.ToArray()
+      ?? throw new DomainInvariantException($"{nameof(sections)} must be provided.");
+
+    if (materializedSections.Length == 0)
+    {
+      throw new DomainInvariantException("At least one report draft section must be provided.");
+    }
+
+    return materializedSections;
+  }
+
+  private static FieldNoteId[] CreateUniqueFieldNoteSourceIds(IEnumerable<FieldNoteId> sourceFieldNoteIds)
+  {
+    var materializedIds = sourceFieldNoteIds?.ToArray()
+      ?? throw new DomainInvariantException($"{nameof(sourceFieldNoteIds)} must be provided.");
+    var distinctIds = materializedIds.Distinct().ToArray();
+    if (distinctIds.Length != materializedIds.Length)
+    {
+      throw new DomainInvariantException("Duplicate field-note source references are not allowed.");
+    }
+
+    return distinctIds;
+  }
+
+  private static EvidenceAttachmentId[] CreateUniqueEvidenceSourceIds(IEnumerable<EvidenceAttachmentId> sourceEvidenceAttachmentIds)
+  {
+    var materializedIds = sourceEvidenceAttachmentIds?.ToArray()
+      ?? throw new DomainInvariantException($"{nameof(sourceEvidenceAttachmentIds)} must be provided.");
+    var distinctIds = materializedIds.Distinct().ToArray();
+    if (distinctIds.Length != materializedIds.Length)
+    {
+      throw new DomainInvariantException("Duplicate evidence source references are not allowed.");
+    }
+
+    return distinctIds;
   }
 
   private AuditEvent CreateAuditEvent(

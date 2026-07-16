@@ -44,7 +44,7 @@ public sealed class StartInspectionSessionUseCase
     {
       // Session creation is the first operational activity for a draft project,
       // so the application layer promotes it before opening the session.
-      project.Activate(_currentUser.UserId, _clock.UtcNow);
+      project.Activate(_currentUser.UserId.Value, _clock.UtcNow);
     }
     else if (project.Lifecycle is ProjectLifecycle.Completed or ProjectLifecycle.Archived)
     {
@@ -56,10 +56,10 @@ public sealed class StartInspectionSessionUseCase
       InspectionSessionId.New(),
       project.Id,
       command.SessionName,
-      _currentUser.UserId,
+      _currentUser.UserId.Value,
       _clock.UtcNow);
 
-    inspectionSession.Start(_currentUser.UserId, _clock.UtcNow);
+    inspectionSession.Start(_currentUser.UserId.Value, _clock.UtcNow);
 
     await _projectRepository.UpdateAsync(project, cancellationToken);
     await _inspectionSessionRepository.AddAsync(inspectionSession, cancellationToken);

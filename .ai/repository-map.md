@@ -20,15 +20,15 @@ Purpose: Explain how the repository is organized and where different kinds of wo
 - `docs/decisions/status/VERTICAL-SLICE-0.1-PROTOTYPE-REVIEW.md` records the post-release prototype review for the first executable local vertical slice.
 - `docs/03-implementation/IMPLEMENTATION_LOG.md` records completed milestones and the next implementation step.
 - `docs/decisions/edr/EDR-DOM-001-versioned-evidence-interpretation-history.md` records the deferred interpretation-history design item for the Domain layer.
-- `docs/decisions/edr/EDR-APP-001-command-idempotency.md` records the deferred command-idempotency design item for the Application layer.
+- `docs/decisions/edr/EDR-APP-001-command-idempotency.md` records the accepted command-idempotency rule for authoritative report-draft creation.
 - `docs/decisions/edr/EDR-APP-002-draft-generation-ownership.md` records the accepted drafting-query boundary for `APPLICATION-0.1`.
 
 ## Source Projects
 
 - `src/SPINbuster.Shared` contains only narrow cross-boundary contracts, primitives, identifiers, and serialization-safe shared DTO primitives.
-- `src/SPINbuster.Domain` contains core domain types and domain-level policies, including the initial Project, InspectionSession, FieldNote, EvidenceAttachment, Report, SaveTransaction, and AuditEvent model.
+- `src/SPINbuster.Domain` contains core domain types and domain-level policies, including the current Project, InspectionSession, FieldNote, EvidenceAttachment, Report, SaveTransaction, and AuditEvent model with structured report-draft sections, revisioning, and source provenance.
 - `src/SPINbuster.Rules` contains reusable business rule evaluation components that support the core.
-- `src/SPINbuster.Application` contains application-layer orchestration, command/query contracts, repository interfaces, transaction boundaries, audit abstractions, identity/time abstractions, and the first vertical-slice use cases.
+- `src/SPINbuster.Application` contains application-layer orchestration, command/query contracts, repository interfaces, transaction boundaries, audit abstractions, typed application identity and operation contracts, and the current vertical-slice use cases.
 - `src/SPINbuster.Infrastructure` contains persistence and external system adapters for non-AI concerns.
 - `src/SPINbuster.AI` contains AI integration adapters and AI-specific orchestration support.
 - `src/SPINbuster.Documents` contains document generation and document workflow support.
@@ -82,20 +82,24 @@ Put lightweight agent instructions in `.ai/`.
 
 - `src/SPINbuster.Application/Contracts/` defines command and query handler contracts.
 - `src/SPINbuster.Application/Abstractions/` defines `IClock`, `ICurrentUser`, `IAuditRecorder`, and `IUnitOfWork`.
-- `src/SPINbuster.Application/Repositories/` defines inward-facing repository interfaces for `Project`, `InspectionSession`, `Report`, and `SaveTransaction`, including explicit update semantics for mutated loaded aggregates.
-- `src/SPINbuster.Application/UseCases/` currently contains `CreateProject`, `StartInspectionSession`, `CaptureFieldNote`, `AttachEvidence`, `AddInterpretation`, `GenerateReportDraftRequest`, and `PrepareTransactionalSave`.
+- `src/SPINbuster.Application/ApplicationIdentity.cs` defines `ApplicationUserId` and `OperationId`.
+- `src/SPINbuster.Application/Repositories/` defines inward-facing repository interfaces for `Project`, `InspectionSession`, `Report`, and `SaveTransaction`, including explicit update semantics for mutated loaded aggregates and operation-aware report persistence.
+- `src/SPINbuster.Application/UseCases/` currently contains `CreateProject`, `StartInspectionSession`, `CaptureFieldNote`, `AttachEvidence`, `AddInterpretation`, `GenerateReportDraftRequest`, `CreateReportDraft`, and `PrepareTransactionalSave`.
 - `src/SPINbuster.Application/UseCases/LoadInspectionWorkflowSnapshot/` reloads persisted project and inspection-session state for the first executable local vertical slice, including field notes and audit history.
+- `src/SPINbuster.Application/UseCases/LoadReportDraftSnapshot/` reloads persisted report drafts, structured sections, provenance, and report audit history through the Application boundary.
 - `tests/SPINbuster.Application.Tests/` uses in-memory fakes to verify orchestration, lifecycle guards, staged audit ordering, explicit mutation updates, failure handling, ownership boundaries, and draft-request shaping without adding persistence or transport concerns.
-- `src/SPINbuster.Infrastructure/Persistence/` contains the local SQLite DbContext, EF Core entity mappings, migration artifacts, typed-ID value converters, and Domain-to-record mapping helpers.
-- `src/SPINbuster.Infrastructure/Repositories/` contains the local SQLite repository implementations, including explicit detached-update support for mutable loaded aggregates.
+- `src/SPINbuster.Infrastructure/Persistence/` contains the local SQLite DbContext, EF Core entity mappings, migration artifacts, typed-ID value converters, and Domain-to-record mapping helpers for reports, report sections, source references, and report-draft operation mappings.
+- `src/SPINbuster.Infrastructure/Repositories/` contains the local SQLite repository implementations, including explicit detached-update support for mutable loaded aggregates and authoritative report-draft persistence.
 - `src/SPINbuster.Infrastructure/Services/` contains `SqliteAuditRecorder` and `SqliteUnitOfWork` for staged audit persistence inside one logical commit boundary.
-- `tests/SPINbuster.Infrastructure.Tests/` contains SQLite integration tests for commit-together behavior, rollback behavior, detached updates, migration metadata presence, migration application, and migration idempotence.
-- `src/SPINbuster.Desktop/` now contains the temporary deterministic console bootstrap host, its narrow composition root, and the local vertical-slice workflow runner.
+- `tests/SPINbuster.Infrastructure.Tests/` contains SQLite integration tests for commit-together behavior, rollback behavior, detached updates, migration metadata presence, migration application, migration idempotence, report persistence, and report-draft idempotency enforcement.
+- `src/SPINbuster.Desktop/` now contains the temporary deterministic console bootstrap host, its narrow composition root, and the local vertical-slice workflow runner for both the inspection and report-draft paths.
 - `tests/SPINbuster.Desktop.Tests/` contains SQLite-backed end-to-end tests for the Desktop workflow.
 
 ## Current Released Baseline
 
 - `VERTICAL-SLICE-0.1` is the current released baseline.
+- `REPORT-DRAFT-SLICE-0.1` is the current released baseline.
 - Migration status: no pending model changes, empty-database migration passes, repeated migration is idempotent, and migration history is verified.
 - Persistence status: aggregate and staged audit changes commit atomically, roll back atomically, and detached updates are verified.
 - Validated vertical-slice path: migrations applied at startup, project created and persisted, inspection session started and persisted, field note captured and preserved, project/session rehydration succeeds, and audit history persists and reloads.
+- Validated report-draft path: evidence persists and reloads, interpretation remains separate from raw evidence, authoritative report drafts persist in `Draft`, provenance reload succeeds, duplicate operation IDs do not create a second draft, and report plus audit changes commit atomically.

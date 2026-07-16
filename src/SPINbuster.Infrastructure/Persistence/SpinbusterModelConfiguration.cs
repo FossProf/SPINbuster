@@ -91,7 +91,7 @@ internal static class SpinbusterModelConfiguration
     builder.Property(record => record.ProjectId).HasConversion(StronglyTypedIdValueConverters.ProjectId).IsRequired();
     builder.Property(record => record.InspectionSessionId).HasConversion(StronglyTypedIdValueConverters.InspectionSessionId).IsRequired();
     builder.Property(record => record.Title).HasMaxLength(512).IsRequired();
-    builder.Property(record => record.Body).HasColumnType("TEXT").IsRequired();
+    builder.Property(record => record.RevisionNumber).IsRequired();
     builder.Property(record => record.CreatedBy).HasMaxLength(256).IsRequired();
     builder.Property(record => record.CreatedAtUtc).IsRequired();
     builder.Property(record => record.Lifecycle).IsRequired();
@@ -106,6 +106,55 @@ internal static class SpinbusterModelConfiguration
       .WithMany()
       .HasForeignKey(record => record.InspectionSessionId)
       .OnDelete(DeleteBehavior.Restrict);
+
+    builder.HasMany(record => record.Sections)
+      .WithOne()
+      .HasForeignKey(record => record.ReportId)
+      .OnDelete(DeleteBehavior.Cascade);
+
+    builder.HasMany(record => record.FieldNoteSources)
+      .WithOne()
+      .HasForeignKey(record => record.ReportId)
+      .OnDelete(DeleteBehavior.Cascade);
+
+    builder.HasMany(record => record.EvidenceSources)
+      .WithOne()
+      .HasForeignKey(record => record.ReportId)
+      .OnDelete(DeleteBehavior.Cascade);
+
+    builder.HasMany(record => record.Operations)
+      .WithOne()
+      .HasForeignKey(record => record.ReportId)
+      .OnDelete(DeleteBehavior.Cascade);
+
+    var sectionBuilder = modelBuilder.Entity<ReportSectionRecord>();
+    sectionBuilder.ToTable("report_sections");
+    sectionBuilder.HasKey(record => new { record.ReportId, record.Position });
+    sectionBuilder.Property(record => record.ReportId).HasConversion(StronglyTypedIdValueConverters.ReportId).IsRequired();
+    sectionBuilder.Property(record => record.Position).IsRequired();
+    sectionBuilder.Property(record => record.Heading).HasMaxLength(256).IsRequired();
+    sectionBuilder.Property(record => record.Content).HasColumnType("TEXT").IsRequired();
+
+    var fieldNoteSourceBuilder = modelBuilder.Entity<ReportFieldNoteSourceRecord>();
+    fieldNoteSourceBuilder.ToTable("report_field_note_sources");
+    fieldNoteSourceBuilder.HasKey(record => new { record.ReportId, record.FieldNoteId });
+    fieldNoteSourceBuilder.Property(record => record.ReportId).HasConversion(StronglyTypedIdValueConverters.ReportId).IsRequired();
+    fieldNoteSourceBuilder.Property(record => record.FieldNoteId).HasConversion(StronglyTypedIdValueConverters.FieldNoteId).IsRequired();
+    fieldNoteSourceBuilder.HasIndex(record => record.FieldNoteId);
+
+    var evidenceSourceBuilder = modelBuilder.Entity<ReportEvidenceSourceRecord>();
+    evidenceSourceBuilder.ToTable("report_evidence_sources");
+    evidenceSourceBuilder.HasKey(record => new { record.ReportId, record.EvidenceAttachmentId });
+    evidenceSourceBuilder.Property(record => record.ReportId).HasConversion(StronglyTypedIdValueConverters.ReportId).IsRequired();
+    evidenceSourceBuilder.Property(record => record.EvidenceAttachmentId).HasConversion(StronglyTypedIdValueConverters.EvidenceAttachmentId).IsRequired();
+    evidenceSourceBuilder.HasIndex(record => record.EvidenceAttachmentId);
+
+    var operationBuilder = modelBuilder.Entity<ReportDraftOperationRecord>();
+    operationBuilder.ToTable("report_draft_operations");
+    operationBuilder.HasKey(record => record.OperationId);
+    operationBuilder.Property(record => record.OperationId).HasConversion(StronglyTypedIdValueConverters.OperationId).ValueGeneratedNever();
+    operationBuilder.Property(record => record.ReportId).HasConversion(StronglyTypedIdValueConverters.ReportId).IsRequired();
+    operationBuilder.HasIndex(record => record.ReportId).IsUnique();
   }
 
   private static void ConfigureSaveTransactions(ModelBuilder modelBuilder)

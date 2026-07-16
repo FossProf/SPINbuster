@@ -42,11 +42,11 @@ public sealed class PrepareTransactionalSaveUseCase
     var saveTransaction = new SaveTransaction(
       SaveTransactionId.New(),
       report.Id,
-      _currentUser.UserId,
+      _currentUser.UserId.Value,
       _clock.UtcNow);
 
     var auditStart = saveTransaction.AuditTrail.Count;
-    saveTransaction.Prepare(_currentUser.UserId, _clock.UtcNow);
+    saveTransaction.Prepare(_currentUser.UserId.Value, _clock.UtcNow);
 
     await _saveTransactionRepository.AddAsync(saveTransaction, cancellationToken);
     StageAuditEvents(AuditTrailSlice.GetNewEvents(saveTransaction, auditStart));

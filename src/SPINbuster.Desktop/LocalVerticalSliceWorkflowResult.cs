@@ -1,6 +1,11 @@
+using SPINbuster.Application.UseCases.AddInterpretation;
+using SPINbuster.Application.UseCases.AttachEvidence;
 using SPINbuster.Application.UseCases.CaptureFieldNote;
 using SPINbuster.Application.UseCases.CreateProject;
+using SPINbuster.Application.UseCases.CreateReportDraft;
+using SPINbuster.Application.UseCases.GenerateReportDraftRequest;
 using SPINbuster.Application.UseCases.LoadInspectionWorkflowSnapshot;
+using SPINbuster.Application.UseCases.LoadReportDraftSnapshot;
 using SPINbuster.Application.UseCases.StartInspectionSession;
 
 namespace SPINbuster.Desktop;
@@ -9,4 +14,9 @@ public sealed record LocalVerticalSliceWorkflowResult(
   CreateProjectResult CreatedProject,
   StartInspectionSessionResult StartedInspectionSession,
   CaptureFieldNoteResult CapturedFieldNote,
-  LoadInspectionWorkflowSnapshotResult PersistedSnapshot);
+  AttachEvidenceResult AttachedEvidence,
+  AddInterpretationResult AddedInterpretation,
+  GenerateReportDraftRequestResult DraftContext,
+  CreateReportDraftResult CreatedReportDraft,
+  LoadInspectionWorkflowSnapshotResult PersistedInspectionSnapshot,
+  LoadReportDraftSnapshotResult PersistedReportSnapshot);
