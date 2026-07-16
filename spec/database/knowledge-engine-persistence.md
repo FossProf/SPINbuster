@@ -2,7 +2,7 @@
 
 ## Scope
 
-`KNOWLEDGE-ENGINE-PERSISTENCE-0.1-RC` introduces the first durable SQLite persistence layer for the Knowledge Engine.
+`KNOWLEDGE-ENGINE-PERSISTENCE-0.1` introduces the first durable SQLite persistence layer for the Knowledge Engine.
 
 This slice includes:
 
@@ -14,6 +14,7 @@ This slice includes:
 - detached update support for document and relationship persistence
 - project-scoped retrieval and bounded relationship traversal
 - migration validation from the released AI executable baseline
+- durable query support for the executable project knowledge snapshot
 
 This slice excludes:
 
@@ -55,15 +56,16 @@ Infrastructure repositories must not expose:
 - `MigrateAsync()` must succeed on an empty SQLite database.
 - `MigrateAsync()` must succeed on a populated `AI-PROPOSAL-EXECUTABLE-SLICE-0.1` database.
 - repeated `MigrateAsync()` execution must remain idempotent.
-- `__EFMigrationsHistory` must record the Knowledge Engine migration.
+- `__EFMigrationsHistory` must record the Knowledge Engine migrations.
 - existing released project, inspection, report, AI proposal, model-run, and audit data must survive unchanged.
 
 ## Transaction expectations
 
-- knowledge document, revision, and staged audit changes commit together.
-- knowledge document, revision, and staged audit changes roll back together.
+- knowledge document, revision, citation, relationship, and staged audit changes commit together.
+- knowledge document, revision, citation, relationship, and staged audit changes roll back together.
 - detached updates must not rely on implicit EF tracking behavior.
 
-## Current migration artifact
+## Current migration artifacts
 
-- `src/SPINbuster.Infrastructure/Persistence/Migrations/20260716180657_KnowledgeEnginePersistenceRc.cs`
+- `src/SPINbuster.Infrastructure/Persistence/Migrations/20260716184900_KnowledgeEnginePersistenceRc2.cs`
+- `src/SPINbuster.Infrastructure/Persistence/Migrations/20260716185107_KnowledgeEnginePersistenceSnapshotIndexes.cs`

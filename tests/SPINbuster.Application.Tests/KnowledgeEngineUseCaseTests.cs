@@ -1,9 +1,11 @@
 using SPINbuster.Application.Tests.Fakes;
+using SPINbuster.Application.UseCases.AddKnowledgeCitation;
 using SPINbuster.Application.UseCases.AddKnowledgeDocumentRevision;
 using SPINbuster.Application.UseCases.CreateKnowledgeRelationship;
 using SPINbuster.Application.UseCases.LoadKnowledgeDocument;
 using SPINbuster.Application.UseCases.LoadKnowledgeNeighborhood;
 using SPINbuster.Application.UseCases.LoadKnowledgeRevisionHistory;
+using SPINbuster.Application.UseCases.LoadProjectKnowledgeSnapshot;
 using SPINbuster.Application.UseCases.RegisterKnowledgeDocument;
 using SPINbuster.Application.UseCases.SupersedeKnowledgeRevision;
 using SPINbuster.Application.UseCases.VerifyKnowledgeRevision;
@@ -125,6 +127,66 @@ public sealed class KnowledgeEngineUseCaseTests
 
     Assert.Equal(KnowledgeVerificationStatus.Verified, result.VerificationStatus);
     Assert.Contains(fixture.AuditRecorder.StagedEvents, auditEvent => auditEvent.EventType == "KnowledgeRevisionVerificationChanged");
+  }
+
+  [Fact]
+  public async Task AddKnowledgeCitationStagesAuditBeforeCommit()
+  {
+    var operationLog = new List<string>();
+    var fixture = CreateFixture(operationLog);
+    await RegisterDocumentWithInitialRevisionAsync(fixture);
+    var revisionId = fixture.KnowledgeRevisionRepository.AddedRevisions.Single().Id;
+    var useCase = new AddKnowledgeCitationUseCase(
+      fixture.KnowledgeCitationRepository,
+      fixture.KnowledgeDocumentRepository,
+      fixture.KnowledgeRevisionRepository,
+      fixture.UnitOfWork,
+      fixture.Clock,
+      fixture.CurrentUser,
+      fixture.AuditRecorder);
+
+    var result = await useCase.HandleAsync(new AddKnowledgeCitationCommand(
+      fixture.ProjectId,
+      revisionId,
+      KnowledgeCitationLocationType.Section,
+      "Section 3.6.B",
+      "Curing requirements."));
+
+    Assert.Equal(revisionId, result.KnowledgeDocumentRevisionId);
+    Assert.Equal(result.KnowledgeCitationId, fixture.KnowledgeCitationRepository.AddedCitations.Single().Id);
+    Assert.Equal(["audit-stage", "commit"], operationLog[^2..]);
+    Assert.Contains(fixture.AuditRecorder.StagedEvents, auditEvent => auditEvent.EventType == "KnowledgeCitationAdded");
+  }
+
+  [Fact]
+  public async Task AddKnowledgeCitationRejectsDuplicateLocator()
+  {
+    var fixture = CreateFixture();
+    await RegisterDocumentWithInitialRevisionAsync(fixture);
+    var revisionId = fixture.KnowledgeRevisionRepository.AddedRevisions.Single().Id;
+    var useCase = new AddKnowledgeCitationUseCase(
+      fixture.KnowledgeCitationRepository,
+      fixture.KnowledgeDocumentRepository,
+      fixture.KnowledgeRevisionRepository,
+      fixture.UnitOfWork,
+      fixture.Clock,
+      fixture.CurrentUser,
+      fixture.AuditRecorder);
+    await useCase.HandleAsync(new AddKnowledgeCitationCommand(
+      fixture.ProjectId,
+      revisionId,
+      KnowledgeCitationLocationType.Section,
+      "Section 3.6.B",
+      "Original citation."));
+
+    var exception = await Assert.ThrowsAsync<DomainInvariantException>(() => useCase.HandleAsync(new AddKnowledgeCitationCommand(
+      fixture.ProjectId,
+      revisionId,
+      KnowledgeCitationLocationType.Section,
+      "Section 3.6.B",
+      "Duplicate citation.")));
+
+    Assert.Contains("Duplicate knowledge citation", exception.Message, StringComparison.Ordinal);
   }
 
   [Fact]
@@ -288,6 +350,81 @@ public sealed class KnowledgeEngineUseCaseTests
       MaxRelationships: LoadKnowledgeNeighborhoodUseCase.MaxRelationshipLimit + 1)));
 
     Assert.Contains("must not exceed", exception.Message, StringComparison.Ordinal);
+  }
+
+  [Fact]
+  public async Task LoadProjectKnowledgeSnapshotReturnsDurablePresentationModelWithoutCommit()
+  {
+    var fixture = CreateFixture();
+    var specificationId = await RegisterDocumentWithInitialRevisionAsync(fixture, "Concrete Spec", "03 30 00");
+    var initialRevision = fixture.KnowledgeRevisionRepository.AddedRevisions.Single();
+    var superseded = await new SupersedeKnowledgeRevisionUseCase(
+      fixture.KnowledgeDocumentRepository,
+      fixture.KnowledgeRevisionRepository,
+      fixture.UnitOfWork,
+      fixture.Clock,
+      fixture.CurrentUser,
+      fixture.AuditRecorder).HandleAsync(new SupersedeKnowledgeRevisionCommand(
+        specificationId,
+        initialRevision.Id,
+        KnowledgeSourceId.New(),
+        "B",
+        new DateOnly(2026, 7, 16),
+        fixture.Clock.UtcNow,
+        KnowledgeSourceAuthorityLevel.EngineerIssued,
+        "content-hash-b",
+        "metadata-hash-b",
+        "spec-system",
+        "Superseding issue.",
+        KnowledgeIngestionStatus.MetadataCaptured));
+    var rfiDocumentId = await RegisterDocumentWithInitialRevisionAsync(fixture, "RFI 27", "RFI-27");
+    var rfiRevision = fixture.KnowledgeRevisionRepository.AddedRevisions.Last();
+
+    await new AddKnowledgeCitationUseCase(
+      fixture.KnowledgeCitationRepository,
+      fixture.KnowledgeDocumentRepository,
+      fixture.KnowledgeRevisionRepository,
+      fixture.UnitOfWork,
+      fixture.Clock,
+      fixture.CurrentUser,
+      fixture.AuditRecorder).HandleAsync(new AddKnowledgeCitationCommand(
+        fixture.ProjectId,
+        superseded.SuccessorRevisionId,
+        KnowledgeCitationLocationType.Section,
+        "Section 3.6.B",
+        "Revised curing requirements."));
+    await new CreateKnowledgeRelationshipUseCase(
+      fixture.KnowledgeDocumentRepository,
+      fixture.KnowledgeRevisionRepository,
+      fixture.KnowledgeRelationshipRepository,
+      fixture.UnitOfWork,
+      fixture.Clock,
+      fixture.CurrentUser,
+      fixture.AuditRecorder).HandleAsync(new CreateKnowledgeRelationshipCommand(
+        fixture.ProjectId,
+        KnowledgeSubjectReference.ForRevision(fixture.ProjectId, rfiRevision.Id),
+        KnowledgeSubjectReference.ForRevision(fixture.ProjectId, superseded.SuccessorRevisionId),
+        KnowledgeRelationshipType.Clarifies,
+        "RFI clarifies the revised curing requirement."));
+
+    var useCase = new LoadProjectKnowledgeSnapshotUseCase(
+      fixture.KnowledgeDocumentRepository,
+      fixture.KnowledgeCitationRepository,
+      fixture.KnowledgeRelationshipRepository,
+      new FakeAuditEventQueryRepository(fixture.AuditRecorder));
+    var initialCommitCount = fixture.UnitOfWork.CommitCount;
+    var stagedAuditCount = fixture.AuditRecorder.StagedEvents.Count;
+
+    var result = await useCase.HandleAsync(new LoadProjectKnowledgeSnapshotQuery(fixture.ProjectId));
+
+    Assert.Equal(fixture.ProjectId, result.ProjectId);
+    Assert.Equal(2, result.Documents.Count);
+    Assert.Contains(result.Documents, document => document.KnowledgeDocumentId == specificationId);
+    Assert.Contains(result.Documents, document => document.KnowledgeDocumentId == rfiDocumentId);
+    Assert.Single(result.Relationships);
+    Assert.Contains(result.Documents.SelectMany(document => document.Revisions), revision => revision.Citations.Count == 1);
+    Assert.Equal(initialCommitCount, fixture.UnitOfWork.CommitCount);
+    Assert.Equal(stagedAuditCount, fixture.AuditRecorder.StagedEvents.Count);
   }
 
   [Fact]

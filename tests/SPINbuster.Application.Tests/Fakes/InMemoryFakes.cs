@@ -604,6 +604,8 @@ internal sealed class FakeKnowledgeCitationRepository : IKnowledgeCitationReposi
 {
   private readonly Dictionary<KnowledgeCitationId, KnowledgeCitation> _citations = [];
 
+  public List<KnowledgeCitation> AddedCitations { get; } = [];
+
   public CancellationToken LastCancellationToken { get; private set; }
 
   public Task<IReadOnlyCollection<KnowledgeCitation>> GetByRevisionIdAsync(
@@ -621,6 +623,7 @@ internal sealed class FakeKnowledgeCitationRepository : IKnowledgeCitationReposi
   {
     LastCancellationToken = cancellationToken;
     _citations[knowledgeCitation.Id] = knowledgeCitation;
+    AddedCitations.Add(knowledgeCitation);
     return Task.CompletedTask;
   }
 }

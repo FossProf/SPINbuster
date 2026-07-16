@@ -30,7 +30,8 @@ Purpose: Explain how the repository is organized and where different kinds of wo
 - `docs/decisions/edr/EDR-APP-001-command-idempotency.md` records the accepted command-idempotency rule for authoritative report-draft creation.
 - `docs/decisions/edr/EDR-APP-002-draft-generation-ownership.md` records the accepted drafting-query boundary for `APPLICATION-0.1`.
 - `docs/decisions/edr/EDR-AI-002-ai-proposal-request-idempotency-and-recovery.md` records deferred duplicate-resolution and recovery work for live AI proposal execution.
-- `docs/decisions/edr/EDR-KE-001-binary-file-storage-ownership.md` through `EDR-KE-008-multi-current-revision-conflict-resolution.md` record the deferred boundaries for future Knowledge Engine expansion.
+- `docs/decisions/edr/EDR-KE-001-binary-file-storage-ownership.md` through `EDR-KE-009-knowledge-command-idempotency.md` record the deferred boundaries for future Knowledge Engine expansion.
+- `docs/decisions/status/KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1-PROTOTYPE-REVIEW.md` records what the first executable local Knowledge Engine slice validated and what remains deferred.
 
 ## Source Projects
 
@@ -99,12 +100,12 @@ Put lightweight agent instructions in `.ai/`.
 - `src/SPINbuster.Application/Abstractions/` now also defines provider-neutral AI contracts, prompt-package resolution, and structured proposal validation contracts.
 - `src/SPINbuster.Application/UseCases/` currently contains `CreateProject`, `StartInspectionSession`, `CaptureFieldNote`, `AttachEvidence`, `AddInterpretation`, `GenerateReportDraftRequest`, `CreateReportDraft`, `PrepareTransactionalSave`, `BuildReportProposalContext`, `RequestReportDraftProposal`, `LoadAiProposal`, and `RejectAiProposal`.
 - `src/SPINbuster.Application/UseCases/` now also contains `AcceptAiProposal` and `LoadAiProposalWorkflowSnapshot` for executable review and durable AI history reload.
-- `src/SPINbuster.Application/UseCases/` now also contains `RegisterKnowledgeDocument`, `AddKnowledgeDocumentRevision`, `SupersedeKnowledgeRevision`, `VerifyKnowledgeRevision`, `CreateKnowledgeRelationship`, `LoadKnowledgeDocument`, `LoadKnowledgeRevisionHistory`, and `LoadKnowledgeNeighborhood`.
+- `src/SPINbuster.Application/UseCases/` now also contains `RegisterKnowledgeDocument`, `AddKnowledgeDocumentRevision`, `SupersedeKnowledgeRevision`, `VerifyKnowledgeRevision`, `CreateKnowledgeRelationship`, `AddKnowledgeCitation`, `LoadKnowledgeDocument`, `LoadKnowledgeRevisionHistory`, `LoadKnowledgeNeighborhood`, and `LoadProjectKnowledgeSnapshot`.
 - `src/SPINbuster.Application/UseCases/LoadInspectionWorkflowSnapshot/` reloads persisted project and inspection-session state for the first executable local vertical slice, including field notes and audit history.
 - `src/SPINbuster.Application/UseCases/LoadReportDraftSnapshot/` reloads persisted report drafts, structured sections, provenance, and report audit history through the Application boundary.
 - `src/SPINbuster.Application/Internal/` now contains the governed report-proposal context assembly path, AI audit-event shaping helpers, and the JSON-backed structured proposal validator.
 - `tests/SPINbuster.Application.Tests/` uses in-memory fakes to verify orchestration, lifecycle guards, staged audit ordering, explicit mutation updates, failure handling, ownership boundaries, draft-request shaping, two-phase AI request persistence, prompt-package contract enforcement, and canonical proposal payload storage without adding persistence or transport concerns.
-- `tests/SPINbuster.Application.Tests/` now also verifies Knowledge Engine registration, revision supersession, verification, contradiction recording, bounded neighborhood loading, query isolation, and cancellation-token flow.
+- `tests/SPINbuster.Application.Tests/` now also verifies Knowledge Engine registration, revision supersession, verification, citation staging, bounded snapshot loading, contradiction recording, query isolation, and cancellation-token flow.
 - `src/SPINbuster.Infrastructure/Persistence/` contains the local SQLite DbContext, EF Core entity mappings, migration artifacts, typed-ID value converters, and Domain-to-record mapping helpers for reports, report sections, source references, report-draft operation mappings, context manifests, model runs, model-run attempts, advisory AI proposals, and Knowledge Engine persistence records.
 - `src/SPINbuster.Infrastructure/Repositories/` contains the local SQLite repository implementations, including explicit detached-update support for mutable loaded aggregates, authoritative report-draft persistence, durable AI substrate persistence, Knowledge document/revision/relationship/citation persistence, and audit-history query support for AI and Knowledge workflow reloads.
 - `src/SPINbuster.Infrastructure/Services/` contains `SqliteAuditRecorder` and `SqliteUnitOfWork` for staged audit persistence inside one logical commit boundary.
@@ -115,8 +116,8 @@ Put lightweight agent instructions in `.ai/`.
 - `spec/knowledge/README.md` defines the authoritative Knowledge Engine foundation boundary.
 - `spec/architecture/knowledge-engine-foundation.md` records the foundational architecture and ownership rules for the first Knowledge Engine slice.
 - `spec/database/README.md` and `spec/database/knowledge-engine-persistence.md` define the authoritative local SQLite persistence boundary for the Knowledge Engine review candidate.
-- `src/SPINbuster.Desktop/` now contains the temporary deterministic console bootstrap host, its narrow composition root, and the local vertical-slice workflow runner for the inspection, report-draft, and deterministic AI proposal paths.
-- `tests/SPINbuster.Desktop.Tests/` contains SQLite-backed end-to-end tests for the Desktop workflow, including replay, review action, and failure cases for deterministic AI proposals.
+- `src/SPINbuster.Desktop/` now contains the temporary deterministic console bootstrap host, its narrow composition root, and the local vertical-slice workflow runner for the inspection, report-draft, deterministic AI proposal, and executable Knowledge Engine paths.
+- `tests/SPINbuster.Desktop.Tests/` contains SQLite-backed end-to-end tests for the Desktop workflow, including deterministic Knowledge Engine execution, reload, failure presentation, and proof that authoritative report plus AI state remain unchanged.
 
 ## Current Released Baseline
 
@@ -124,9 +125,11 @@ Put lightweight agent instructions in `.ai/`.
 - `AI-DRAFT-PROPOSAL-SLICE-0.1` is the latest released AI baseline.
 - `AI-PROPOSAL-EXECUTABLE-SLICE-0.1` is the latest released executable AI baseline.
 - `KNOWLEDGE-ENGINE-PERSISTENCE-0.1` is the latest released Knowledge Engine baseline.
+- `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1-RC` is the current validated Knowledge Engine review candidate.
 - Migration status: no pending model changes, empty-database migration passes, repeated migration is idempotent, and migration history is verified.
 - Persistence status: aggregate and staged audit changes commit atomically, roll back atomically, and detached updates are verified.
 - Validated vertical-slice path: migrations applied at startup, project created and persisted, inspection session started and persisted, field note captured and preserved, project/session rehydration succeeds, and audit history persists and reloads.
 - Validated report-draft path: evidence persists and reloads, interpretation remains separate from raw evidence, authoritative report drafts persist in `Draft`, provenance reload succeeds, duplicate operation IDs do not create a second draft, and report plus audit changes commit atomically.
 - Validated AI substrate path: governed report-proposal context manifests persist and reload, deterministic provider output is validated before review, malformed or fabricated output is retained as non-reviewable failure, advisory proposals and audit records commit atomically, repeated migrations are safe, and populated report-draft databases upgrade without losing existing state.
 - Validated executable AI path: the Desktop host can request deterministic proposals, replay them idempotently, reload model-run/proposal/attempt/audit history, record `HumanAccepted` or `Rejected` review outcomes, display failed runs with no persisted proposal, and confirm that review actions do not mutate authoritative reports.
+- Validated executable Knowledge path: the Desktop host can register documents, add and supersede revisions, create project-scoped relationships, add citations, reload a durable project knowledge snapshot, present expected workflow failures cleanly, and confirm that report plus AI records remain unchanged.

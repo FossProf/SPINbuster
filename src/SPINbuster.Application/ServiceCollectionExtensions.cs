@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using SPINbuster.Application.Contracts;
 using SPINbuster.Application.UseCases.AddInterpretation;
 using SPINbuster.Application.UseCases.AcceptAiProposal;
+using SPINbuster.Application.UseCases.AddKnowledgeCitation;
 using SPINbuster.Application.UseCases.AttachEvidence;
 using SPINbuster.Application.UseCases.BuildReportProposalContext;
 using SPINbuster.Application.UseCases.CreateReportDraft;
@@ -14,6 +15,7 @@ using SPINbuster.Application.UseCases.LoadInspectionWorkflowSnapshot;
 using SPINbuster.Application.UseCases.LoadKnowledgeDocument;
 using SPINbuster.Application.UseCases.LoadKnowledgeNeighborhood;
 using SPINbuster.Application.UseCases.LoadKnowledgeRevisionHistory;
+using SPINbuster.Application.UseCases.LoadProjectKnowledgeSnapshot;
 using SPINbuster.Application.UseCases.LoadReportDraftSnapshot;
 using SPINbuster.Application.UseCases.PrepareTransactionalSave;
 using SPINbuster.Application.UseCases.RejectAiProposal;
@@ -38,6 +40,7 @@ public static class ServiceCollectionExtensions
     services.AddScoped<ICommandHandler<AttachEvidenceCommand, AttachEvidenceResult>, AttachEvidenceUseCase>();
     services.AddScoped<ICommandHandler<AddInterpretationCommand, AddInterpretationResult>, AddInterpretationUseCase>();
     services.AddScoped<ICommandHandler<AcceptAiProposalCommand, AcceptAiProposalResult>, AcceptAiProposalUseCase>();
+    services.AddScoped<ICommandHandler<AddKnowledgeCitationCommand, AddKnowledgeCitationResult>, AddKnowledgeCitationUseCase>();
     services.AddScoped<ICommandHandler<AddKnowledgeDocumentRevisionCommand, AddKnowledgeDocumentRevisionResult>, AddKnowledgeDocumentRevisionUseCase>();
     services.AddScoped<ICommandHandler<CreateReportDraftCommand, CreateReportDraftResult>, CreateReportDraftUseCase>();
     services.AddScoped<ICommandHandler<CreateKnowledgeRelationshipCommand, CreateKnowledgeRelationshipResult>, CreateKnowledgeRelationshipUseCase>();
@@ -55,6 +58,7 @@ public static class ServiceCollectionExtensions
     services.AddScoped<IQueryHandler<LoadKnowledgeDocumentQuery, LoadKnowledgeDocumentResult>, LoadKnowledgeDocumentUseCase>();
     services.AddScoped<IQueryHandler<LoadKnowledgeNeighborhoodQuery, LoadKnowledgeNeighborhoodResult>, LoadKnowledgeNeighborhoodUseCase>();
     services.AddScoped<IQueryHandler<LoadKnowledgeRevisionHistoryQuery, LoadKnowledgeRevisionHistoryResult>, LoadKnowledgeRevisionHistoryUseCase>();
+    services.AddScoped<IQueryHandler<LoadProjectKnowledgeSnapshotQuery, LoadProjectKnowledgeSnapshotResult>, LoadProjectKnowledgeSnapshotUseCase>();
     services.AddScoped<IQueryHandler<LoadReportDraftSnapshotQuery, LoadReportDraftSnapshotResult>, LoadReportDraftSnapshotUseCase>();
     return services;
   }

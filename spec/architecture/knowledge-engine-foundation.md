@@ -29,7 +29,7 @@ This slice excludes:
 
 - `SPINbuster.Domain` owns knowledge invariants and lifecycle rules.
 - `SPINbuster.Application` owns orchestration, repository contracts, and transaction boundaries.
-- `SPINbuster.Infrastructure` will later own persistence mappings and query implementations.
+- `SPINbuster.Infrastructure` owns persistence mappings and query implementations for the local SQLite path.
 - `SPINbuster.AI` may consume governed knowledge but does not author authoritative knowledge in this slice.
 - `SPINbuster.Documents` may later adapt document inputs and exports but does not mutate Knowledge Engine persistence directly.
 
@@ -54,6 +54,17 @@ This slice excludes:
 
 Knowledge neighborhood loading returns a bounded graph snapshot.
 
+The executable local slice also permits a read-only project knowledge snapshot that returns:
+
+- stable document identities
+- revision chains
+- current authoritative revisions
+- citations
+- bounded relationships
+- audit history
+
+That snapshot must remain presentation-safe and must not expose mutable Domain aggregates directly.
+
 It must not expose:
 
 - database query objects
@@ -73,3 +84,4 @@ The foundation slice distinguishes:
 - verification change
 - relationship creation
 - contradiction detection
+- citation creation

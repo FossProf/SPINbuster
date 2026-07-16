@@ -1,7 +1,7 @@
 # Current State
 
 Repository status:
-`KNOWLEDGE-ENGINE-PERSISTENCE-0.1` is released. Build passing. Desktop end-to-end tests `3/3`. Infrastructure tests `23/23`. Application tests `57/57`. Domain tests `48/48`. AI tests `6/6`. Architecture tests `16/16`. Warnings `0`.
+`KNOWLEDGE-ENGINE-PERSISTENCE-0.1` is the latest released baseline. `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1-RC` is validated and ready for governance review. Build passing. Desktop end-to-end tests `6/6`. Infrastructure tests `23/23`. Application tests `60/60`. Domain tests `48/48`. AI tests `6/6`. Architecture tests `16/16`. Warnings `0`.
 
 Current branch:
 `main`
@@ -18,7 +18,7 @@ Next active package:
 Recent accomplishments:
 
 - Established the initial .NET solution and layered project skeleton.
-- Added architecture tests to enforce dependency direction and scaffold rules.
+- Added architecture tests to enforce project reference rules and scaffold guardrails.
 - Hardened build configuration with deterministic builds and warnings-as-errors.
 - Added continuity files for future AI sessions.
 - Released the scaffold baseline as `SKELETON-0.1`.
@@ -34,52 +34,23 @@ Recent accomplishments:
 - Expanded Application tests to cover staged audit ordering, commit failure behavior, staging failure behavior, explicit update semantics, and read-only query isolation.
 - Released the initial Application foundation as `APPLICATION-0.1`.
 - Added the local SQLite Infrastructure foundation with EF Core DbContext, entity configurations, strongly typed ID value conversions, repository implementations, staged audit persistence, and a `SqliteUnitOfWork`.
-- Added a scaffolded initial EF Core migration and design-time DbContext factory for the SQLite persistence slice.
-- Added SQLite integration tests proving commit-together behavior, rollback on staged-audit failure, and explicit detached update support for `Project` and `InspectionSession`.
-- Added narrow Domain rehydration hooks so Infrastructure can rebuild released aggregates without reflection or persistence leakage into Application contracts.
-- Aligned `SPINbuster.Server` with the Infrastructure DbContext so the official EF Core startup path can validate migrations.
 - Verified `dotnet ef migrations has-pending-model-changes` returns no pending changes.
-- Verified `MigrateAsync()` from an empty SQLite database, migration-history recording, and second-run idempotence.
 - Released the local SQLite persistence foundation as `INFRASTRUCTURE-0.1`.
-- Added `AddSpinbusterApplication()` and `AddSpinbusterSqliteInfrastructure()` composition helpers so hosts can wire the existing handlers and SQLite-backed repositories consistently.
-- Added a read-only Application query to reload a persisted `Project` plus `InspectionSession` snapshot, including field notes and audit history, after command commits.
-- Reworked `SPINbuster.Desktop` into a deterministic bootstrap console host that applies migrations, executes Create Project -> Start Inspection Session -> Capture Field Note, reloads persisted state, and prints IDs, lifecycles, and audit history.
-- Added Desktop end-to-end tests proving the workflow runs against a real SQLite file and can be reloaded from a fresh service provider.
-- Corrected `StartInspectionSessionUseCase` so brand-new inspection sessions persist both the creation audit event and the start audit event in the same commit.
-- Switched `SqliteInspectionSessionRepository` collection loads to split queries to avoid EF multiple-collection include runtime warnings during the vertical slice.
-- Released the first local executable vertical slice as `VERTICAL-SLICE-0.1`.
-- Recorded the post-release prototype review milestone for `VERTICAL-SLICE-0.1`, including validated assumptions, uncovered defects, DI/rehydration/migration/audit/query friction, and the temporary Desktop host assessment.
-- Added typed Application-layer identity contracts with `ApplicationUserId` and `OperationId`.
-- Extended the Domain report model with structured draft sections, explicit revision numbers, and persisted provenance to source field notes and evidence attachments.
-- Added `CreateReportDraftCommand` plus a read-only report reload query while keeping `GenerateReportDraftRequest` side-effect free.
-- Added SQLite persistence for reports, source-reference mappings, operation-id mappings, and detached report rehydration.
-- Added Infrastructure tests for report persistence, idempotent operation mapping, and atomic rollback of report state plus audit staging.
-- Extended the Desktop bootstrap workflow through Attach Evidence -> Add Interpretation -> Assemble Draft Context -> Create Report Draft -> Reload Report -> Display report audit history.
-- Validated the executable slice against a fresh SQLite file after migrations.
-- Released the authoritative report-draft vertical slice as `REPORT-DRAFT-SLICE-0.1`.
-- Recorded the post-release prototype review milestone for `REPORT-DRAFT-SLICE-0.1`, including migration behavior, idempotency, provenance validation, and report-section revisioning assessment.
-- Released the governed AI draft proposal substrate with governed context manifests, provider-neutral generation contracts, deterministic Tier 0 provider adapters, structured proposal validation, durable model-run and proposal persistence, and AI-specific architecture guardrails.
-- Added a report-draft proposal JSON Schema under `schemas/ai/` and updated the authoritative AI subsystem specifications under `spec/ai/`.
-- Added AI-focused Domain, Application, AI, Infrastructure, and Architecture tests and validated the full solution with zero warnings.
-- Hardened the AI review candidate so human proposal disposition is separate from technical model-run closure, requested runs persist before provider execution, and canonical proposal payloads are stored for review.
-- Extended the temporary Desktop host through the deterministic AI proposal workflow, including request replay, durable AI workflow snapshot reload, human accept or reject review actions, failure display, and proof that report revisions remain unchanged.
-- Hardened the executable AI slice with explicit audit markers for model-run request, provider attempt, validation outcome, and review disposition.
-- Added replay and review-idempotency regression coverage plus explicit authoritative report isolation assertions.
-- Released the deterministic executable AI proposal workflow as `AI-PROPOSAL-EXECUTABLE-SLICE-0.1`.
-- Added the first Knowledge Engine Domain foundation with authoritative knowledge documents, immutable revisions, explicit supersession, project-scoped relationships, and precise citations.
-- Added provider-neutral Knowledge Engine Application repository contracts and orchestration use cases for registration, revision lifecycle, verification, relationships, and bounded neighborhood loading.
-- Added deferred EDRs and the first authoritative Knowledge Engine specifications under `spec/knowledge/` and `spec/architecture/`.
-- Added the first Knowledge Engine SQLite persistence slice with EF Core records, mappings, repositories, strongly typed ID conversions, detached updates, citations, and relationship uniqueness hardened through stable subject keys.
-- Added SQLite migration coverage from the released AI executable baseline and extended Infrastructure verification for atomic commit, rollback, duplicate rejection, citations, revision reload, and bounded relationship traversal.
-- Added database specifications under `spec/database/` and expanded architecture guardrails to keep Knowledge persistence concerns inside Infrastructure.
-- Validated and released the Knowledge Engine persistence foundation with zero build warnings plus updated Infrastructure, Architecture, and full solution test coverage.
+- Reworked `SPINbuster.Desktop` into a deterministic bootstrap console host and released `VERTICAL-SLICE-0.1`.
+- Added the authoritative report-draft workflow and released `REPORT-DRAFT-SLICE-0.1`.
+- Added the governed AI draft proposal substrate and released `AI-DRAFT-PROPOSAL-SLICE-0.1`.
+- Extended the temporary Desktop host through the deterministic AI proposal workflow and released `AI-PROPOSAL-EXECUTABLE-SLICE-0.1`.
+- Added the first Knowledge Engine Domain and Application foundation with authoritative knowledge documents, immutable revisions, explicit supersession, project-scoped relationships, and precise citations.
+- Added the first Knowledge Engine SQLite persistence slice and released `KNOWLEDGE-ENGINE-PERSISTENCE-0.1`.
+- Extended the temporary Desktop host through the first executable local Knowledge Engine workflow.
+- Added `AddKnowledgeCitation` plus `LoadProjectKnowledgeSnapshot` so the host can remain thin and Application-driven.
+- Added SQLite-backed Desktop tests for successful Knowledge execution, reload, current revision selection, relationship traversal, citation reload, audit ordering, failure presentation, commit failure handling, and proof that report plus AI records remain unchanged.
+- Recorded the executable-slice prototype review and deferred `EDR-KE-009` for Knowledge command idempotency before synchronization-oriented work.
 
 Current architectural decisions:
 
-- `REPORT-DRAFT-SLICE-0.1` is the active released baseline.
-- `AI-DRAFT-PROPOSAL-SLICE-0.1` is the active released AI baseline.
-- `AI-PROPOSAL-EXECUTABLE-SLICE-0.1` is the active released executable AI baseline.
 - `KNOWLEDGE-ENGINE-PERSISTENCE-0.1` is the active released knowledge baseline.
+- `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1-RC` is the active validated review candidate.
 - `SPINbuster.Desktop` remains a temporary bootstrap host, not a MAUI application yet.
 - `SPINbuster.Shared` is constrained to narrow cross-boundary contracts and primitives.
 - Adapter-to-adapter references are disallowed.
@@ -88,42 +59,30 @@ Current architectural decisions:
 - The Application layer stages audit facts before a single unit-of-work commit so state and audit persistence can share one logical transaction.
 - Mutated loaded aggregates require explicit repository `UpdateAsync` calls in Application handlers.
 - The local SQLite Infrastructure slice persists Domain aggregates through explicit mapping records rather than implicit EF tracking assumptions.
-- The Infrastructure slice uses staged audit persistence inside the same unit-of-work commit as aggregate state changes.
-- The startup-project and design-time DbContext paths now use aligned SQLite provider configuration for migration tooling.
-- The temporary Desktop host depends only on `SPINbuster.Application` and `SPINbuster.Infrastructure`.
-- The first vertical slice reloads persisted state through an Application query instead of reading EF models directly in the host.
-- `EDR-DOM-001` defers versioned evidence interpretation history; current behavior is single-assignment with no silent replacement.
-- `EDR-APP-001` is now accepted for the report-draft slice: `CreateReportDraftCommand` uses `OperationId`, and Infrastructure enforces uniqueness for that authoritative outcome.
-- `EDR-APP-002` fixes `GenerateReportDraftRequest` as a side-effect-free query that assembles drafting context only.
-- `EDR-AI-001` defers authoritative report revision creation from human-accepted AI proposals; the current slice persists human review disposition without mutating authoritative reports.
-- `EDR-AI-002` defers concurrent duplicate-resolution and crash-recovery rules for AI proposal requests until live-provider integration.
-- AI provider support remains intentionally limited to the deterministic fixture in this baseline.
-- A distinct `Knowledge Engine` subsystem now has a concrete Domain and Application foundation and remains separate from the AI subsystem.
-- AI remains operationally optional; the deterministic Tier 0 provider exercises the full proposal pipeline without any live AI dependency.
-- AI proposals, model runs, run attempts, and governed context manifests commit through the existing unit-of-work boundary alongside audit records.
+- The temporary Desktop host depends on `SPINbuster.Application`, `SPINbuster.Infrastructure`, and the deterministic `SPINbuster.AI` composition helper only.
+- Knowledge Engine executable reload now flows through a presentation-safe project snapshot query rather than host-specific reconstruction logic.
+- Knowledge Engine mutations still do not have a uniform `OperationId` replay contract; `EDR-KE-009` makes that required before synchronization or automated ingestion.
 
 Next task:
-Implement `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1-RC` through the temporary Desktop host before starting ingestion, retrieval expansion, or prompt-driven knowledge workflows
+Complete governance review of `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1-RC` before starting ingestion, chunking, or broader retrieval workflows
 
 Known issues:
 
 - Most non-architecture test projects are still empty scaffolds and intentionally have no real test cases yet.
 - Evidence interpretation is intentionally single-assignment for `DOMAIN-0.1`; richer interpretation history is deferred by `EDR-DOM-001`.
 - The Desktop host is still a console bootstrapper and should not accumulate broader UI assumptions before the real client direction is chosen.
-- The SQLite report migration emits EF's expected non-transactional SQLite table-rebuild warning because the released report table shape changed from the earlier baseline; the migrated workflow still completes successfully from a fresh database.
+- SQLite migration execution still emits the previously accepted provider warning around the report-table rebuild path during a fresh executable run. The workflow completes successfully, but the warning should remain documented rather than ignored.
 - Human-accepted AI proposals still do not create authoritative report revisions; that boundary is intentionally deferred by `EDR-AI-001`.
 - Advanced retry orchestration and crash recovery remain intentionally deferred by `EDR-AI-002`.
-- The Desktop host now references `SPINbuster.AI` as a composition-root dependency so it can execute the deterministic provider path; adapter projects still do not reference each other.
-- Knowledge Engine local SQLite persistence is now implemented; parsing, OCR, embeddings, executable retrieval flows, and cross-project sharing remain intentionally deferred.
-- The next slice should prove: register specification, add revisions, supersede prior revision, register RFI, create a `Clarifies` relationship, add a citation, reload the knowledge snapshot, and display the revision chain, graph, citations, and audit history end to end.
+- Knowledge Engine local SQLite persistence is implemented; parsing, OCR, embeddings, executable retrieval flows, and cross-project sharing remain intentionally deferred.
+- Knowledge Engine command idempotency is still deferred and must be designed before synchronization or automated ingestion work.
 
 Requested review:
 
-- Whether human-accepted advisory proposals should create a new authoritative report revision in Domain or Application first
-- Whether prompt-package registry metadata should remain repository-owned or later become persisted configuration
-- How the future `Knowledge Engine` should be bounded relative to `Domain`, `Documents`, `Reporting`, and `AI`
+- Whether the next Knowledge Engine package should focus first on ingestion and chunking boundaries or on broader retrieval/query shaping
 - Whether `KnowledgeDocumentRevision` should remain aggregate-owned through persistence or later be promoted to a separate aggregate boundary
 - Whether the stable-subject-key approach for relationship uniqueness should remain the long-term enforcement mechanism beyond local SQLite
+- Whether human-accepted advisory proposals should create a new authoritative report revision in Domain or Application first
 
 Current capabilities:
 
@@ -140,9 +99,12 @@ Current capabilities:
 - Generate deterministic advisory AI proposals with no live provider dependency
 - Persist model runs, run attempts, and advisory proposal manifests
 - Reject advisory AI proposals through explicit review workflow
-- Execute deterministic AI proposal request/replay/review flows through the Desktop host
+- Execute deterministic AI proposal request, replay, and review flows through the Desktop host
 - Register authoritative knowledge documents
 - Add, supersede, and verify knowledge revisions explicitly
 - Create project-scoped knowledge relationships with contradiction visibility
 - Load bounded knowledge neighborhoods through Application queries
 - Persist and reload authoritative knowledge revisions, relationships, citations, and audit history through local SQLite
+- Execute a deterministic Knowledge Engine document-registration, revisioning, supersession, relationship, and citation workflow through the Desktop host
+- Reload a project-scoped Knowledge Engine snapshot with document identities, revision chains, current authoritative revisions, relationships, citations, and audit history
+- Present expected Knowledge Engine failure cases without crashing the scripted executable path

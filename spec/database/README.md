@@ -19,6 +19,6 @@ These specifications define storage shape, migration expectations, and persisten
 
 ## Current release boundary
 
-The latest released executable baseline remains `AI-PROPOSAL-EXECUTABLE-SLICE-0.1`.
+The latest released knowledge persistence baseline is `KNOWLEDGE-ENGINE-PERSISTENCE-0.1`.
 
-The active review candidate is `KNOWLEDGE-ENGINE-PERSISTENCE-0.1-RC`.
+The active review candidate is `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1-RC`.

@@ -1,16 +1,22 @@
 using SPINbuster.Application.UseCases.AcceptAiProposal;
 using SPINbuster.Application.UseCases.AddInterpretation;
+using SPINbuster.Application.UseCases.AddKnowledgeCitation;
+using SPINbuster.Application.UseCases.AddKnowledgeDocumentRevision;
 using SPINbuster.Application.UseCases.AttachEvidence;
 using SPINbuster.Application.UseCases.CaptureFieldNote;
+using SPINbuster.Application.UseCases.CreateKnowledgeRelationship;
 using SPINbuster.Application.UseCases.CreateProject;
 using SPINbuster.Application.UseCases.CreateReportDraft;
 using SPINbuster.Application.UseCases.GenerateReportDraftRequest;
 using SPINbuster.Application.UseCases.LoadAiProposalWorkflowSnapshot;
 using SPINbuster.Application.UseCases.LoadInspectionWorkflowSnapshot;
+using SPINbuster.Application.UseCases.LoadProjectKnowledgeSnapshot;
 using SPINbuster.Application.UseCases.LoadReportDraftSnapshot;
 using SPINbuster.Application.UseCases.RejectAiProposal;
+using SPINbuster.Application.UseCases.RegisterKnowledgeDocument;
 using SPINbuster.Application.UseCases.RequestReportDraftProposal;
 using SPINbuster.Application.UseCases.StartInspectionSession;
+using SPINbuster.Application.UseCases.SupersedeKnowledgeRevision;
 
 namespace SPINbuster.Desktop;
 
@@ -28,6 +34,23 @@ public sealed record LocalVerticalSliceWorkflowResult(
   LoadReportDraftSnapshotResult PersistedReportSnapshotBeforeReview,
   AcceptAiProposalResult? AcceptedAiProposal,
   RejectAiProposalResult? RejectedAiProposal,
-  LoadAiProposalWorkflowSnapshotResult ReviewedAiProposalSnapshot,
+  LoadAiProposalWorkflowSnapshotResult ReviewedAiProposalSnapshotBeforeKnowledge,
   LoadInspectionWorkflowSnapshotResult PersistedInspectionSnapshot,
-  LoadReportDraftSnapshotResult PersistedReportSnapshot);
+  LoadReportDraftSnapshotResult PersistedReportSnapshotBeforeKnowledge,
+  RegisterKnowledgeDocumentResult RegisteredSpecificationDocument,
+  AddKnowledgeDocumentRevisionResult AddedSpecificationInitialRevision,
+  SupersedeKnowledgeRevisionResult SupersededSpecificationRevision,
+  RegisterKnowledgeDocumentResult RegisteredRfiDocument,
+  AddKnowledgeDocumentRevisionResult AddedRfiInitialRevision,
+  CreateKnowledgeRelationshipResult CreatedKnowledgeRelationship,
+  AddKnowledgeCitationResult AddedKnowledgeCitation,
+  LoadProjectKnowledgeSnapshotResult ReloadedKnowledgeSnapshot,
+  LoadProjectKnowledgeSnapshotResult ReplayedKnowledgeSnapshot,
+  LoadAiProposalWorkflowSnapshotResult ReviewedAiProposalSnapshot,
+  LoadReportDraftSnapshotResult PersistedReportSnapshot,
+  IReadOnlyList<DesktopWorkflowFailurePresentation> FailurePresentations);
+
+public sealed record DesktopWorkflowFailurePresentation(
+  string Scenario,
+  string ErrorType,
+  string Message);

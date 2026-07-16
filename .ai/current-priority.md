@@ -10,7 +10,7 @@ Next active package:
 KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1-RC
 
 Status:
-Released
+Validated review candidate
 
 Build:
 Passing
@@ -25,7 +25,7 @@ Architecture tests:
 16/16 passing
 
 Application tests:
-57/57 passing
+60/60 passing
 
 Infrastructure tests:
 23/23 passing
@@ -34,34 +34,34 @@ AI tests:
 6/6 passing
 
 Desktop end-to-end tests:
-3/3 passing
+6/6 passing
 
 Current task:
-Implement `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1-RC`
+Review `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1-RC`
 
 Required outcome:
 
-- Preserve the released report-draft and executable AI baselines while introducing the first authoritative Knowledge Engine foundation.
-- Keep knowledge records authoritative and project-scoped.
+- Preserve the released report-draft and executable AI baselines while introducing the first executable local Knowledge Engine workflow.
+- Keep knowledge records authoritative, project-scoped, and presentation-safe through an Application snapshot query.
 - Preserve immutable historical revisions and explicit supersession semantics.
 - Keep repository contracts provider-neutral and free of EF Core, file-system, transport, or UI leakage.
 - Keep the Knowledge Engine usable without AI.
-- Defer parsing, OCR, embeddings, vector search, and automatic authority promotion explicitly through EDRs.
+- Record Knowledge Engine command idempotency as an explicit deferred decision before synchronization work begins.
 
 Next review:
-`KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1-RC` end-to-end workflow, reload, and audit review
+`KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1-RC` governance and release review
 
 Known blockers:
 None
 
 Last completed:
-Released `KNOWLEDGE-ENGINE-PERSISTENCE-0.1`
+Validated `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1-RC`
 
 Proposed next direction:
 
-- Wire the persisted Knowledge Engine workflow through the temporary Desktop host
-- Validate revision chains, graph edges, citations, and audit history end to end
-- Prepare the next prompt-driven Knowledge Engine package after executable validation
+- Complete governance review for the executable Knowledge Engine slice
+- Decide the next ingestion or chunking preparation package
+- Keep `EDR-KE-009` active before synchronization or automated ingestion work
 
 Current capabilities:
 
@@ -84,8 +84,11 @@ Current capabilities:
 - Reload durable model-run, proposal, attempt, and audit history through an application snapshot query
 - Persist explicit AI lifecycle audit markers for request, provider attempt, validation, completion, and review disposition
 - Register authoritative knowledge documents and immutable revisions
-- Record explicit knowledge supersession, verification, relationship, and contradiction audit facts
+- Record explicit knowledge supersession, verification, relationship, contradiction, and citation audit facts
 - Load bounded knowledge neighborhoods through application snapshots
+- Execute deterministic Knowledge Engine workflows through the Desktop host
+- Reload project-scoped knowledge documents, revisions, relationships, citations, and audit history through a presentation-safe Application query
+- Present expected Knowledge Engine failure cases without crashing the scripted demo path
 
 Authoritative context:
 
@@ -108,7 +111,8 @@ Authoritative context:
 - `docs/decisions/edr/EDR-APP-002-draft-generation-ownership.md`
 - `docs/decisions/edr/EDR-AI-001-authoritative-report-revision-acceptance.md`
 - `docs/decisions/edr/EDR-AI-002-ai-proposal-request-idempotency-and-recovery.md`
-- `docs/decisions/status/REPORT-DRAFT-SLICE-0.1-PROTOTYPE-REVIEW.md`
+- `docs/decisions/edr/EDR-KE-009-knowledge-command-idempotency.md`
+- `docs/decisions/status/KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1-PROTOTYPE-REVIEW.md`
 - `schemas/ai/report-draft-proposal.schema.json`
 - `spec/ai/context-manifest.md`
 - `spec/ai/json-schemas.md`
@@ -118,6 +122,8 @@ Authoritative context:
 - `spec/ai/model-run-lifecycle.md`
 - `spec/knowledge/README.md`
 - `spec/architecture/knowledge-engine-foundation.md`
+- `spec/database/README.md`
+- `spec/database/knowledge-engine-persistence.md`
 - `docs/decisions/edr/EDR-KE-001-binary-file-storage-ownership.md`
 - `docs/decisions/edr/EDR-KE-002-document-parsing-and-chunking.md`
 - `docs/decisions/edr/EDR-KE-003-ocr-boundary.md`
@@ -126,19 +132,17 @@ Authoritative context:
 - `docs/decisions/edr/EDR-KE-006-ai-generated-relationship-promotion.md`
 - `docs/decisions/edr/EDR-KE-007-cross-project-knowledge-sharing.md`
 - `docs/decisions/edr/EDR-KE-008-multi-current-revision-conflict-resolution.md`
-- Relevant knowledge foundation files under `src/SPINbuster.Domain/`, `src/SPINbuster.Application/`, and `tests/`
-- `spec/database/README.md`
-- `spec/database/knowledge-engine-persistence.md`
-- Relevant report-draft slice files under `src/SPINbuster.Domain/`, `src/SPINbuster.Application/`, `src/SPINbuster.Infrastructure/`, and `src/SPINbuster.Desktop/`
 
 Validation before completion:
 
-- `dotnet restore SPINbuster.sln --configfile NuGet.Config`
 - `dotnet format SPINbuster.sln --no-restore`
+- `dotnet restore SPINbuster.sln --configfile NuGet.Config`
 - `dotnet build SPINbuster.sln --no-restore`
 - `dotnet tool run dotnet-ef migrations has-pending-model-changes --no-build --project src/SPINbuster.Infrastructure --startup-project src/SPINbuster.Server --context SPINbuster.Infrastructure.Persistence.SpinbusterDbContext`
-- `dotnet test tests/SPINbuster.Domain.Tests/SPINbuster.Domain.Tests.csproj --no-build`
-- `dotnet test tests/SPINbuster.Application.Tests/SPINbuster.Application.Tests.csproj --no-build`
+- `dotnet test tests/SPINbuster.Desktop.Tests/SPINbuster.Desktop.Tests.csproj --no-build`
 - `dotnet test tests/SPINbuster.Infrastructure.Tests/SPINbuster.Infrastructure.Tests.csproj --no-build`
+- `dotnet test tests/SPINbuster.Application.Tests/SPINbuster.Application.Tests.csproj --no-build`
+- `dotnet test tests/SPINbuster.Domain.Tests/SPINbuster.Domain.Tests.csproj --no-build`
 - `dotnet test tests/SPINbuster.Architecture.Tests/SPINbuster.Architecture.Tests.csproj --no-build`
 - `dotnet test SPINbuster.sln --no-build -m:1`
+- `dotnet run --project src/SPINbuster.Desktop/SPINbuster.Desktop.csproj --no-build`

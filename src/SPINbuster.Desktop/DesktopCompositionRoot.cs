@@ -50,6 +50,21 @@ public static class DesktopCompositionRoot
     var aiScenarioText = configuration["DesktopWorkflow:AiScenario"] ?? nameof(DeterministicAiScenario.Success);
     var proposalReviewActionText = configuration["DesktopWorkflow:ProposalReviewAction"] ?? nameof(DesktopAiReviewAction.Reject);
     var proposalReviewNotes = configuration["DesktopWorkflow:ProposalReviewNotes"] ?? "Deterministic desktop review disposition.";
+    var specificationTitle = configuration["DesktopWorkflow:SpecificationTitle"] ?? "Section 03 30 00 - Cast-in-Place Concrete";
+    var specificationExternalReference = configuration["DesktopWorkflow:SpecificationExternalReference"] ?? "03 30 00";
+    var specificationDiscipline = configuration["DesktopWorkflow:SpecificationDiscipline"] ?? "Concrete";
+    var specificationInitialRevisionLabel = configuration["DesktopWorkflow:SpecificationInitialRevisionLabel"] ?? "0";
+    var specificationInitialRevisionNotes = configuration["DesktopWorkflow:SpecificationInitialRevisionNotes"] ?? "Initial issue.";
+    var specificationSupersedingRevisionLabel = configuration["DesktopWorkflow:SpecificationSupersedingRevisionLabel"] ?? "1";
+    var specificationSupersedingRevisionNotes = configuration["DesktopWorkflow:SpecificationSupersedingRevisionNotes"] ?? "Revised curing requirements.";
+    var rfiTitle = configuration["DesktopWorkflow:RfiTitle"] ?? "Request for Information 027";
+    var rfiExternalReference = configuration["DesktopWorkflow:RfiExternalReference"] ?? "RFI-027";
+    var rfiDiscipline = configuration["DesktopWorkflow:RfiDiscipline"] ?? "Concrete";
+    var rfiInitialRevisionLabel = configuration["DesktopWorkflow:RfiInitialRevisionLabel"] ?? "0";
+    var rfiInitialRevisionNotes = configuration["DesktopWorkflow:RfiInitialRevisionNotes"] ?? "Clarifies the curing sequence.";
+    var relationshipRationale = configuration["DesktopWorkflow:RelationshipRationale"] ?? "RFI-027 clarifies the revised curing requirement.";
+    var citationLocatorValue = configuration["DesktopWorkflow:CitationLocatorValue"] ?? "Section 3.6.B";
+    var citationQuotedText = configuration["DesktopWorkflow:CitationQuotedText"] ?? "Provide curing protection immediately after finishing.";
     var initialTimestampText = configuration["DesktopWorkflow:InitialTimestampUtc"] ?? "2026-07-15T14:00:00Z";
 
     if (!Guid.TryParse(reportOperationIdText, out var reportOperationId))
@@ -111,6 +126,21 @@ public static class DesktopCompositionRoot
       aiScenario,
       proposalReviewAction,
       proposalReviewNotes,
+      specificationTitle,
+      specificationExternalReference,
+      specificationDiscipline,
+      specificationInitialRevisionLabel,
+      specificationInitialRevisionNotes,
+      specificationSupersedingRevisionLabel,
+      specificationSupersedingRevisionNotes,
+      rfiTitle,
+      rfiExternalReference,
+      rfiDiscipline,
+      rfiInitialRevisionLabel,
+      rfiInitialRevisionNotes,
+      relationshipRationale,
+      citationLocatorValue,
+      citationQuotedText,
       initialTimestampUtc);
   }
 }

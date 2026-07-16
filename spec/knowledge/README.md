@@ -42,10 +42,28 @@ It exists to model stable document identity, immutable historical revisions, gov
 - Supersede the current authoritative revision explicitly
 - Change revision verification status explicitly
 - Create project-scoped relationships
+- Add a citation to a specific revision
 - Load a knowledge document
 - Load revision history
 - Load a bounded knowledge neighborhood graph
+- Load a presentation-safe project knowledge snapshot for executable workflows
 - Persist and reload knowledge records through SQLite Infrastructure adapters
+
+## Executable workflow boundary
+
+The first executable local Knowledge Engine slice proves:
+
+- document registration
+- revision supersession
+- relationship creation
+- citation persistence
+- project knowledge snapshot reload
+- audit-history presentation
+- predictable failure presentation for invalid workflow attempts
+
+The executable host must remain thin and may call Application commands and queries only.
+
+Knowledge Engine mutation idempotency beyond conservative duplicate rejection is deferred by `docs/decisions/edr/EDR-KE-009-knowledge-command-idempotency.md`.
 
 ## Non-goals for the foundation slice
 

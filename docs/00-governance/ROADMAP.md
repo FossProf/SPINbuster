@@ -11,46 +11,46 @@ Deferred
 
 ## Foundation And Proven Backend
 
-- Repository and solution scaffold — Released
-- Domain foundation — Released
-- Application foundation — Released
-- Local SQLite Infrastructure — Released
-- Initial executable field workflow — Released
-- Authoritative report-draft workflow — Released
-- Governed AI proposal substrate — Released
-- Deterministic AI proposal executable workflow — Released
+- Repository and solution scaffold - Released
+- Domain foundation - Released
+- Application foundation - Released
+- Local SQLite Infrastructure - Released
+- Initial executable field workflow - Released
+- Authoritative report-draft workflow - Released
+- Governed AI proposal substrate - Released
+- Deterministic AI proposal executable workflow - Released
 
 ## Current Major Phase
 
-- Knowledge Engine foundation — Active
-- Knowledge Engine persistence — Planned
-- Knowledge Engine executable slice — Planned
+- Knowledge Engine foundation - Released
+- Knowledge Engine persistence - Released
+- Knowledge Engine executable slice - Active
 
 ## Subsequent Backend Phases
 
-- Rule Engine — Planned
-- Document ingestion and revision management — Planned
-- Parsing and chunking — Deferred
-- Retrieval and citations — Planned
-- Local Ollama integration — Deferred
-- Report revision acceptance from reviewed AI proposals — Planned
-- Synchronization engine — Planned
-- PostgreSQL server persistence — Planned
-- API and server workflows — Planned
-- conflict resolution — Planned
-- backup and recovery — Planned
+- Rule Engine - Planned
+- Document ingestion and revision management - Planned
+- Parsing and chunking - Deferred
+- Retrieval and citations - Planned
+- Local Ollama integration - Deferred
+- Report revision acceptance from reviewed AI proposals - Planned
+- Synchronization engine - Planned
+- PostgreSQL server persistence - Planned
+- API and server workflows - Planned
+- Conflict resolution - Planned
+- Backup and recovery - Planned
 
 ## Presentation And Product Phases
 
-- UX and workflow design — Planned
-- Windows MAUI Blazor Hybrid UI — Deferred
-- calendar and scheduling — Planned
-- project setup and configuration — Planned
-- evidence and photo capture — Planned
-- GPS and device metadata — Planned
-- mobile companion — Deferred
-- administrative tools — Planned
-- commercial pilot — Planned
+- UX and workflow design - Planned
+- Windows MAUI Blazor Hybrid UI - Deferred
+- Calendar and scheduling - Planned
+- Project setup and configuration - Planned
+- Evidence and photo capture - Planned
+- GPS and device metadata - Planned
+- Mobile companion - Deferred
+- Administrative tools - Planned
+- Commercial pilot - Planned
 
 UI is intentionally delayed until the Knowledge, Rule, Document, and synchronization foundations are sufficiently stable.
 

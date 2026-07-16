@@ -8,15 +8,15 @@
 ## Next Active Package
 
 - `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1-RC`
-- Status: `Ready to implement`
+- Status: `Validated review candidate`
 - Build: `Passing`
 - Warnings: `0`
 - Architecture tests: `16/16 passing`
 - Domain tests: `48/48 passing`
-- Application tests: `57/57 passing`
+- Application tests: `60/60 passing`
 - AI tests: `6/6 passing`
 - Infrastructure tests: `23/23 passing`
-- Desktop end-to-end tests: `3/3 passing`
+- Desktop end-to-end tests: `6/6 passing`
 
 ## Current Branch
 
@@ -32,10 +32,11 @@
 - Deterministic executable AI proposal workflow released
 - Knowledge Engine domain and application foundation implemented and validated as a review candidate
 - Knowledge Engine SQLite persistence foundation released
+- Knowledge Engine executable local workflow implemented and validated as a review candidate
 
 ## Current Implementation Phase
 
-- Knowledge Engine executable slice planning
+- Knowledge Engine executable slice review
 
 ## Current Milestone
 
@@ -60,6 +61,7 @@
 - `EDR-KE-006` AI-generated relationship promotion (`Deferred`)
 - `EDR-KE-007` Cross-project knowledge sharing (`Deferred`)
 - `EDR-KE-008` Multi-current-revision conflict resolution (`Deferred`)
+- `EDR-KE-009` Knowledge command idempotency (`Deferred`)
 
 ## Outstanding Technical Debt
 
@@ -73,10 +75,11 @@
 - Concurrent duplicate AI proposal resolution beyond the current `OperationId` replay path remains deferred until live-provider integration.
 - AI provider support remains intentionally limited to the deterministic fixture in this baseline.
 - Knowledge Engine local SQLite persistence is implemented; ingestion workflows, executable knowledge retrieval, and non-SQLite storage remain deferred.
+- Knowledge Engine command idempotency is still deferred and must be resolved before synchronization-oriented work.
 
 ## Immediate Next Task
 
-- Implement `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1-RC`
+- Review `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1-RC`
 
 ## Fast Context
 
@@ -89,8 +92,7 @@
 - The current released AI baseline adds governed context manifests, deterministic Tier 0 AI proposal generation, structured proposal validation, durable model-run/proposal persistence, and explicit proposal rejection without authoritative report mutation.
 - The latest released executable AI baseline extends the Desktop host through deterministic proposal request, replay verification, durable model-run history reload, human accept or reject review actions, failure display, and explicit verification that report revisions remain unchanged.
 - The current released Knowledge Engine persistence baseline adds authoritative knowledge documents, immutable revision history, explicit supersession semantics, project-scoped relationships, precise citations, provider-neutral application contracts, and local SQLite persistence with migration validation.
-- The prototype review is recorded in `docs/decisions/status/VERTICAL-SLICE-0.1-PROTOTYPE-REVIEW.md`.
-- The report-draft prototype review is recorded in `docs/decisions/status/REPORT-DRAFT-SLICE-0.1-PROTOTYPE-REVIEW.md`.
+- The current review candidate extends the Desktop host through deterministic document registration, revision supersession, relationship creation, citation persistence, knowledge snapshot reload, audit display, and failure presentation without mutating authoritative report or AI records.
 
 ## Current Capabilities
 
@@ -114,6 +116,8 @@
 - Verify knowledge revisions explicitly
 - Create project-scoped knowledge relationships
 - Load bounded knowledge neighborhoods without persistence leakage
+- Execute deterministic local Knowledge Engine workflows through the temporary Desktop host
+- Reload presentation-safe project knowledge snapshots through the Application layer
 
 ## Future Direction
 
