@@ -10,15 +10,15 @@ SPINbuster is a layered .NET codebase with AI-assisted capabilities, governed by
 
 - Repository scaffold exists and builds successfully.
 - Architecture guardrails are in place and passing.
-- The repository includes the released `AI-DRAFT-PROPOSAL-SLICE-0.1` baseline, the released `AI-PROPOSAL-EXECUTABLE-SLICE-0.1` Desktop executable workflow, the released `KNOWLEDGE-ENGINE-PERSISTENCE-0.1` SQLite persistence baseline, and the validated `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1-RC` review candidate.
+- The repository includes the released `AI-DRAFT-PROPOSAL-SLICE-0.1` baseline, the released `AI-PROPOSAL-EXECUTABLE-SLICE-0.1` Desktop executable workflow, the released `KNOWLEDGE-ENGINE-PERSISTENCE-0.1` SQLite persistence baseline, and the released `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1` executable Knowledge Engine baseline.
 
 ## Latest Released Baseline
 
-- `KNOWLEDGE-ENGINE-PERSISTENCE-0.1`
+- `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1`
 
 ## Next Active Package
 
-- `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1-RC`
+- `Knowledge Engine ingestion and chunking planning`
 
 ## Current Milestone
 
@@ -26,7 +26,7 @@ SPINbuster is a layered .NET codebase with AI-assisted capabilities, governed by
 
 ## Current Active Task
 
-- `Review KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1-RC`
+- `Define the next Knowledge Engine package after the executable release`
 
 ## Authoritative Files
 

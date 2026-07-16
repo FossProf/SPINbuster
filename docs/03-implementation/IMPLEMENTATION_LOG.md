@@ -54,7 +54,8 @@ Completed:
 - Application knowledge snapshot query and citation command
 - Desktop executable failure presentation and prototype review
 - Deferred `EDR-KE-009` for Knowledge command idempotency
+- Released baseline `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1`
 
 Next:
 
-- Review `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1-RC`
+- Define the next Knowledge Engine package

@@ -1,7 +1,7 @@
 # Current State
 
 Repository status:
-`KNOWLEDGE-ENGINE-PERSISTENCE-0.1` is the latest released baseline. `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1-RC` is validated and ready for governance review. Build passing. Desktop end-to-end tests `6/6`. Infrastructure tests `23/23`. Application tests `60/60`. Domain tests `48/48`. AI tests `6/6`. Architecture tests `16/16`. Warnings `0`.
+`KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1` is released. Build passing. Desktop end-to-end tests `6/6`. Infrastructure tests `23/23`. Application tests `60/60`. Domain tests `48/48`. AI tests `6/6`. Architecture tests `16/16`. Warnings `0`.
 
 Current branch:
 `main`
@@ -10,10 +10,10 @@ Current milestone:
 `Prototype Vertical Slice`
 
 Latest released baseline:
-`KNOWLEDGE-ENGINE-PERSISTENCE-0.1`
+`KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1`
 
 Next active package:
-`KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1-RC`
+Knowledge Engine ingestion and chunking planning
 
 Recent accomplishments:
 
@@ -46,11 +46,11 @@ Recent accomplishments:
 - Added `AddKnowledgeCitation` plus `LoadProjectKnowledgeSnapshot` so the host can remain thin and Application-driven.
 - Added SQLite-backed Desktop tests for successful Knowledge execution, reload, current revision selection, relationship traversal, citation reload, audit ordering, failure presentation, commit failure handling, and proof that report plus AI records remain unchanged.
 - Recorded the executable-slice prototype review and deferred `EDR-KE-009` for Knowledge command idempotency before synchronization-oriented work.
+- Released `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1` and pushed tag `knowledge-engine-executable-slice-0.1`.
 
 Current architectural decisions:
 
-- `KNOWLEDGE-ENGINE-PERSISTENCE-0.1` is the active released knowledge baseline.
-- `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1-RC` is the active validated review candidate.
+- `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1` is the active released knowledge baseline.
 - `SPINbuster.Desktop` remains a temporary bootstrap host, not a MAUI application yet.
 - `SPINbuster.Shared` is constrained to narrow cross-boundary contracts and primitives.
 - Adapter-to-adapter references are disallowed.
@@ -64,7 +64,7 @@ Current architectural decisions:
 - Knowledge Engine mutations still do not have a uniform `OperationId` replay contract; `EDR-KE-009` makes that required before synchronization or automated ingestion.
 
 Next task:
-Complete governance review of `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1-RC` before starting ingestion, chunking, or broader retrieval workflows
+Define the next Knowledge Engine package before starting ingestion, chunking, or broader retrieval workflows
 
 Known issues:
 

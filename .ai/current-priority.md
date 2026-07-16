@@ -4,13 +4,13 @@ Current milestone:
 Prototype Vertical Slice
 
 Latest released baseline:
-KNOWLEDGE-ENGINE-PERSISTENCE-0.1
+KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1
 
 Next active package:
-KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1-RC
+Knowledge Engine ingestion and chunking planning
 
 Status:
-Validated review candidate
+Released
 
 Build:
 Passing
@@ -37,31 +37,29 @@ Desktop end-to-end tests:
 6/6 passing
 
 Current task:
-Review `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1-RC`
+Define the next Knowledge Engine package after `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1`
 
 Required outcome:
 
 - Preserve the released report-draft and executable AI baselines while introducing the first executable local Knowledge Engine workflow.
-- Keep knowledge records authoritative, project-scoped, and presentation-safe through an Application snapshot query.
-- Preserve immutable historical revisions and explicit supersession semantics.
-- Keep repository contracts provider-neutral and free of EF Core, file-system, transport, or UI leakage.
-- Keep the Knowledge Engine usable without AI.
-- Record Knowledge Engine command idempotency as an explicit deferred decision before synchronization work begins.
+- Select the next highest-value Knowledge Engine package without regressing the released executable slice.
+- Keep `EDR-KE-009` active before synchronization, automated ingestion, or retry-heavy Knowledge workflows begin.
+- Decide whether the next slice should focus first on ingestion and chunking boundaries or on broader retrieval and query shaping.
 
 Next review:
-`KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1-RC` governance and release review
+Next Knowledge Engine package selection and scope review
 
 Known blockers:
 None
 
 Last completed:
-Validated `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1-RC`
+Released `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1`
 
 Proposed next direction:
 
-- Complete governance review for the executable Knowledge Engine slice
-- Decide the next ingestion or chunking preparation package
-- Keep `EDR-KE-009` active before synchronization or automated ingestion work
+- Define the first ingestion or chunking preparation slice
+- Clarify locator normalization, chunk provenance, and retry boundaries before automated document workflows begin
+- Keep `EDR-KE-009` and `EDR-KE-002` as active design inputs
 
 Current capabilities:
 

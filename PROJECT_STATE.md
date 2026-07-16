@@ -2,13 +2,13 @@
 
 ## Latest Released Baseline
 
-- `KNOWLEDGE-ENGINE-PERSISTENCE-0.1`
+- `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1`
 - Status: `Released`
 
 ## Next Active Package
 
-- `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1-RC`
-- Status: `Validated review candidate`
+- `Knowledge Engine ingestion and chunking planning`
+- Status: `Active`
 - Build: `Passing`
 - Warnings: `0`
 - Architecture tests: `16/16 passing`
@@ -32,11 +32,11 @@
 - Deterministic executable AI proposal workflow released
 - Knowledge Engine domain and application foundation implemented and validated as a review candidate
 - Knowledge Engine SQLite persistence foundation released
-- Knowledge Engine executable local workflow implemented and validated as a review candidate
+- Knowledge Engine executable local workflow released
 
 ## Current Implementation Phase
 
-- Knowledge Engine executable slice review
+- Post-release Knowledge Engine package planning
 
 ## Current Milestone
 
@@ -79,7 +79,7 @@
 
 ## Immediate Next Task
 
-- Review `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1-RC`
+- Define the next Knowledge Engine package after `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1`
 
 ## Fast Context
 
@@ -92,7 +92,7 @@
 - The current released AI baseline adds governed context manifests, deterministic Tier 0 AI proposal generation, structured proposal validation, durable model-run/proposal persistence, and explicit proposal rejection without authoritative report mutation.
 - The latest released executable AI baseline extends the Desktop host through deterministic proposal request, replay verification, durable model-run history reload, human accept or reject review actions, failure display, and explicit verification that report revisions remain unchanged.
 - The current released Knowledge Engine persistence baseline adds authoritative knowledge documents, immutable revision history, explicit supersession semantics, project-scoped relationships, precise citations, provider-neutral application contracts, and local SQLite persistence with migration validation.
-- The current review candidate extends the Desktop host through deterministic document registration, revision supersession, relationship creation, citation persistence, knowledge snapshot reload, audit display, and failure presentation without mutating authoritative report or AI records.
+- The current released executable Knowledge Engine baseline extends the Desktop host through deterministic document registration, revision supersession, relationship creation, citation persistence, knowledge snapshot reload, audit display, and failure presentation without mutating authoritative report or AI records.
 
 ## Current Capabilities
 
