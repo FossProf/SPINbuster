@@ -21,10 +21,11 @@
 - First executable local Desktop-to-SQLite vertical slice released
 - `VERTICAL-SLICE-0.1` prototype review recorded
 - Second local report-draft vertical slice implemented and validated
+- `REPORT-DRAFT-SLICE-0.1` prototype review recorded
 
 ## Current Implementation Phase
 
-- Next implementation package planning
+- AI draft proposal slice planning
 
 ## Current Milestone
 
@@ -51,7 +52,7 @@
 
 ## Immediate Next Task
 
-- Next implementation package definition
+- Define `AI-DRAFT-PROPOSAL-SLICE-0.1`
 
 ## Fast Context
 
@@ -61,6 +62,7 @@
 - The released vertical slice validates migrations applied at startup, project creation and persistence, inspection-session start and persistence, field-note capture and preservation, successful project/session rehydration, and persisted audit-history reload.
 - The current released report-draft baseline extends that path through evidence attachment, interpretation, draft-context assembly, authoritative report-draft creation, provenance reload, duplicate-safe operation handling, and report audit-history reload.
 - The prototype review is recorded in `docs/decisions/status/VERTICAL-SLICE-0.1-PROTOTYPE-REVIEW.md`.
+- The report-draft prototype review is recorded in `docs/decisions/status/REPORT-DRAFT-SLICE-0.1-PROTOTYPE-REVIEW.md`.
 
 ## Current Capabilities
 

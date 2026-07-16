@@ -54,6 +54,7 @@ Recent accomplishments:
 - Extended the Desktop bootstrap workflow through Attach Evidence -> Add Interpretation -> Assemble Draft Context -> Create Report Draft -> Reload Report -> Display report audit history.
 - Validated the executable slice against a fresh SQLite file after migrations.
 - Released the authoritative report-draft vertical slice as `REPORT-DRAFT-SLICE-0.1`.
+- Recorded the post-release prototype review milestone for `REPORT-DRAFT-SLICE-0.1`, including migration behavior, idempotency, provenance validation, and report-section revisioning assessment.
 
 Current architectural decisions:
 
@@ -75,7 +76,7 @@ Current architectural decisions:
 - `EDR-APP-002` fixes `GenerateReportDraftRequest` as a side-effect-free query that assembles drafting context only.
 
 Next task:
-Next implementation package definition
+Define `AI-DRAFT-PROPOSAL-SLICE-0.1`
 
 Known issues:
 
@@ -86,8 +87,8 @@ Known issues:
 
 Requested review:
 
-- Next implementation package review
-- Whether the next slice should move into save/commit workflows, report review/approval boundaries, or richer read models
+- `AI-DRAFT-PROPOSAL-SLICE-0.1` package review
+- How proposal storage, governed context manifests, and explicit human acceptance should relate to authoritative report revisioning
 
 Current capabilities:
 

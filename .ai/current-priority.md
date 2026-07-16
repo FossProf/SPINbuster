@@ -31,27 +31,33 @@ Desktop end-to-end tests:
 2/2 passing
 
 Current task:
-Next implementation package definition
+Define `AI-DRAFT-PROPOSAL-SLICE-0.1`
 
 Required outcome:
 
-- Preserve the released `VERTICAL-SLICE-0.1` path while extending it through:
-  Attach Evidence -> Add Interpretation -> Assemble Draft Context -> Create Report Draft -> Reload Report -> Display report audit history.
-- Keep the Application layer free of EF Core, SQLite, HTTP, Ollama, file-system, and UI concerns.
-- Preserve explicit repository mutation semantics and single-commit audit staging.
-- Keep `GenerateReportDraftRequest` side-effect free under `EDR-APP-002`.
-- Keep the new authoritative report draft in `Draft` state only.
-- Enforce duplicate-safe retry behavior for `CreateReportDraftCommand` through `OperationId`.
+- Preserve the released authoritative report-draft baseline while adding the first local AI-assisted proposal path.
+- Keep AI output non-authoritative until explicit human acceptance creates a new authoritative report revision.
+- Preserve the current `Draft` ownership boundary, provenance rules, and `OperationId` retry guarantees.
+- Introduce governed AI context assembly and structured proposal validation without adding HTTP, MAUI, or cloud-provider dependencies.
 - Keep the Desktop host deterministic and intentionally narrow until a real MAUI client is introduced.
 
 Next review:
-Next implementation package review
+`AI-DRAFT-PROPOSAL-SLICE-0.1` package review
 
 Known blockers:
 None
 
 Last completed:
-Authoritative report-draft vertical slice released as `REPORT-DRAFT-SLICE-0.1`
+Prototype review recorded for `REPORT-DRAFT-SLICE-0.1`
+
+Proposed next direction:
+
+- Persisted field material
+- Assemble governed context manifest
+- Invoke local AI provider
+- Validate structured proposal
+- Present proposal for human review
+- Explicitly accept into a new authoritative report revision
 
 Current capabilities:
 
@@ -84,6 +90,7 @@ Authoritative context:
 - `docs/decisions/edr/EDR-DOM-001-versioned-evidence-interpretation-history.md`
 - `docs/decisions/edr/EDR-APP-001-command-idempotency.md`
 - `docs/decisions/edr/EDR-APP-002-draft-generation-ownership.md`
+- `docs/decisions/status/REPORT-DRAFT-SLICE-0.1-PROTOTYPE-REVIEW.md`
 - Relevant report-draft slice files under `src/SPINbuster.Domain/`, `src/SPINbuster.Application/`, `src/SPINbuster.Infrastructure/`, and `src/SPINbuster.Desktop/`
 
 Validation before completion:

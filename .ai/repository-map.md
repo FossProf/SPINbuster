@@ -18,6 +18,7 @@ Purpose: Explain how the repository is organized and where different kinds of wo
 - `docs/decisions/edr/` contains engineering and product decision records.
 - `docs/decisions/status/` contains baseline, review, and status records.
 - `docs/decisions/status/VERTICAL-SLICE-0.1-PROTOTYPE-REVIEW.md` records the post-release prototype review for the first executable local vertical slice.
+- `docs/decisions/status/REPORT-DRAFT-SLICE-0.1-PROTOTYPE-REVIEW.md` records the post-release prototype review for the authoritative report-draft slice.
 - `docs/03-implementation/IMPLEMENTATION_LOG.md` records completed milestones and the next implementation step.
 - `docs/decisions/edr/EDR-DOM-001-versioned-evidence-interpretation-history.md` records the deferred interpretation-history design item for the Domain layer.
 - `docs/decisions/edr/EDR-APP-001-command-idempotency.md` records the accepted command-idempotency rule for authoritative report-draft creation.

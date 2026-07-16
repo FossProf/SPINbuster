@@ -22,7 +22,8 @@ Completed:
 - Second local report-draft vertical slice
 - Authoritative report-draft creation and SQLite provenance persistence
 - Report-draft executable workflow validation
+- Prototype review milestone for `REPORT-DRAFT-SLICE-0.1`
 
 Next:
 
-- Release review and baseline cut for `REPORT-DRAFT-SLICE-0.1`
+- `AI-DRAFT-PROPOSAL-SLICE-0.1` package definition
