@@ -195,6 +195,13 @@ public sealed class RequestReportDraftProposalUseCase
       await _modelRunRepository.AddAsync(modelRun, cancellationToken);
       await _proposalRepository.AddAsync(abstentionProposal, cancellationToken);
       StageAudit(AiAuditEventFactory.ContextManifestCreated(contextAssembly.ContextManifest, _currentUser.UserId.Value, _clock.UtcNow));
+      StageAudit(AiAuditEventFactory.ModelRunRequested(modelRun, _clock.UtcNow));
+      StageAudit(AiAuditEventFactory.ValidationCompleted(
+        modelRun,
+        abstentionProposal.Status,
+        modelRun.FailureClassification,
+        "Governed context was incomplete before provider execution.",
+        _clock.UtcNow));
       StageAudit(AiAuditEventFactory.ModelRunCompleted(modelRun, "AI request abstained because governed context was incomplete.", _clock.UtcNow));
       StageAudit(AiAuditEventFactory.ProposalRecorded(abstentionProposal, _currentUser.UserId.Value, _clock.UtcNow));
       await _unitOfWork.CommitAsync(cancellationToken);
@@ -216,6 +223,7 @@ public sealed class RequestReportDraftProposalUseCase
     await _contextManifestRepository.AddAsync(contextAssembly.ContextManifest, cancellationToken);
     await _modelRunRepository.AddAsync(modelRun, cancellationToken);
     StageAudit(AiAuditEventFactory.ContextManifestCreated(contextAssembly.ContextManifest, _currentUser.UserId.Value, _clock.UtcNow));
+    StageAudit(AiAuditEventFactory.ModelRunRequested(modelRun, _clock.UtcNow));
     await _unitOfWork.CommitAsync(cancellationToken);
 
     var generationRequest = new AiGenerationRequest(
@@ -270,11 +278,18 @@ public sealed class RequestReportDraftProposalUseCase
       generationResult.FailureMessage);
 
     await _modelRunRepository.AddAttemptAsync(attempt, cancellationToken);
+    StageAudit(AiAuditEventFactory.ProviderAttemptRecorded(modelRun, attempt, _clock.UtcNow));
 
     if (!generationResult.Succeeded || string.IsNullOrWhiteSpace(generationResult.StructuredOutputJson))
     {
       modelRun.MarkFailed(MapGenerationOutcome(generationResult.FailureClassification), generationResult.FailureMessage ?? "AI generation failed.");
       await _modelRunRepository.UpdateAsync(modelRun, cancellationToken);
+      StageAudit(AiAuditEventFactory.ValidationCompleted(
+        modelRun,
+        null,
+        modelRun.FailureClassification,
+        generationResult.FailureMessage ?? "AI generation failed before validation.",
+        _clock.UtcNow));
       StageAudit(AiAuditEventFactory.ModelRunCompleted(modelRun, generationResult.FailureMessage ?? "AI generation failed.", _clock.UtcNow));
       await _unitOfWork.CommitAsync(cancellationToken);
 
@@ -340,6 +355,12 @@ public sealed class RequestReportDraftProposalUseCase
 
     await _modelRunRepository.UpdateAsync(modelRun, cancellationToken);
     await _proposalRepository.AddAsync(proposal, cancellationToken);
+    StageAudit(AiAuditEventFactory.ValidationCompleted(
+      modelRun,
+      proposal.Status,
+      modelRun.FailureClassification,
+      DescribeOutcome(proposal),
+      _clock.UtcNow));
     StageAudit(AiAuditEventFactory.ModelRunCompleted(modelRun, DescribeOutcome(proposal), _clock.UtcNow));
     StageAudit(AiAuditEventFactory.ProposalRecorded(proposal, _currentUser.UserId.Value, _clock.UtcNow));
     await _unitOfWork.CommitAsync(cancellationToken);

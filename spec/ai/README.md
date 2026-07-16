@@ -35,7 +35,7 @@ Agents should read only the documents relevant to the task they are performing.
 
 ## Current Implemented Baseline
 
-`AI-DRAFT-PROPOSAL-SLICE-0.1-RC` currently implements:
+`AI-DRAFT-PROPOSAL-SLICE-0.1` is the latest released baseline and `AI-PROPOSAL-EXECUTABLE-SLICE-0.1-RC` currently extends it with:
 
 - provider-neutral generation contracts in `SPINbuster.Application`
 - deterministic Tier 0 provider and prompt-package registry in `SPINbuster.AI`
@@ -43,6 +43,7 @@ Agents should read only the documents relevant to the task they are performing.
 - durable model-run and proposal records in SQLite
 - structured proposal validation against the report-draft proposal schema
 - non-authoritative AI proposal persistence, review loading, and rejection workflow
+- deterministic Desktop-host execution of proposal request, replay, review action, and failure-display workflows
 
 Not implemented in this slice:
 

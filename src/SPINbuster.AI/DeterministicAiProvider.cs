@@ -72,9 +72,11 @@ public sealed class DeterministicAiProvider : IAiGenerationProvider
         """
 {
   "sections": [],
-  "reasoningSummary": "",
+  "reasoningSummary": "The governed context is insufficient to produce a safe grounded proposal.",
   "confidenceBand": "None",
-  "sourceReferences": [],
+  "sourceReferences": [
+    { "sourceType": "FieldNote", "sourceId": "FIELD_NOTE_ID" }
+  ],
   "missingInformation": ["additional-governed-context-required"],
   "openQuestions": [],
   "warnings": ["insufficient-context"],

@@ -1,11 +1,15 @@
+using SPINbuster.Application.UseCases.AcceptAiProposal;
 using SPINbuster.Application.UseCases.AddInterpretation;
 using SPINbuster.Application.UseCases.AttachEvidence;
 using SPINbuster.Application.UseCases.CaptureFieldNote;
 using SPINbuster.Application.UseCases.CreateProject;
 using SPINbuster.Application.UseCases.CreateReportDraft;
 using SPINbuster.Application.UseCases.GenerateReportDraftRequest;
+using SPINbuster.Application.UseCases.LoadAiProposalWorkflowSnapshot;
 using SPINbuster.Application.UseCases.LoadInspectionWorkflowSnapshot;
 using SPINbuster.Application.UseCases.LoadReportDraftSnapshot;
+using SPINbuster.Application.UseCases.RejectAiProposal;
+using SPINbuster.Application.UseCases.RequestReportDraftProposal;
 using SPINbuster.Application.UseCases.StartInspectionSession;
 
 namespace SPINbuster.Desktop;
@@ -18,5 +22,12 @@ public sealed record LocalVerticalSliceWorkflowResult(
   AddInterpretationResult AddedInterpretation,
   GenerateReportDraftRequestResult DraftContext,
   CreateReportDraftResult CreatedReportDraft,
+  RequestReportDraftProposalResult RequestedAiProposal,
+  RequestReportDraftProposalResult ReplayedAiProposalRequest,
+  LoadAiProposalWorkflowSnapshotResult PersistedAiProposalSnapshot,
+  LoadReportDraftSnapshotResult PersistedReportSnapshotBeforeReview,
+  AcceptAiProposalResult? AcceptedAiProposal,
+  RejectAiProposalResult? RejectedAiProposal,
+  LoadAiProposalWorkflowSnapshotResult ReviewedAiProposalSnapshot,
   LoadInspectionWorkflowSnapshotResult PersistedInspectionSnapshot,
   LoadReportDraftSnapshotResult PersistedReportSnapshot);

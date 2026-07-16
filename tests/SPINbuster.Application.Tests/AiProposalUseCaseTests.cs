@@ -2,7 +2,9 @@ using SPINbuster.Application;
 using SPINbuster.Application.Abstractions;
 using SPINbuster.Application.Internal;
 using SPINbuster.Application.Tests.Fakes;
+using SPINbuster.Application.UseCases.AcceptAiProposal;
 using SPINbuster.Application.UseCases.BuildReportProposalContext;
+using SPINbuster.Application.UseCases.LoadAiProposalWorkflowSnapshot;
 using SPINbuster.Application.UseCases.RejectAiProposal;
 using SPINbuster.Application.UseCases.RequestReportDraftProposal;
 using SPINbuster.Domain;
@@ -74,8 +76,11 @@ public sealed class AiProposalUseCaseTests
 
     Assert.Equal(firstResult.ProposalId, secondResult.ProposalId);
     Assert.True(secondResult.IsIdempotentReplay);
+    Assert.Single(fixture.GenerationProvider.Requests);
+    Assert.Single(await fixture.ModelRunRepository.GetAttemptsAsync(firstResult.ModelRunId));
     Assert.Single(fixture.AiProposalRepository.AddedProposals);
     Assert.Equal(2, fixture.UnitOfWork.CommitCount);
+    Assert.Equal(6, fixture.AuditRecorder.StagedEvents.Count);
   }
 
   [Fact]
@@ -315,7 +320,222 @@ public sealed class AiProposalUseCaseTests
     Assert.Equal(ProposalStatus.Rejected, rejectResult.ProposalStatus);
     Assert.Equal(ModelRunState.Closed, rejectResult.ModelRunState);
     Assert.Equal(3, fixture.UnitOfWork.CommitCount);
-    Assert.Contains(fixture.AuditRecorder.StagedEvents, auditEvent => auditEvent.EventType == "AiProposalRejected");
+    var auditEvent = Assert.Single(fixture.AuditRecorder.StagedEvents, audit => audit.EventType == "AiProposalRejected");
+    Assert.Equal(fixture.CurrentUser.UserId.Value, auditEvent.Actor);
+    Assert.Equal(fixture.Clock.UtcNow, auditEvent.OccurredAtUtc);
+  }
+
+  [Fact]
+  public async Task AcceptAiProposalStagesAuditAndClosesModelRunWithoutMutatingReport()
+  {
+    var fixture = await AiProposalFixture.CreateAsync();
+    var requestUseCase = fixture.CreateRequestUseCase();
+    var requestResult = await requestUseCase.HandleAsync(new RequestReportDraftProposalCommand(
+      OperationId.New(),
+      fixture.Report.Id,
+      "report-draft-proposal-default",
+      "0.1.0",
+      null));
+    var acceptUseCase = new AcceptAiProposalUseCase(
+      fixture.AiProposalRepository,
+      fixture.ModelRunRepository,
+      fixture.UnitOfWork,
+      fixture.Clock,
+      fixture.CurrentUser,
+      fixture.AuditRecorder);
+
+    var acceptResult = await acceptUseCase.HandleAsync(new AcceptAiProposalCommand(
+      requestResult.ProposalId!.Value,
+      "Human accepted the advisory proposal for later deterministic processing."));
+
+    Assert.Equal(ProposalStatus.HumanAccepted, acceptResult.ProposalStatus);
+    Assert.Equal(ModelRunState.Closed, acceptResult.ModelRunState);
+    Assert.Equal(3, fixture.UnitOfWork.CommitCount);
+    Assert.Equal(ReportLifecycle.Draft, fixture.Report.Lifecycle);
+    Assert.Equal(1, fixture.Report.RevisionNumber);
+    var auditEvent = Assert.Single(fixture.AuditRecorder.StagedEvents, audit => audit.EventType == "AiProposalAccepted");
+    Assert.Equal(fixture.CurrentUser.UserId.Value, auditEvent.Actor);
+    Assert.Equal(fixture.Clock.UtcNow, auditEvent.OccurredAtUtc);
+  }
+
+  [Fact]
+  public async Task RepeatingAcceptDoesNotAppendDuplicateAuditEvents()
+  {
+    var fixture = await AiProposalFixture.CreateAsync();
+    var requestUseCase = fixture.CreateRequestUseCase();
+    var requestResult = await requestUseCase.HandleAsync(new RequestReportDraftProposalCommand(
+      OperationId.New(),
+      fixture.Report.Id,
+      "report-draft-proposal-default",
+      "0.1.0",
+      null));
+    var acceptUseCase = new AcceptAiProposalUseCase(
+      fixture.AiProposalRepository,
+      fixture.ModelRunRepository,
+      fixture.UnitOfWork,
+      fixture.Clock,
+      fixture.CurrentUser,
+      fixture.AuditRecorder);
+
+    await acceptUseCase.HandleAsync(new AcceptAiProposalCommand(
+      requestResult.ProposalId!.Value,
+      "Accepted once."));
+    var auditCountAfterFirstAccept = fixture.AuditRecorder.StagedEvents.Count(auditEvent => auditEvent.EventType == "AiProposalAccepted");
+
+    await Assert.ThrowsAsync<LifecycleTransitionException>(() => acceptUseCase.HandleAsync(new AcceptAiProposalCommand(
+      requestResult.ProposalId.Value,
+      "Accepted twice.")));
+
+    Assert.Equal(auditCountAfterFirstAccept, fixture.AuditRecorder.StagedEvents.Count(auditEvent => auditEvent.EventType == "AiProposalAccepted"));
+    Assert.Equal(3, fixture.UnitOfWork.CommitCount);
+  }
+
+  [Fact]
+  public async Task RepeatingRejectDoesNotAppendDuplicateAuditEvents()
+  {
+    var fixture = await AiProposalFixture.CreateAsync();
+    var requestUseCase = fixture.CreateRequestUseCase();
+    var requestResult = await requestUseCase.HandleAsync(new RequestReportDraftProposalCommand(
+      OperationId.New(),
+      fixture.Report.Id,
+      "report-draft-proposal-default",
+      "0.1.0",
+      null));
+    var rejectUseCase = new RejectAiProposalUseCase(
+      fixture.AiProposalRepository,
+      fixture.ModelRunRepository,
+      fixture.UnitOfWork,
+      fixture.Clock,
+      fixture.CurrentUser,
+      fixture.AuditRecorder);
+
+    await rejectUseCase.HandleAsync(new RejectAiProposalCommand(
+      requestResult.ProposalId!.Value,
+      "Rejected once."));
+    var auditCountAfterFirstReject = fixture.AuditRecorder.StagedEvents.Count(auditEvent => auditEvent.EventType == "AiProposalRejected");
+
+    await Assert.ThrowsAsync<LifecycleTransitionException>(() => rejectUseCase.HandleAsync(new RejectAiProposalCommand(
+      requestResult.ProposalId.Value,
+      "Rejected twice.")));
+
+    Assert.Equal(auditCountAfterFirstReject, fixture.AuditRecorder.StagedEvents.Count(auditEvent => auditEvent.EventType == "AiProposalRejected"));
+    Assert.Equal(3, fixture.UnitOfWork.CommitCount);
+  }
+
+  [Fact]
+  public async Task HumanAcceptedProposalCannotLaterBeRejected()
+  {
+    var fixture = await AiProposalFixture.CreateAsync();
+    var requestUseCase = fixture.CreateRequestUseCase();
+    var requestResult = await requestUseCase.HandleAsync(new RequestReportDraftProposalCommand(
+      OperationId.New(),
+      fixture.Report.Id,
+      "report-draft-proposal-default",
+      "0.1.0",
+      null));
+    var acceptUseCase = new AcceptAiProposalUseCase(
+      fixture.AiProposalRepository,
+      fixture.ModelRunRepository,
+      fixture.UnitOfWork,
+      fixture.Clock,
+      fixture.CurrentUser,
+      fixture.AuditRecorder);
+    var rejectUseCase = new RejectAiProposalUseCase(
+      fixture.AiProposalRepository,
+      fixture.ModelRunRepository,
+      fixture.UnitOfWork,
+      fixture.Clock,
+      fixture.CurrentUser,
+      fixture.AuditRecorder);
+
+    await acceptUseCase.HandleAsync(new AcceptAiProposalCommand(
+      requestResult.ProposalId!.Value,
+      "Accepted once."));
+
+    await Assert.ThrowsAsync<LifecycleTransitionException>(() => rejectUseCase.HandleAsync(new RejectAiProposalCommand(
+      requestResult.ProposalId.Value,
+      "Reject after accept should fail.")));
+
+    Assert.DoesNotContain(fixture.AuditRecorder.StagedEvents, auditEvent => auditEvent.EventType == "AiProposalRejected");
+  }
+
+  [Fact]
+  public async Task RejectedProposalCannotLaterBeHumanAccepted()
+  {
+    var fixture = await AiProposalFixture.CreateAsync();
+    var requestUseCase = fixture.CreateRequestUseCase();
+    var requestResult = await requestUseCase.HandleAsync(new RequestReportDraftProposalCommand(
+      OperationId.New(),
+      fixture.Report.Id,
+      "report-draft-proposal-default",
+      "0.1.0",
+      null));
+    var rejectUseCase = new RejectAiProposalUseCase(
+      fixture.AiProposalRepository,
+      fixture.ModelRunRepository,
+      fixture.UnitOfWork,
+      fixture.Clock,
+      fixture.CurrentUser,
+      fixture.AuditRecorder);
+    var acceptUseCase = new AcceptAiProposalUseCase(
+      fixture.AiProposalRepository,
+      fixture.ModelRunRepository,
+      fixture.UnitOfWork,
+      fixture.Clock,
+      fixture.CurrentUser,
+      fixture.AuditRecorder);
+
+    await rejectUseCase.HandleAsync(new RejectAiProposalCommand(
+      requestResult.ProposalId!.Value,
+      "Rejected once."));
+
+    await Assert.ThrowsAsync<LifecycleTransitionException>(() => acceptUseCase.HandleAsync(new AcceptAiProposalCommand(
+      requestResult.ProposalId.Value,
+      "Accept after reject should fail.")));
+
+    Assert.DoesNotContain(fixture.AuditRecorder.StagedEvents, auditEvent => auditEvent.EventType == "AiProposalAccepted");
+  }
+
+  [Fact]
+  public async Task LoadAiProposalWorkflowSnapshotReturnsAttemptsProposalAndAuditHistory()
+  {
+    var fixture = await AiProposalFixture.CreateAsync();
+    var requestUseCase = fixture.CreateRequestUseCase();
+    var requestResult = await requestUseCase.HandleAsync(new RequestReportDraftProposalCommand(
+      OperationId.New(),
+      fixture.Report.Id,
+      "report-draft-proposal-default",
+      "0.1.0",
+      0.2m));
+    var acceptUseCase = new AcceptAiProposalUseCase(
+      fixture.AiProposalRepository,
+      fixture.ModelRunRepository,
+      fixture.UnitOfWork,
+      fixture.Clock,
+      fixture.CurrentUser,
+      fixture.AuditRecorder);
+    await acceptUseCase.HandleAsync(new AcceptAiProposalCommand(
+      requestResult.ProposalId!.Value,
+      "Accepted for deterministic downstream processing."));
+    var loadUseCase = new LoadAiProposalWorkflowSnapshotUseCase(
+      fixture.ModelRunRepository,
+      fixture.AiProposalRepository,
+      fixture.AuditEventQueryRepository);
+
+    var result = await loadUseCase.HandleAsync(new LoadAiProposalWorkflowSnapshotQuery(
+      requestResult.ModelRunId,
+      requestResult.ProposalId));
+
+    Assert.Equal(ModelRunState.Closed, result.ModelRunState);
+    Assert.Single(result.Attempts);
+    Assert.NotNull(result.Proposal);
+    Assert.Equal(ProposalStatus.HumanAccepted, result.Proposal!.Status);
+    Assert.Contains(result.ModelRunAuditHistory, auditEntry => auditEntry.EventType == "AiModelRunRequested");
+    Assert.Contains(result.ModelRunAuditHistory, auditEntry => auditEntry.EventType == "AiProviderAttemptRecorded");
+    Assert.Contains(result.ModelRunAuditHistory, auditEntry => auditEntry.EventType == "AiValidationCompleted");
+    Assert.Contains(result.ModelRunAuditHistory, auditEntry => auditEntry.EventType == "AiModelRunCompleted");
+    Assert.Contains(result.Proposal.AuditHistory, auditEntry => auditEntry.EventType == "AiProposalAccepted");
+    Assert.False(string.IsNullOrWhiteSpace(result.Proposal.StructuredPayloadHash));
   }
 
   [Fact]
@@ -362,7 +582,64 @@ public sealed class AiProposalUseCaseTests
       "0.1.0",
       null));
 
-    Assert.Equal(["audit-stage", "commit", "provider-generate", "audit-stage", "audit-stage", "commit"], operationLog);
+    Assert.Equal(
+      ["audit-stage", "audit-stage", "commit", "provider-generate", "audit-stage", "audit-stage", "audit-stage", "audit-stage", "commit"],
+      operationLog);
+  }
+
+  [Theory]
+  [InlineData(DeterministicAiFailure.ProviderUnavailable)]
+  [InlineData(DeterministicAiFailure.Timeout)]
+  [InlineData(DeterministicAiFailure.Cancelled)]
+  [InlineData(DeterministicAiFailure.MalformedJson)]
+  [InlineData(DeterministicAiFailure.SchemaRejected)]
+  [InlineData(DeterministicAiFailure.PolicyRejected)]
+  [InlineData(DeterministicAiFailure.Abstained)]
+  public async Task LoadAiProposalWorkflowSnapshotRepresentsFailureAndAbstentionOutcomes(DeterministicAiFailure failure)
+  {
+    var fixture = await AiProposalFixture.CreateAsync();
+    fixture.GenerationProvider.GenerateAsyncImpl = (_, cancellationToken) => Task.FromResult(CreateGenerationResult(fixture, failure, cancellationToken));
+    var requestUseCase = fixture.CreateRequestUseCase();
+    var requestResult = await requestUseCase.HandleAsync(new RequestReportDraftProposalCommand(
+      OperationId.New(),
+      fixture.Report.Id,
+      "report-draft-proposal-default",
+      "0.1.0",
+      null));
+    var loadUseCase = new LoadAiProposalWorkflowSnapshotUseCase(
+      fixture.ModelRunRepository,
+      fixture.AiProposalRepository,
+      fixture.AuditEventQueryRepository);
+
+    var result = await loadUseCase.HandleAsync(new LoadAiProposalWorkflowSnapshotQuery(
+      requestResult.ModelRunId,
+      requestResult.ProposalId));
+
+    Assert.Contains(result.ModelRunAuditHistory, auditEntry => auditEntry.EventType == "AiModelRunRequested");
+
+    if (failure == DeterministicAiFailure.Abstained)
+    {
+      Assert.Equal(ModelRunState.Abstained, result.ModelRunState);
+      Assert.NotNull(result.Proposal);
+      Assert.Equal(ProposalStatus.Abstained, result.Proposal!.Status);
+      Assert.Contains(result.ModelRunAuditHistory, auditEntry => auditEntry.EventType == "AiValidationCompleted");
+      return;
+    }
+
+    Assert.Contains(result.ModelRunAuditHistory, auditEntry => auditEntry.EventType == "AiProviderAttemptRecorded");
+    Assert.Contains(result.ModelRunAuditHistory, auditEntry => auditEntry.EventType == "AiValidationCompleted");
+
+    switch (failure)
+    {
+      case DeterministicAiFailure.MalformedJson:
+      case DeterministicAiFailure.SchemaRejected:
+      case DeterministicAiFailure.PolicyRejected:
+        Assert.NotNull(result.Proposal);
+        break;
+      default:
+        Assert.Null(result.Proposal);
+        break;
+    }
   }
 
   [Fact]
@@ -443,6 +720,7 @@ public sealed class AiProposalUseCaseTests
       FakeContextManifestRepository contextManifestRepository,
       FakeModelRunRepository modelRunRepository,
       FakeAiProposalRepository aiProposalRepository,
+      FakeAuditEventQueryRepository auditEventQueryRepository,
       FakeUnitOfWork unitOfWork,
       FakeClock clock,
       FakeCurrentUser currentUser,
@@ -462,6 +740,7 @@ public sealed class AiProposalUseCaseTests
       ContextManifestRepository = contextManifestRepository;
       ModelRunRepository = modelRunRepository;
       AiProposalRepository = aiProposalRepository;
+      AuditEventQueryRepository = auditEventQueryRepository;
       UnitOfWork = unitOfWork;
       Clock = clock;
       CurrentUser = currentUser;
@@ -489,6 +768,8 @@ public sealed class AiProposalUseCaseTests
     public FakeAiProposalRepository AiProposalRepository { get; }
 
     public FakeUnitOfWork UnitOfWork { get; }
+
+    public FakeAuditEventQueryRepository AuditEventQueryRepository { get; }
 
     public FakeClock Clock { get; }
 
@@ -543,6 +824,7 @@ public sealed class AiProposalUseCaseTests
       var clock = new FakeClock(new DateTimeOffset(2026, 7, 15, 10, 0, 0, TimeSpan.Zero));
       var currentUser = new FakeCurrentUser("inspector@example.invalid");
       var auditRecorder = new FakeAuditRecorder(operationLog);
+      var auditEventQueryRepository = new FakeAuditEventQueryRepository(auditRecorder);
       var generationProvider = new FakeAiGenerationProvider();
       var promptPackageRegistry = new FakePromptPackageRegistry();
 
@@ -597,6 +879,7 @@ public sealed class AiProposalUseCaseTests
         contextManifestRepository,
         modelRunRepository,
         aiProposalRepository,
+        auditEventQueryRepository,
         unitOfWork,
         clock,
         currentUser,
@@ -610,5 +893,148 @@ public sealed class AiProposalUseCaseTests
         evidenceAttachment,
         report);
     }
+  }
+
+  public enum DeterministicAiFailure
+  {
+    ProviderUnavailable,
+    Timeout,
+    Cancelled,
+    MalformedJson,
+    SchemaRejected,
+    PolicyRejected,
+    Abstained,
+  }
+
+  private static AiGenerationResult CreateGenerationResult(
+    AiProposalFixture fixture,
+    DeterministicAiFailure failure,
+    CancellationToken cancellationToken)
+  {
+    return failure switch
+    {
+      DeterministicAiFailure.ProviderUnavailable => new AiGenerationResult(
+        false,
+        null,
+        AiGenerationFailureClassification.ProviderUnavailable,
+        "Provider unavailable.",
+        null,
+        null,
+        null,
+        null,
+        new DateTimeOffset(2026, 7, 15, 16, 0, 0, TimeSpan.Zero),
+        new DateTimeOffset(2026, 7, 15, 16, 0, 1, TimeSpan.Zero)),
+      DeterministicAiFailure.Timeout => new AiGenerationResult(
+        false,
+        null,
+        AiGenerationFailureClassification.Timeout,
+        "Provider timed out.",
+        null,
+        null,
+        null,
+        null,
+        new DateTimeOffset(2026, 7, 15, 16, 0, 0, TimeSpan.Zero),
+        new DateTimeOffset(2026, 7, 15, 16, 0, 30, TimeSpan.Zero)),
+      DeterministicAiFailure.Cancelled => new AiGenerationResult(
+        false,
+        null,
+        AiGenerationFailureClassification.Cancelled,
+        "Provider invocation cancelled.",
+        null,
+        null,
+        null,
+        null,
+        new DateTimeOffset(2026, 7, 15, 16, 0, 0, TimeSpan.Zero),
+        new DateTimeOffset(2026, 7, 15, 16, 0, 5, TimeSpan.Zero)),
+      DeterministicAiFailure.MalformedJson => new AiGenerationResult(
+        true,
+        "{",
+        AiGenerationFailureClassification.None,
+        null,
+        5,
+        1,
+        1,
+        null,
+        new DateTimeOffset(2026, 7, 15, 16, 0, 0, TimeSpan.Zero),
+        new DateTimeOffset(2026, 7, 15, 16, 0, 1, TimeSpan.Zero)),
+      DeterministicAiFailure.SchemaRejected => new AiGenerationResult(
+        true,
+        """
+{
+  "sections": [
+    { "heading": "Summary", "content": "Deterministic advisory summary." }
+  ],
+  "reasoningSummary": "Grounded in governed sources only.",
+  "confidenceBand": "Medium",
+  "sourceReferences": [
+    { "sourceType": "FieldNote", "sourceId": "fabricated-field-note" }
+  ],
+  "missingInformation": [],
+  "openQuestions": [],
+  "warnings": [],
+  "uncertaintyCodes": []
+}
+""",
+        AiGenerationFailureClassification.None,
+        null,
+        5,
+        1,
+        1,
+        null,
+        new DateTimeOffset(2026, 7, 15, 16, 0, 0, TimeSpan.Zero),
+        new DateTimeOffset(2026, 7, 15, 16, 0, 1, TimeSpan.Zero)),
+      DeterministicAiFailure.PolicyRejected => new AiGenerationResult(
+        true,
+        """
+{
+  "sections": [
+    { "heading": "Summary", "content": "This final report is approved." }
+  ],
+  "reasoningSummary": "Authority claimed.",
+  "confidenceBand": "Medium",
+  "sourceReferences": [
+    { "sourceType": "FieldNote", "sourceId": "FIELD_NOTE_ID" }
+  ],
+  "missingInformation": [],
+  "openQuestions": [],
+  "warnings": [],
+  "uncertaintyCodes": []
+}
+""".Replace("FIELD_NOTE_ID", fixture.FieldNote.Id.ToString(), StringComparison.Ordinal),
+        AiGenerationFailureClassification.None,
+        null,
+        5,
+        1,
+        1,
+        null,
+        new DateTimeOffset(2026, 7, 15, 16, 0, 0, TimeSpan.Zero),
+        new DateTimeOffset(2026, 7, 15, 16, 0, 1, TimeSpan.Zero)),
+      DeterministicAiFailure.Abstained => new AiGenerationResult(
+        true,
+        """
+{
+  "sections": [],
+  "reasoningSummary": "The governed context is insufficient to produce a safe grounded proposal.",
+  "confidenceBand": "None",
+  "sourceReferences": [
+    { "sourceType": "FieldNote", "sourceId": "FIELD_NOTE_ID" }
+  ],
+  "missingInformation": ["insufficient-source-grounding"],
+  "openQuestions": [],
+  "warnings": ["context-insufficient"],
+  "uncertaintyCodes": [],
+  "abstentionReason": "Insufficient grounded evidence for a proposal."
+}
+""".Replace("FIELD_NOTE_ID", fixture.FieldNote.Id.ToString(), StringComparison.Ordinal),
+        AiGenerationFailureClassification.None,
+        null,
+        5,
+        1,
+        1,
+        null,
+        new DateTimeOffset(2026, 7, 15, 16, 0, 0, TimeSpan.Zero),
+        new DateTimeOffset(2026, 7, 15, 16, 0, 1, TimeSpan.Zero)),
+      _ => throw new ArgumentOutOfRangeException(nameof(failure), failure, null),
+    };
   }
 }

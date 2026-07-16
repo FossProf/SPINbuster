@@ -31,7 +31,10 @@ Completed:
 - `AI-DRAFT-PROPOSAL-SLICE-0.1-RC` review-candidate validation
 - AI review hardening pass for lifecycle semantics, pre-inference run persistence, and canonical proposal payload storage
 - Released baseline `AI-DRAFT-PROPOSAL-SLICE-0.1`
+- Deterministic executable AI proposal workflow through the Desktop host
+- AI proposal replay, review-action, failure-display, and no-report-mutation validation
+- Released baseline `AI-PROPOSAL-EXECUTABLE-SLICE-0.1`
 
 Next:
 
-- Next authoritative AI acceptance slice design
+- Define the first authoritative `Knowledge Engine` package after the executable AI checkpoint

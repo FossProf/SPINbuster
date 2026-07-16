@@ -53,6 +53,29 @@ internal sealed class FakeAuditRecorder : IAuditRecorder
   }
 }
 
+internal sealed class FakeAuditEventQueryRepository : IAuditEventQueryRepository
+{
+  private readonly FakeAuditRecorder _auditRecorder;
+
+  public FakeAuditEventQueryRepository(FakeAuditRecorder auditRecorder)
+  {
+    _auditRecorder = auditRecorder;
+  }
+
+  public Task<IReadOnlyCollection<AuditEvent>> GetBySubjectAsync(
+    string subjectType,
+    string subjectId,
+    CancellationToken cancellationToken = default)
+  {
+    return Task.FromResult<IReadOnlyCollection<AuditEvent>>(
+      _auditRecorder.StagedEvents
+        .Where(auditEvent => auditEvent.SubjectType == subjectType && auditEvent.SubjectId == subjectId)
+        .OrderBy(auditEvent => auditEvent.OccurredAtUtc)
+        .ThenBy(auditEvent => auditEvent.Id.ToString(), StringComparer.Ordinal)
+        .ToArray());
+  }
+}
+
 internal sealed class FakeUnitOfWork : IUnitOfWork
 {
   private readonly List<string>? _sharedOperationLog;

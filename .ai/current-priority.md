@@ -4,7 +4,7 @@ Current milestone:
 Prototype Vertical Slice
 
 Baseline:
-AI-DRAFT-PROPOSAL-SLICE-0.1
+AI-PROPOSAL-EXECUTABLE-SLICE-0.1
 
 Status:
 Released
@@ -22,7 +22,7 @@ Architecture tests:
 12/12 passing
 
 Application tests:
-32/32 passing
+45/45 passing
 
 Infrastructure tests:
 14/14 passing
@@ -31,10 +31,10 @@ AI tests:
 6/6 passing
 
 Desktop end-to-end tests:
-2/2 passing
+3/3 passing
 
 Current task:
-Define the next authoritative AI acceptance slice
+Record the released deterministic executable AI proposal baseline and await the next implementation package
 
 Required outcome:
 
@@ -44,15 +44,17 @@ Required outcome:
 - Introduce governed AI context assembly and structured proposal validation without adding HTTP, MAUI, or cloud-provider dependencies.
 - Keep the Desktop host deterministic and intentionally narrow until a real MAUI client is introduced.
 - Keep AI provider integration limited to the deterministic fixture until the next slice intentionally broadens it.
+- Validate deterministic executable AI proposal request, replay, review action, failure display, and no-report-mutation behavior through the Desktop host.
+- Preserve the released deterministic fixture boundary until the next package intentionally broadens provider integration.
 
 Next review:
-Next authoritative AI acceptance slice design review
+Define and review the next package after `AI-PROPOSAL-EXECUTABLE-SLICE-0.1`
 
 Known blockers:
 None
 
 Last completed:
-Governed AI draft proposal substrate released
+Released `AI-PROPOSAL-EXECUTABLE-SLICE-0.1`
 
 Proposed next direction:
 
@@ -80,6 +82,9 @@ Current capabilities:
 - Validate structured AI proposal output before review
 - Load and reject advisory AI proposals without mutating authoritative reports
 - Record human acceptance as review intent only
+- Replay deterministic AI proposal requests safely through the Desktop host
+- Reload durable model-run, proposal, attempt, and audit history through an application snapshot query
+- Persist explicit AI lifecycle audit markers for request, provider attempt, validation, completion, and review disposition
 
 Authoritative context:
 

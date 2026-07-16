@@ -40,7 +40,15 @@ public sealed class SqliteAiProposalRepository : IAiProposalRepository
 
   public Task UpdateAsync(AiProposal proposal, CancellationToken cancellationToken = default)
   {
-    _dbContext.AiProposals.Update(InfrastructureMapper.ToRecord(proposal));
+    var record = InfrastructureMapper.ToRecord(proposal);
+    var trackedRecord = _dbContext.AiProposals.Local.SingleOrDefault(localRecord => localRecord.Id == proposal.Id);
+    if (trackedRecord is null)
+    {
+      _dbContext.AiProposals.Update(record);
+      return Task.CompletedTask;
+    }
+
+    _dbContext.Entry(trackedRecord).CurrentValues.SetValues(record);
     return Task.CompletedTask;
   }
 }

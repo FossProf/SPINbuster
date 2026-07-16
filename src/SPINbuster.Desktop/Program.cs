@@ -26,6 +26,8 @@ Console.WriteLine($"Field note captured: {result.CapturedFieldNote.FieldNoteId}"
 Console.WriteLine($"Evidence attached: {result.AttachedEvidence.EvidenceAttachmentId}");
 Console.WriteLine($"Evidence interpreted: {result.AddedInterpretation.EvidenceAttachmentId}");
 Console.WriteLine($"Report draft created: {result.CreatedReportDraft.ReportId} ({result.PersistedReportSnapshot.Lifecycle})");
+Console.WriteLine($"AI proposal request: run={result.RequestedAiProposal.ModelRunId} state={result.RequestedAiProposal.ModelRunState} proposal={result.RequestedAiProposal.ProposalId}");
+Console.WriteLine($"AI proposal replay: idempotent={result.ReplayedAiProposalRequest.IsIdempotentReplay} state={result.ReplayedAiProposalRequest.ModelRunState} proposal={result.ReplayedAiProposalRequest.ProposalId}");
 Console.WriteLine();
 Console.WriteLine("Reloaded Project");
 Console.WriteLine($"  Id: {result.PersistedInspectionSnapshot.Project.ProjectId}");
@@ -69,6 +71,31 @@ foreach (var evidenceAttachment in result.PersistedReportSnapshot.EvidenceAttach
 }
 
 Console.WriteLine();
+Console.WriteLine("Reloaded AI Proposal Workflow");
+Console.WriteLine($"  ModelRun: {result.ReviewedAiProposalSnapshot.ModelRunId}");
+Console.WriteLine($"  State: {result.ReviewedAiProposalSnapshot.ModelRunState}");
+Console.WriteLine($"  Failure: {result.ReviewedAiProposalSnapshot.FailureClassification} | {result.ReviewedAiProposalSnapshot.FailureMessage}");
+Console.WriteLine($"  Attempts: {result.ReviewedAiProposalSnapshot.Attempts.Count}");
+foreach (var attempt in result.ReviewedAiProposalSnapshot.Attempts)
+{
+  Console.WriteLine(
+    $"    Attempt {attempt.AttemptNumber}: outcome={attempt.OutcomeClassification} latency={attempt.LatencyMilliseconds} rawOutputHash={attempt.RawOutputHash}");
+}
+
+if (result.ReviewedAiProposalSnapshot.Proposal is null)
+{
+  Console.WriteLine("  Proposal: none persisted");
+}
+else
+{
+  Console.WriteLine($"  Proposal: {result.ReviewedAiProposalSnapshot.Proposal.ProposalId}");
+  Console.WriteLine($"  Status: {result.ReviewedAiProposalSnapshot.Proposal.Status}");
+  Console.WriteLine($"  Confidence: {result.ReviewedAiProposalSnapshot.Proposal.ConfidenceBand}");
+  Console.WriteLine($"  PayloadHash: {result.ReviewedAiProposalSnapshot.Proposal.StructuredPayloadHash}");
+  Console.WriteLine($"  ReviewNotes: {result.ReviewedAiProposalSnapshot.Proposal.ReviewDispositionNotes}");
+}
+
+Console.WriteLine();
 Console.WriteLine("Persisted Audit History");
 Console.WriteLine("  Project");
 foreach (var auditEntry in result.PersistedInspectionSnapshot.Project.AuditHistory)
@@ -86,4 +113,19 @@ Console.WriteLine("  Report");
 foreach (var auditEntry in result.PersistedReportSnapshot.AuditHistory)
 {
   Console.WriteLine($"    {auditEntry.OccurredAtUtc:O} | {auditEntry.EventType} | {auditEntry.Actor} | {auditEntry.Description}");
+}
+
+Console.WriteLine("  ModelRun");
+foreach (var auditEntry in result.ReviewedAiProposalSnapshot.ModelRunAuditHistory)
+{
+  Console.WriteLine($"    {auditEntry.OccurredAtUtc:O} | {auditEntry.EventType} | {auditEntry.Actor} | {auditEntry.Description}");
+}
+
+if (result.ReviewedAiProposalSnapshot.Proposal is not null)
+{
+  Console.WriteLine("  AiProposal");
+  foreach (var auditEntry in result.ReviewedAiProposalSnapshot.Proposal.AuditHistory)
+  {
+    Console.WriteLine($"    {auditEntry.OccurredAtUtc:O} | {auditEntry.EventType} | {auditEntry.Actor} | {auditEntry.Description}");
+  }
 }

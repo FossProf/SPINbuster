@@ -10,11 +10,11 @@ SPINbuster is a layered .NET codebase with AI-assisted capabilities, governed by
 
 - Repository scaffold exists and builds successfully.
 - Architecture guardrails are in place and passing.
-- The repository includes the released `VERTICAL-SLICE-0.1` baseline with the first executable local Desktop-to-SQLite path validated end-to-end.
+- The repository includes the released `AI-DRAFT-PROPOSAL-SLICE-0.1` baseline and the released `AI-PROPOSAL-EXECUTABLE-SLICE-0.1` Desktop executable workflow.
 
 ## Current Baseline
 
-- `VERTICAL-SLICE-0.1`
+- `AI-PROPOSAL-EXECUTABLE-SLICE-0.1`
 
 ## Current Milestone
 
@@ -22,7 +22,7 @@ SPINbuster is a layered .NET codebase with AI-assisted capabilities, governed by
 
 ## Current Active Task
 
-- `Next implementation package definition`
+- `Await the next implementation package after AI-PROPOSAL-EXECUTABLE-SLICE-0.1`
 
 ## Authoritative Files
 

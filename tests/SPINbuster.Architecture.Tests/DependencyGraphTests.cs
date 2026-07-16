@@ -16,7 +16,7 @@ public sealed class DependencyGraphTests
       ["SPINbuster.Documents"] = ["SPINbuster.Application", "SPINbuster.Shared"],
       ["SPINbuster.Reporting"] = ["SPINbuster.Application", "SPINbuster.Shared"],
       ["SPINbuster.Server"] = ["SPINbuster.Application", "SPINbuster.Infrastructure", "SPINbuster.AI", "SPINbuster.Rules", "SPINbuster.Documents", "SPINbuster.Reporting", "SPINbuster.Shared"],
-      ["SPINbuster.Desktop"] = ["SPINbuster.Application", "SPINbuster.Infrastructure"],
+      ["SPINbuster.Desktop"] = ["SPINbuster.AI", "SPINbuster.Application", "SPINbuster.Infrastructure"],
     };
 
   [Fact]

@@ -53,7 +53,15 @@ public sealed class SqliteModelRunRepository : IModelRunRepository
 
   public Task UpdateAsync(ModelRun modelRun, CancellationToken cancellationToken = default)
   {
-    _dbContext.ModelRuns.Update(InfrastructureMapper.ToRecord(modelRun));
+    var record = InfrastructureMapper.ToRecord(modelRun);
+    var trackedRecord = _dbContext.ModelRuns.Local.SingleOrDefault(localRecord => localRecord.Id == modelRun.Id);
+    if (trackedRecord is null)
+    {
+      _dbContext.ModelRuns.Update(record);
+      return Task.CompletedTask;
+    }
+
+    _dbContext.Entry(trackedRecord).CurrentValues.SetValues(record);
     return Task.CompletedTask;
   }
 

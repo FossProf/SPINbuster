@@ -1,3 +1,5 @@
+using SPINbuster.AI;
+
 namespace SPINbuster.Desktop;
 
 public sealed record DesktopWorkflowSettings(
@@ -16,4 +18,11 @@ public sealed record DesktopWorkflowSettings(
   string DraftObservationHeading,
   string DraftObservationContent,
   Guid ReportOperationId,
+  Guid ProposalOperationId,
+  string ProposalPromptPackageId,
+  string ProposalPromptPackageVersion,
+  decimal? ProposalTemperature,
+  DeterministicAiScenario AiScenario,
+  DesktopAiReviewAction ProposalReviewAction,
+  string ProposalReviewNotes,
   DateTimeOffset InitialTimestampUtc);

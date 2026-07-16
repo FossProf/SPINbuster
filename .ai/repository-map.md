@@ -89,26 +89,29 @@ Put lightweight agent instructions in `.ai/`.
 - `src/SPINbuster.Application/Repositories/` also now defines inward-facing persistence contracts for `ContextManifest`, `ModelRun`, and `AiProposal`.
 - `src/SPINbuster.Application/Abstractions/` now also defines provider-neutral AI contracts, prompt-package resolution, and structured proposal validation contracts.
 - `src/SPINbuster.Application/UseCases/` currently contains `CreateProject`, `StartInspectionSession`, `CaptureFieldNote`, `AttachEvidence`, `AddInterpretation`, `GenerateReportDraftRequest`, `CreateReportDraft`, `PrepareTransactionalSave`, `BuildReportProposalContext`, `RequestReportDraftProposal`, `LoadAiProposal`, and `RejectAiProposal`.
+- `src/SPINbuster.Application/UseCases/` now also contains `AcceptAiProposal` and `LoadAiProposalWorkflowSnapshot` for executable review and durable AI history reload.
 - `src/SPINbuster.Application/UseCases/LoadInspectionWorkflowSnapshot/` reloads persisted project and inspection-session state for the first executable local vertical slice, including field notes and audit history.
 - `src/SPINbuster.Application/UseCases/LoadReportDraftSnapshot/` reloads persisted report drafts, structured sections, provenance, and report audit history through the Application boundary.
 - `src/SPINbuster.Application/Internal/` now contains the governed report-proposal context assembly path, AI audit-event shaping helpers, and the JSON-backed structured proposal validator.
 - `tests/SPINbuster.Application.Tests/` uses in-memory fakes to verify orchestration, lifecycle guards, staged audit ordering, explicit mutation updates, failure handling, ownership boundaries, draft-request shaping, two-phase AI request persistence, prompt-package contract enforcement, and canonical proposal payload storage without adding persistence or transport concerns.
 - `src/SPINbuster.Infrastructure/Persistence/` contains the local SQLite DbContext, EF Core entity mappings, migration artifacts, typed-ID value converters, and Domain-to-record mapping helpers for reports, report sections, source references, report-draft operation mappings, context manifests, model runs, model-run attempts, and advisory AI proposals.
-- `src/SPINbuster.Infrastructure/Repositories/` contains the local SQLite repository implementations, including explicit detached-update support for mutable loaded aggregates, authoritative report-draft persistence, and durable AI substrate persistence.
+- `src/SPINbuster.Infrastructure/Repositories/` contains the local SQLite repository implementations, including explicit detached-update support for mutable loaded aggregates, authoritative report-draft persistence, durable AI substrate persistence, and audit-history query support for AI workflow reloads.
 - `src/SPINbuster.Infrastructure/Services/` contains `SqliteAuditRecorder` and `SqliteUnitOfWork` for staged audit persistence inside one logical commit boundary.
 - `src/SPINbuster.AI/` currently contains the deterministic `IAiGenerationProvider` implementation, prompt-package registry, and Tier 0 scenario controls used to validate the advisory AI path without live services.
 - `schemas/ai/` currently contains the authoritative `report-draft-proposal` schema.
 - `tests/SPINbuster.Infrastructure.Tests/` contains SQLite integration tests for commit-together behavior, rollback behavior, detached updates, migration metadata presence, migration application, migration idempotence, report persistence, report-draft idempotency enforcement, AI substrate persistence, AI migration compatibility, and atomic AI-state plus audit rollback.
 - `tests/SPINbuster.AI.Tests/` now contains deterministic provider, failure-classification, and prompt-registry tests for the Tier 0 AI path.
-- `src/SPINbuster.Desktop/` now contains the temporary deterministic console bootstrap host, its narrow composition root, and the local vertical-slice workflow runner for both the inspection and report-draft paths.
-- `tests/SPINbuster.Desktop.Tests/` contains SQLite-backed end-to-end tests for the Desktop workflow.
+- `src/SPINbuster.Desktop/` now contains the temporary deterministic console bootstrap host, its narrow composition root, and the local vertical-slice workflow runner for the inspection, report-draft, and deterministic AI proposal paths.
+- `tests/SPINbuster.Desktop.Tests/` contains SQLite-backed end-to-end tests for the Desktop workflow, including replay, review action, and failure cases for deterministic AI proposals.
 
 ## Current Released Baseline
 
 - `REPORT-DRAFT-SLICE-0.1` is the latest released baseline.
-- `AI-DRAFT-PROPOSAL-SLICE-0.1-RC` is the current review-candidate baseline.
+- `AI-DRAFT-PROPOSAL-SLICE-0.1` is the latest released AI baseline.
+- `AI-PROPOSAL-EXECUTABLE-SLICE-0.1-RC` is the current review-candidate executable AI baseline.
 - Migration status: no pending model changes, empty-database migration passes, repeated migration is idempotent, and migration history is verified.
 - Persistence status: aggregate and staged audit changes commit atomically, roll back atomically, and detached updates are verified.
 - Validated vertical-slice path: migrations applied at startup, project created and persisted, inspection session started and persisted, field note captured and preserved, project/session rehydration succeeds, and audit history persists and reloads.
 - Validated report-draft path: evidence persists and reloads, interpretation remains separate from raw evidence, authoritative report drafts persist in `Draft`, provenance reload succeeds, duplicate operation IDs do not create a second draft, and report plus audit changes commit atomically.
 - Validated AI substrate path: governed report-proposal context manifests persist and reload, deterministic provider output is validated before review, malformed or fabricated output is retained as non-reviewable failure, advisory proposals and audit records commit atomically, repeated migrations are safe, and populated report-draft databases upgrade without losing existing state.
+- Validated executable AI path: the Desktop host can request deterministic proposals, replay them idempotently, reload model-run/proposal/attempt/audit history, record `HumanAccepted` or `Rejected` review outcomes, display failed runs with no persisted proposal, and confirm that review actions do not mutate authoritative reports.
