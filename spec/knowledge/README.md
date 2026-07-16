@@ -36,7 +36,9 @@ It exists to model stable document identity, immutable historical revisions, gov
 - verification
 - provenance
 
-The authoritative conceptual model now lives in `spec/knowledge/engineering-knowledge-model.md`.
+The noun-level engineering object catalog lives in `spec/knowledge/engineering-object-model.md`.
+
+The authoritative conceptual model lives in `spec/knowledge/engineering-knowledge-model.md`.
 
 ## Current released implementation scope
 
@@ -81,4 +83,4 @@ Knowledge Engine mutation idempotency beyond conservative duplicate rejection is
 - Cross-project sharing
 - Multi-current-revision conflict resolution
 
-See `spec/architecture/knowledge-engine-foundation.md`, `spec/knowledge/engineering-knowledge-model.md`, and the deferred EDRs under `docs/decisions/edr/` for the current boundary.
+See `spec/architecture/knowledge-engine-foundation.md`, `spec/knowledge/engineering-object-model.md`, `spec/knowledge/engineering-knowledge-model.md`, and the deferred EDRs under `docs/decisions/edr/` for the current boundary.

@@ -24,7 +24,9 @@ Purpose: Explain how the repository is organized and where different kinds of wo
 
 ## Specification Layout
 
+- `spec/README.md` is the top-level navigation index for the authoritative specification repository.
 - `spec/knowledge/README.md` defines the Knowledge Engine boundary at a high level.
+- `spec/knowledge/engineering-object-model.md` defines the shared durable noun model used across Knowledge, Documents, Rules, Reports, and AI.
 - `spec/knowledge/engineering-knowledge-model.md` defines the authoritative conceptual model for engineering knowledge.
 - `spec/documents/README.md` and `spec/documents/document-engine-boundary.md` define the future Document Engine boundary.
 - `spec/rules/README.md` and `spec/rules/rule-engine-boundary.md` define the future Rule Engine boundary.
