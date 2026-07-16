@@ -6,11 +6,14 @@ Prototype Vertical Slice
 Latest released baseline:
 KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1
 
-Next active package:
-Knowledge Engine ingestion and chunking planning
+Active review candidate:
+ENGINEERING-KNOWLEDGE-MODEL-0.1-RC
+
+Next planned implementation package:
+DOCUMENT-ENGINE-FOUNDATION-0.1-RC
 
 Status:
-Released
+Active review candidate
 
 Build:
 Passing
@@ -37,17 +40,18 @@ Desktop end-to-end tests:
 6/6 passing
 
 Current task:
-Define the next Knowledge Engine package after `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1`
+Define the authoritative engineering knowledge model and subsystem boundaries
 
 Required outcome:
 
-- Preserve the released report-draft and executable AI baselines while introducing the first executable local Knowledge Engine workflow.
-- Select the next highest-value Knowledge Engine package without regressing the released executable slice.
-- Keep `EDR-KE-009` active before synchronization, automated ingestion, or retry-heavy Knowledge workflows begin.
-- Decide whether the next slice should focus first on ingestion and chunking boundaries or on broader retrieval and query shaping.
+- Create the authoritative conceptual engineering knowledge model under `spec/knowledge/`.
+- Define the initial Document Engine and Rule Engine boundaries without implementing them.
+- Preserve all released Knowledge Engine, AI, and report behavior classifications accurately.
+- Keep AI advisory, citations revision-bound, and raw records immutable.
+- Leave `DOCUMENT-ENGINE-FOUNDATION-0.1-RC` as the next planned implementation package after review and release.
 
 Next review:
-Next Knowledge Engine package selection and scope review
+`ENGINEERING-KNOWLEDGE-MODEL-0.1-RC` governance review
 
 Known blockers:
 None
@@ -57,9 +61,9 @@ Released `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1`
 
 Proposed next direction:
 
-- Define the first ingestion or chunking preparation slice
-- Clarify locator normalization, chunk provenance, and retry boundaries before automated document workflows begin
-- Keep `EDR-KE-009` and `EDR-KE-002` as active design inputs
+- Complete governance review for the engineering knowledge model package
+- Then begin `DOCUMENT-ENGINE-FOUNDATION-0.1-RC`
+- Keep `EDR-KE-002`, `EDR-KE-009`, `EDR-KE-010`, and `EDR-KE-011` active before automated document workflows begin
 
 Current capabilities:
 
@@ -94,53 +98,25 @@ Authoritative context:
 - `.ai/coding-rules.md`
 - `.ai/architecture-summary.md`
 - `.ai/repository-map.md`
-- `spec/architecture/`
-- `spec/ai/README.md`
-- `src/SPINbuster.Application/`
-- `tests/SPINbuster.Application.Tests/`
-- `src/SPINbuster.Domain/`
-- `tests/SPINbuster.Domain.Tests/`
-- `src/SPINbuster.Infrastructure/`
-- `tests/SPINbuster.Infrastructure.Tests/`
-- `src/SPINbuster.Desktop/`
-- `tests/SPINbuster.Desktop.Tests/`
-- `docs/decisions/edr/EDR-DOM-001-versioned-evidence-interpretation-history.md`
-- `docs/decisions/edr/EDR-APP-001-command-idempotency.md`
-- `docs/decisions/edr/EDR-APP-002-draft-generation-ownership.md`
-- `docs/decisions/edr/EDR-AI-001-authoritative-report-revision-acceptance.md`
-- `docs/decisions/edr/EDR-AI-002-ai-proposal-request-idempotency-and-recovery.md`
-- `docs/decisions/edr/EDR-KE-009-knowledge-command-idempotency.md`
-- `docs/decisions/status/KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1-PROTOTYPE-REVIEW.md`
-- `schemas/ai/report-draft-proposal.schema.json`
-- `spec/ai/context-manifest.md`
-- `spec/ai/json-schemas.md`
-- `spec/ai/provider-adapters.md`
-- `spec/ai/prompt-contracts.md`
-- `spec/ai/confidence-and-uncertainty.md`
-- `spec/ai/model-run-lifecycle.md`
+- `.ai/glossary-summary.md`
 - `spec/knowledge/README.md`
-- `spec/architecture/knowledge-engine-foundation.md`
-- `spec/database/README.md`
-- `spec/database/knowledge-engine-persistence.md`
-- `docs/decisions/edr/EDR-KE-001-binary-file-storage-ownership.md`
+- `spec/knowledge/engineering-knowledge-model.md`
+- `spec/documents/README.md`
+- `spec/documents/document-engine-boundary.md`
+- `spec/rules/README.md`
+- `spec/rules/rule-engine-boundary.md`
+- `docs/00-governance/ROADMAP.md`
 - `docs/decisions/edr/EDR-KE-002-document-parsing-and-chunking.md`
-- `docs/decisions/edr/EDR-KE-003-ocr-boundary.md`
-- `docs/decisions/edr/EDR-KE-004-embeddings-and-vector-search.md`
-- `docs/decisions/edr/EDR-KE-005-automatic-authority-classification.md`
-- `docs/decisions/edr/EDR-KE-006-ai-generated-relationship-promotion.md`
-- `docs/decisions/edr/EDR-KE-007-cross-project-knowledge-sharing.md`
-- `docs/decisions/edr/EDR-KE-008-multi-current-revision-conflict-resolution.md`
+- `docs/decisions/edr/EDR-KE-009-knowledge-command-idempotency.md`
+- `docs/decisions/edr/EDR-KE-010-knowledge-fragment-identity.md`
+- `docs/decisions/edr/EDR-KE-011-engineering-assertion-promotion.md`
+- `docs/decisions/edr/EDR-KE-012-document-engine-ownership-boundary.md`
 
 Validation before completion:
 
 - `dotnet format SPINbuster.sln --no-restore`
 - `dotnet restore SPINbuster.sln --configfile NuGet.Config`
 - `dotnet build SPINbuster.sln --no-restore`
-- `dotnet tool run dotnet-ef migrations has-pending-model-changes --no-build --project src/SPINbuster.Infrastructure --startup-project src/SPINbuster.Server --context SPINbuster.Infrastructure.Persistence.SpinbusterDbContext`
-- `dotnet test tests/SPINbuster.Desktop.Tests/SPINbuster.Desktop.Tests.csproj --no-build`
-- `dotnet test tests/SPINbuster.Infrastructure.Tests/SPINbuster.Infrastructure.Tests.csproj --no-build`
-- `dotnet test tests/SPINbuster.Application.Tests/SPINbuster.Application.Tests.csproj --no-build`
-- `dotnet test tests/SPINbuster.Domain.Tests/SPINbuster.Domain.Tests.csproj --no-build`
 - `dotnet test tests/SPINbuster.Architecture.Tests/SPINbuster.Architecture.Tests.csproj --no-build`
 - `dotnet test SPINbuster.sln --no-build -m:1`
-- `dotnet run --project src/SPINbuster.Desktop/SPINbuster.Desktop.csproj --no-build`
+- `git diff --check`

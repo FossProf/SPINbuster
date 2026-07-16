@@ -4,7 +4,7 @@
 
 The Knowledge Engine defines authoritative project knowledge records that remain useful with or without AI.
 
-It exists to model stable document identity, immutable historical revisions, governed relationships, and precise citations so later retrieval, reporting, and AI workflows consume traceable engineering knowledge instead of ad hoc conversation memory.
+It exists to model stable document identity, immutable historical revisions, governed relationships, precise citations, and the broader engineering-knowledge concepts that later retrieval, reporting, deterministic rules, and AI workflows consume.
 
 ## Foundational rules
 
@@ -15,39 +15,44 @@ It exists to model stable document identity, immutable historical revisions, gov
 - AI may consume governed knowledge but may not create authoritative knowledge automatically.
 - Derived conclusions must remain traceable to explicit source material.
 
-## Core Domain concepts
+## Core conceptual terms
 
-- `KnowledgeDocument` is the stable project-scoped identity for a knowledge item.
-- `KnowledgeDocumentRevision` represents immutable historical content metadata plus explicit supersession and verification state.
-- `KnowledgeRelationship` connects knowledge documents or revisions without increasing their authority.
-- `KnowledgeCitation` points to a precise location inside a cited revision without storing large document content in the Domain layer.
+- source material
+- knowledge document
+- knowledge revision
+- knowledge fragment
+- citation
+- engineering assertion
+- observation
+- requirement
+- constraint
+- deterministic rule
+- interpretation
+- proposal
+- relationship
+- conflict
+- applicability
+- authority
+- verification
+- provenance
 
-## Initial document types
+The authoritative conceptual model now lives in `spec/knowledge/engineering-knowledge-model.md`.
 
-- `Drawing`
-- `Specification`
-- `RFI`
-- `Bulletin`
-- `Submittal`
-- `ChangeOrder`
-- `Report`
-- `FieldNote`
-- `Evidence`
-- `GeneralReference`
+## Current released implementation scope
 
-## Initial application capabilities
+Current released capabilities include:
 
-- Register a knowledge document
-- Add an initial authoritative revision
-- Supersede the current authoritative revision explicitly
-- Change revision verification status explicitly
-- Create project-scoped relationships
-- Add a citation to a specific revision
-- Load a knowledge document
-- Load revision history
-- Load a bounded knowledge neighborhood graph
-- Load a presentation-safe project knowledge snapshot for executable workflows
-- Persist and reload knowledge records through SQLite Infrastructure adapters
+- register a knowledge document
+- add an initial authoritative revision
+- supersede the current authoritative revision explicitly
+- change revision verification status explicitly
+- create project-scoped relationships
+- add a citation to a specific revision
+- load a knowledge document
+- load revision history
+- load a bounded knowledge neighborhood graph
+- load a presentation-safe project knowledge snapshot
+- persist and reload knowledge records through SQLite Infrastructure adapters
 
 ## Executable workflow boundary
 
@@ -65,7 +70,7 @@ The executable host must remain thin and may call Application commands and queri
 
 Knowledge Engine mutation idempotency beyond conservative duplicate rejection is deferred by `docs/decisions/edr/EDR-KE-009-knowledge-command-idempotency.md`.
 
-## Non-goals for the foundation slice
+## Non-goals still deferred
 
 - Binary file storage ownership
 - Parsing and chunking
@@ -76,6 +81,4 @@ Knowledge Engine mutation idempotency beyond conservative duplicate rejection is
 - Cross-project sharing
 - Multi-current-revision conflict resolution
 
-See `spec/architecture/knowledge-engine-foundation.md` and the deferred EDRs under `docs/decisions/edr/` for the current boundary.
-
-The current persistence boundary is further specified in `spec/database/knowledge-engine-persistence.md`.
+See `spec/architecture/knowledge-engine-foundation.md`, `spec/knowledge/engineering-knowledge-model.md`, and the deferred EDRs under `docs/decisions/edr/` for the current boundary.

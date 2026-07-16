@@ -5,9 +5,9 @@
 - `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1`
 - Status: `Released`
 
-## Next Active Package
+## Active Review Candidate
 
-- `Knowledge Engine ingestion and chunking planning`
+- `ENGINEERING-KNOWLEDGE-MODEL-0.1-RC`
 - Status: `Active`
 - Build: `Passing`
 - Warnings: `0`
@@ -18,25 +18,21 @@
 - Infrastructure tests: `23/23 passing`
 - Desktop end-to-end tests: `6/6 passing`
 
+## Next Planned Implementation Package
+
+- `DOCUMENT-ENGINE-FOUNDATION-0.1-RC`
+
 ## Current Branch
 
 - `main`
 
 ## Last Completed Milestone
 
-- First executable local Desktop-to-SQLite vertical slice released
-- `VERTICAL-SLICE-0.1` prototype review recorded
-- Second local report-draft vertical slice implemented and validated
-- `REPORT-DRAFT-SLICE-0.1` prototype review recorded
-- Governed AI draft proposal substrate released
-- Deterministic executable AI proposal workflow released
-- Knowledge Engine domain and application foundation implemented and validated as a review candidate
-- Knowledge Engine SQLite persistence foundation released
 - Knowledge Engine executable local workflow released
 
 ## Current Implementation Phase
 
-- Post-release Knowledge Engine package planning
+- Engineering knowledge model review
 
 ## Current Milestone
 
@@ -62,69 +58,32 @@
 - `EDR-KE-007` Cross-project knowledge sharing (`Deferred`)
 - `EDR-KE-008` Multi-current-revision conflict resolution (`Deferred`)
 - `EDR-KE-009` Knowledge command idempotency (`Deferred`)
+- `EDR-KE-010` Knowledge fragment identity (`Deferred`)
+- `EDR-KE-011` Engineering assertion promotion (`Deferred`)
+- `EDR-KE-012` Document Engine ownership boundary (`Accepted`)
 
 ## Outstanding Technical Debt
 
 - `SPINbuster.Desktop` is still a temporary bootstrap host and has not been replaced with a real MAUI client.
 - Most test projects are still empty scaffolds outside of `SPINbuster.Architecture.Tests`.
-- `spec/architecture/` still needs fuller authoritative content as implementation begins.
-- Known deferred design item: versioned evidence interpretation history.
-- Audit staging for new aggregates requires deliberate full-slice staging to avoid missing creation events in future handlers.
-- SQLite migrations that rebuild existing tables emit EF's expected non-transactional warning and should keep being validated through fresh-database executable runs.
 - Human-accepted AI proposals do not yet create authoritative report revisions.
-- Concurrent duplicate AI proposal resolution beyond the current `OperationId` replay path remains deferred until live-provider integration.
-- AI provider support remains intentionally limited to the deterministic fixture in this baseline.
-- Knowledge Engine local SQLite persistence is implemented; ingestion workflows, executable knowledge retrieval, and non-SQLite storage remain deferred.
 - Knowledge Engine command idempotency is still deferred and must be resolved before synchronization-oriented work.
+- Document parsing, OCR, fragment promotion, assertion promotion, and broader retrieval remain conceptual only in the current package.
 
 ## Immediate Next Task
 
-- Define the next Knowledge Engine package after `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1`
+- Complete governance review of `ENGINEERING-KNOWLEDGE-MODEL-0.1-RC`
 
 ## Fast Context
 
 - The repository is the source of truth for project state and architecture.
 - Start every new AI session from `.ai/bootstrap.md`.
-- The durable governance layer now lives under `docs/00-governance/` and supplements, but does not replace, `.ai/bootstrap.md`.
-- The current scaffold builds successfully, Infrastructure tests pass, Application tests pass, Domain tests pass, and the architecture guardrails pass.
-- The released vertical slice validates migrations applied at startup, project creation and persistence, inspection-session start and persistence, field-note capture and preservation, successful project/session rehydration, and persisted audit-history reload.
-- The current released report-draft baseline extends that path through evidence attachment, interpretation, draft-context assembly, authoritative report-draft creation, provenance reload, duplicate-safe operation handling, and report audit-history reload.
-- The current released AI baseline adds governed context manifests, deterministic Tier 0 AI proposal generation, structured proposal validation, durable model-run/proposal persistence, and explicit proposal rejection without authoritative report mutation.
-- The latest released executable AI baseline extends the Desktop host through deterministic proposal request, replay verification, durable model-run history reload, human accept or reject review actions, failure display, and explicit verification that report revisions remain unchanged.
-- The current released Knowledge Engine persistence baseline adds authoritative knowledge documents, immutable revision history, explicit supersession semantics, project-scoped relationships, precise citations, provider-neutral application contracts, and local SQLite persistence with migration validation.
-- The current released executable Knowledge Engine baseline extends the Desktop host through deterministic document registration, revision supersession, relationship creation, citation persistence, knowledge snapshot reload, audit display, and failure presentation without mutating authoritative report or AI records.
+- The current released behavior remains `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1`.
+- The current review package is primarily documentation and governance, not a code-expansion slice.
+- The next planned implementation package is `DOCUMENT-ENGINE-FOUNDATION-0.1-RC`.
 
 ## Current Capabilities
 
-- Create project
-- Start inspection session
-- Capture immutable field notes
-- Attach raw evidence
-- Add one non-replaceable interpretation
-- Assemble report-draft context
-- Create authoritative revision-1 report drafts
-- Persist provenance and audit history
-- Retry draft creation safely through `OperationId`
-- Build governed report-proposal context manifests
-- Generate deterministic advisory AI proposals without live AI services
-- Persist model runs, run attempts, and advisory AI proposal manifests
-- Load and reject advisory AI proposals without mutating authoritative reports
-- Record human acceptance as review intent only
-- Execute the deterministic AI proposal workflow through the temporary Desktop host
-- Register authoritative knowledge documents
-- Add and supersede knowledge document revisions explicitly
-- Verify knowledge revisions explicitly
-- Create project-scoped knowledge relationships
-- Load bounded knowledge neighborhoods without persistence leakage
-- Execute deterministic local Knowledge Engine workflows through the temporary Desktop host
-- Reload presentation-safe project knowledge snapshots through the Application layer
-
-## Future Direction
-
-- Planned major subsystem: `Knowledge Engine`
-- Intent: model engineering knowledge separately from AI so project facts, documents, references, field artifacts, and rules become first-class queryable structures.
-- Tentative knowledge graph root:
-  `Project -> Specifications / Drawings / Details / RFIs / Change Orders / Mix Designs / Submittals / Materials / Equipment / Field Notes / Photos / Reports / AI Proposals / Engineering Rules`
-- Core architectural principle:
-  AI consumes governed knowledge context; it does not replace the knowledge model.
-- The current foundation slice now formalizes the first authoritative Knowledge Engine boundary in `spec/knowledge/README.md` and `spec/architecture/knowledge-engine-foundation.md`.
+- Current released capabilities remain unchanged from `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1`
+- The repository now additionally defines the authoritative conceptual engineering knowledge model
+- The repository now defines Document Engine and Rule Engine ownership boundaries for future implementation

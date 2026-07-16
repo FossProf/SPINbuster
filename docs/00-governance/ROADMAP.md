@@ -19,26 +19,31 @@ Deferred
 - Authoritative report-draft workflow - Released
 - Governed AI proposal substrate - Released
 - Deterministic AI proposal executable workflow - Released
+- Knowledge Engine foundation - Released
+- Knowledge Engine persistence - Released
+- Knowledge Engine executable slice - Released
 
 ## Current Major Phase
 
-- Knowledge Engine foundation - Released
-- Knowledge Engine persistence - Released
-- Knowledge Engine executable slice - Active
+- Engineering Knowledge Model - Active
 
-## Subsequent Backend Phases
+## Planned Implementation Packages
 
-- Rule Engine - Planned
+- Document Engine foundation - Planned
+- Rule Engine foundation - Planned
 - Document ingestion and revision management - Planned
-- Parsing and chunking - Deferred
 - Retrieval and citations - Planned
-- Local Ollama integration - Deferred
 - Report revision acceptance from reviewed AI proposals - Planned
 - Synchronization engine - Planned
 - PostgreSQL server persistence - Planned
 - API and server workflows - Planned
 - Conflict resolution - Planned
 - Backup and recovery - Planned
+
+## Deferred Packages
+
+- Parsing and chunking - Deferred
+- Local Ollama integration - Deferred
 
 ## Presentation And Product Phases
 
