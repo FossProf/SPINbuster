@@ -25,11 +25,11 @@ Deferred
 
 ## Current Major Phase
 
-- Engineering Knowledge Model - Active
+- Document Engine foundation - Active
 
 ## Planned Implementation Packages
 
-- Document Engine foundation - Planned
+- Document Engine executable slice - Planned
 - Rule Engine foundation - Planned
 - Document ingestion and revision management - Planned
 - Retrieval and citations - Planned

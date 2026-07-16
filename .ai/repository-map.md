@@ -28,7 +28,7 @@ Purpose: Explain how the repository is organized and where different kinds of wo
 - `spec/knowledge/README.md` defines the Knowledge Engine boundary at a high level.
 - `spec/knowledge/engineering-object-model.md` defines the shared durable noun model used across Knowledge, Documents, Rules, Reports, and AI.
 - `spec/knowledge/engineering-knowledge-model.md` defines the authoritative conceptual model for engineering knowledge.
-- `spec/documents/README.md` and `spec/documents/document-engine-boundary.md` define the future Document Engine boundary.
+- `spec/documents/README.md`, `spec/documents/document-engine-boundary.md`, and `spec/documents/document-engine-foundation.md` define the current Document Engine boundary and durable foundation.
 - `spec/rules/README.md` and `spec/rules/rule-engine-boundary.md` define the future Rule Engine boundary.
 - `spec/database/` contains persistence specifications.
 - `spec/ai/` contains durable AI behavior specifications.
@@ -39,7 +39,7 @@ Purpose: Explain how the repository is organized and where different kinds of wo
 - `src/SPINbuster.Domain` contains authoritative business concepts and invariants.
 - `src/SPINbuster.Application` contains orchestration, command and query workflows, transaction boundaries, and project-scope enforcement.
 - `src/SPINbuster.Infrastructure` contains persistence and adapter implementations.
-- `src/SPINbuster.Documents` is reserved for future binary import, parsing, and extraction workflows.
+- `src/SPINbuster.Documents` now contains deterministic Document Engine adapters for hashing, media inspection, immutable content storage, and fixture processing.
 - `src/SPINbuster.Rules` is reserved for future deterministic rule definitions and evaluators.
 - `src/SPINbuster.AI` contains AI integration adapters and advisory proposal support.
 - `src/SPINbuster.Reporting` contains reporting composition and report output support.
@@ -52,11 +52,11 @@ Purpose: Explain how the repository is organized and where different kinds of wo
 
 ## Active Review Candidate
 
-- `ENGINEERING-KNOWLEDGE-MODEL-0.1-RC`
+- `DOCUMENT-ENGINE-FOUNDATION-0.1-RC`
 
 ## Next Planned Implementation Package
 
-- `DOCUMENT-ENGINE-FOUNDATION-0.1-RC`
+- `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-RC`
 
 ## Working Rule
 

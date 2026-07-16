@@ -291,6 +291,28 @@ public sealed class DependencyGraphTests
   }
 
   [Fact]
+  public void DocumentApplicationContractsDoNotLeakProviderSpecificTypes()
+  {
+    var repoRoot = FindRepositoryRoot();
+    var documentsApplicationFiles = Directory
+      .EnumerateFiles(Path.Combine(repoRoot, "src", "SPINbuster.Application"), "*.cs", SearchOption.AllDirectories)
+      .Where(path => Path.GetFileName(path).Contains("Document", StringComparison.OrdinalIgnoreCase))
+      .ToArray();
+
+    foreach (var documentsApplicationFile in documentsApplicationFiles)
+    {
+      var contents = File.ReadAllText(documentsApplicationFile);
+      Assert.DoesNotContain("FileInfo", contents, StringComparison.Ordinal);
+      Assert.DoesNotContain("DirectoryInfo", contents, StringComparison.Ordinal);
+      Assert.DoesNotContain("Azure.", contents, StringComparison.Ordinal);
+      Assert.DoesNotContain("Amazon.", contents, StringComparison.Ordinal);
+      Assert.DoesNotContain("Google.", contents, StringComparison.Ordinal);
+      Assert.DoesNotContain("Sqlite", contents, StringComparison.Ordinal);
+      Assert.DoesNotContain("DbContext", contents, StringComparison.Ordinal);
+    }
+  }
+
+  [Fact]
   public void NonInfrastructureProjectsDoNotReferenceInfrastructurePersistenceRecords()
   {
     var repoRoot = FindRepositoryRoot();

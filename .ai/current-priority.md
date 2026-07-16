@@ -7,10 +7,10 @@ Latest released baseline:
 KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1
 
 Active review candidate:
-ENGINEERING-KNOWLEDGE-MODEL-0.1-RC
+DOCUMENT-ENGINE-FOUNDATION-0.1-RC
 
 Next planned implementation package:
-DOCUMENT-ENGINE-FOUNDATION-0.1-RC
+DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-RC
 
 Status:
 Active review candidate
@@ -40,30 +40,30 @@ Desktop end-to-end tests:
 6/6 passing
 
 Current task:
-Define the authoritative engineering knowledge model and subsystem boundaries
+Implement the first durable Document Engine foundation
 
 Required outcome:
 
-- Create the authoritative conceptual engineering knowledge model under `spec/knowledge/`.
-- Define the initial Document Engine and Rule Engine boundaries without implementing them.
-- Preserve all released Knowledge Engine, AI, and report behavior classifications accurately.
-- Keep AI advisory, citations revision-bound, and raw records immutable.
-- Leave `DOCUMENT-ENGINE-FOUNDATION-0.1-RC` as the next planned implementation package after review and release.
+- Add immutable imported-source identity and storage-object identity.
+- Add import-session, processing-attempt, and document-candidate lifecycles.
+- Preserve non-authoritative candidate semantics.
+- Add deterministic hashing, immutable storage, and fixture processing adapters.
+- Add SQLite persistence, migration, and verification for the Document Engine foundation.
 
 Next review:
-`ENGINEERING-KNOWLEDGE-MODEL-0.1-RC` governance review
+`DOCUMENT-ENGINE-FOUNDATION-0.1-RC` architecture and governance review
 
 Known blockers:
 None
 
 Last completed:
-Released `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1`
+Defined the engineering knowledge model and specification index
 
 Proposed next direction:
 
-- Complete governance review for the engineering knowledge model package
-- Then begin `DOCUMENT-ENGINE-FOUNDATION-0.1-RC`
-- Keep `EDR-KE-002`, `EDR-KE-009`, `EDR-KE-010`, and `EDR-KE-011` active before automated document workflows begin
+- Complete review of `DOCUMENT-ENGINE-FOUNDATION-0.1-RC`
+- Then begin `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-RC`
+- Keep parsing, OCR, and promotion boundaries deferred until after the executable slice proves the foundation
 
 Current capabilities:
 
@@ -91,6 +91,9 @@ Current capabilities:
 - Execute deterministic Knowledge Engine workflows through the Desktop host
 - Reload project-scoped knowledge documents, revisions, relationships, citations, and audit history through a presentation-safe Application query
 - Present expected Knowledge Engine failure cases without crashing the scripted demo path
+- Register immutable imported document sources
+- Detect exact duplicate content deterministically
+- Persist import sessions, processing attempts, and non-authoritative document candidates
 
 Authoritative context:
 
@@ -103,6 +106,7 @@ Authoritative context:
 - `spec/knowledge/engineering-knowledge-model.md`
 - `spec/documents/README.md`
 - `spec/documents/document-engine-boundary.md`
+- `spec/documents/document-engine-foundation.md`
 - `spec/rules/README.md`
 - `spec/rules/rule-engine-boundary.md`
 - `docs/00-governance/ROADMAP.md`
@@ -118,5 +122,7 @@ Validation before completion:
 - `dotnet restore SPINbuster.sln --configfile NuGet.Config`
 - `dotnet build SPINbuster.sln --no-restore`
 - `dotnet test tests/SPINbuster.Architecture.Tests/SPINbuster.Architecture.Tests.csproj --no-build`
+- `dotnet test tests/SPINbuster.Documents.Tests/SPINbuster.Documents.Tests.csproj --no-build`
+- `dotnet test tests/SPINbuster.Infrastructure.Tests/SPINbuster.Infrastructure.Tests.csproj --no-build`
 - `dotnet test SPINbuster.sln --no-build -m:1`
 - `git diff --check`

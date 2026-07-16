@@ -70,6 +70,26 @@ internal static class StronglyTypedIdValueConverters
     value => value.Value,
     value => new KnowledgeCitationId(value));
 
+  public static readonly ValueConverter<ImportedSourceId, Guid> ImportedSourceId = new(
+    value => value.Value,
+    value => new ImportedSourceId(value));
+
+  public static readonly ValueConverter<DocumentImportSessionId, Guid> DocumentImportSessionId = new(
+    value => value.Value,
+    value => new DocumentImportSessionId(value));
+
+  public static readonly ValueConverter<DocumentProcessingAttemptId, Guid> DocumentProcessingAttemptId = new(
+    value => value.Value,
+    value => new DocumentProcessingAttemptId(value));
+
+  public static readonly ValueConverter<DocumentCandidateId, Guid> DocumentCandidateId = new(
+    value => value.Value,
+    value => new DocumentCandidateId(value));
+
+  public static readonly ValueConverter<StorageObjectId, Guid> StorageObjectId = new(
+    value => value.Value,
+    value => new StorageObjectId(value));
+
   public static readonly ValueConverter<OperationId, Guid> OperationId = new(
     value => value.Value,
     value => new OperationId(value));

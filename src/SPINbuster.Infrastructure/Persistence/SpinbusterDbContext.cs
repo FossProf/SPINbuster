@@ -50,6 +50,16 @@ public sealed class SpinbusterDbContext : DbContext
 
   internal DbSet<KnowledgeCitationRecord> KnowledgeCitations => Set<KnowledgeCitationRecord>();
 
+  internal DbSet<StorageObjectRecord> StorageObjects => Set<StorageObjectRecord>();
+
+  internal DbSet<ImportedDocumentSourceRecord> ImportedDocumentSources => Set<ImportedDocumentSourceRecord>();
+
+  internal DbSet<DocumentImportSessionRecord> DocumentImportSessions => Set<DocumentImportSessionRecord>();
+
+  internal DbSet<DocumentProcessingAttemptRecord> DocumentProcessingAttempts => Set<DocumentProcessingAttemptRecord>();
+
+  internal DbSet<DocumentCandidateRecord> DocumentCandidates => Set<DocumentCandidateRecord>();
+
   protected override void OnModelCreating(ModelBuilder modelBuilder)
   {
     SpinbusterModelConfiguration.Configure(modelBuilder);

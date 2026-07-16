@@ -464,10 +464,10 @@ public sealed class SqliteKnowledgeEnginePersistenceTests : IDisposable
 
     var appliedMigrations = (await dbContext.Database.GetAppliedMigrationsAsync()).ToArray();
 
-    Assert.Equal(5, appliedMigrations.Length);
+    Assert.Equal(6, appliedMigrations.Length);
     Assert.Contains(appliedMigrations, migration => migration.EndsWith("KnowledgeEnginePersistenceRc2", StringComparison.Ordinal));
     Assert.Contains(appliedMigrations, migration => migration.EndsWith("KnowledgeEnginePersistenceSnapshotAlignment", StringComparison.Ordinal));
-    Assert.Equal(5L, await QueryCountAsync(dbContext, "SELECT COUNT(*) FROM __EFMigrationsHistory"));
+    Assert.Equal(6L, await QueryCountAsync(dbContext, "SELECT COUNT(*) FROM __EFMigrationsHistory"));
   }
 
   [Fact]
@@ -487,7 +487,7 @@ public sealed class SqliteKnowledgeEnginePersistenceTests : IDisposable
     await migratedContext.Database.MigrateAsync();
 
     var appliedMigrations = (await migratedContext.Database.GetAppliedMigrationsAsync()).ToArray();
-    Assert.Equal(5, appliedMigrations.Length);
+    Assert.Equal(6, appliedMigrations.Length);
 
     var storedProject = await new SqliteProjectRepository(migratedContext).GetByIdAsync(seededState.ProjectId);
     var storedInspectionSession = await new SqliteInspectionSessionRepository(migratedContext).GetByIdAsync(seededState.InspectionSessionId);

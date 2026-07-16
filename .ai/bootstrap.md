@@ -11,7 +11,7 @@ SPINbuster is a layered .NET codebase with AI-assisted capabilities, governed by
 - Repository scaffold exists and builds successfully.
 - Architecture guardrails are in place and passing.
 - The repository includes the released `AI-DRAFT-PROPOSAL-SLICE-0.1` baseline, the released `AI-PROPOSAL-EXECUTABLE-SLICE-0.1` Desktop executable workflow, the released `KNOWLEDGE-ENGINE-PERSISTENCE-0.1` SQLite persistence baseline, and the released `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1` executable Knowledge Engine baseline.
-- The active review candidate is `ENGINEERING-KNOWLEDGE-MODEL-0.1-RC`.
+- The active review candidate is `DOCUMENT-ENGINE-FOUNDATION-0.1-RC`.
 
 ## Latest Released Baseline
 
@@ -19,11 +19,11 @@ SPINbuster is a layered .NET codebase with AI-assisted capabilities, governed by
 
 ## Active Review Candidate
 
-- `ENGINEERING-KNOWLEDGE-MODEL-0.1-RC`
+- `DOCUMENT-ENGINE-FOUNDATION-0.1-RC`
 
 ## Next Planned Implementation Package
 
-- `DOCUMENT-ENGINE-FOUNDATION-0.1-RC`
+- `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-RC`
 
 ## Current Milestone
 
@@ -31,7 +31,7 @@ SPINbuster is a layered .NET codebase with AI-assisted capabilities, governed by
 
 ## Current Active Task
 
-- `Define the authoritative engineering knowledge model and subsystem boundaries`
+- `Implement the first durable Document Engine foundation`
 
 ## Authoritative Files
 

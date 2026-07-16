@@ -605,6 +605,219 @@ internal static class InfrastructureMapper
     };
   }
 
+  public static StorageObject ToDomain(StorageObjectRecord record)
+  {
+    return StorageObject.Rehydrate(
+      record.Id,
+      record.StorageProviderKey,
+      record.ImmutableObjectKey,
+      record.ContentLength,
+      record.ContentHash,
+      record.HashAlgorithm,
+      record.HashAlgorithmVersion,
+      record.CreatedAtUtc,
+      record.EncryptionMetadataId,
+      record.AvailabilityState);
+  }
+
+  public static StorageObjectRecord ToRecord(StorageObject storageObject)
+  {
+    return new StorageObjectRecord
+    {
+      Id = storageObject.Id,
+      StorageProviderKey = storageObject.StorageProviderKey,
+      ImmutableObjectKey = storageObject.ImmutableObjectKey,
+      ContentLength = storageObject.ContentLength,
+      ContentHash = storageObject.ContentHash,
+      HashAlgorithm = storageObject.HashAlgorithm,
+      HashAlgorithmVersion = storageObject.HashAlgorithmVersion,
+      CreatedAtUtc = storageObject.CreatedAtUtc,
+      EncryptionMetadataId = storageObject.EncryptionMetadataId,
+      AvailabilityState = storageObject.AvailabilityState,
+    };
+  }
+
+  public static ImportedDocumentSource ToDomain(
+    ImportedDocumentSourceRecord record,
+    StorageObjectRecord storageObjectRecord,
+    IReadOnlyCollection<AuditEvent> auditTrail)
+  {
+    return ImportedDocumentSource.Rehydrate(
+      record.Id,
+      record.ImportSessionId,
+      record.ProjectId,
+      record.OriginalFileName,
+      record.DeclaredMediaType,
+      record.DetectedMediaType,
+      record.ContentLength,
+      record.ContentHash,
+      record.HashAlgorithm,
+      record.HashAlgorithmVersion,
+      ToDomain(storageObjectRecord).ToReference(),
+      record.SourceOrigin,
+      record.ImportedBy,
+      record.ImportedAtUtc,
+      record.Status,
+      record.ExternalSourceReference,
+      auditTrail);
+  }
+
+  public static ImportedDocumentSourceRecord ToRecord(ImportedDocumentSource importedDocumentSource)
+  {
+    return new ImportedDocumentSourceRecord
+    {
+      Id = importedDocumentSource.Id,
+      ImportSessionId = importedDocumentSource.ImportSessionId,
+      ProjectId = importedDocumentSource.ProjectId,
+      OriginalFileName = importedDocumentSource.OriginalFileName,
+      DeclaredMediaType = importedDocumentSource.DeclaredMediaType,
+      DetectedMediaType = importedDocumentSource.DetectedMediaType,
+      ContentLength = importedDocumentSource.ContentLength,
+      ContentHash = importedDocumentSource.ContentHash,
+      HashAlgorithm = importedDocumentSource.HashAlgorithm,
+      HashAlgorithmVersion = importedDocumentSource.HashAlgorithmVersion,
+      StorageObjectId = importedDocumentSource.StorageReference.StorageObjectId,
+      SourceOrigin = importedDocumentSource.SourceOrigin,
+      ImportedBy = importedDocumentSource.ImportedBy,
+      ImportedAtUtc = importedDocumentSource.ImportedAtUtc,
+      Status = importedDocumentSource.Status,
+      ExternalSourceReference = importedDocumentSource.ExternalSourceReference,
+    };
+  }
+
+  public static DocumentImportSession ToDomain(
+    DocumentImportSessionRecord record,
+    IReadOnlyCollection<AuditEvent> auditTrail)
+  {
+    return DocumentImportSession.Rehydrate(
+      record.Id,
+      record.ProjectId,
+      record.InitiatedBy,
+      record.StartedAtUtc,
+      record.CompletedAtUtc,
+      record.State,
+      record.SourceCount,
+      record.AcceptedCount,
+      record.DuplicateCount,
+      record.RejectedCount,
+      record.FailureSummary,
+      auditTrail);
+  }
+
+  public static DocumentImportSessionRecord ToRecord(DocumentImportSession importSession)
+  {
+    return new DocumentImportSessionRecord
+    {
+      Id = importSession.Id,
+      ProjectId = importSession.ProjectId,
+      InitiatedBy = importSession.InitiatedBy,
+      StartedAtUtc = importSession.StartedAtUtc,
+      CompletedAtUtc = importSession.CompletedAtUtc,
+      State = importSession.State,
+      SourceCount = importSession.SourceCount,
+      AcceptedCount = importSession.AcceptedCount,
+      DuplicateCount = importSession.DuplicateCount,
+      RejectedCount = importSession.RejectedCount,
+      FailureSummary = importSession.FailureSummary,
+    };
+  }
+
+  public static DocumentProcessingAttempt ToDomain(
+    DocumentProcessingAttemptRecord record,
+    IReadOnlyCollection<AuditEvent> auditTrail)
+  {
+    return DocumentProcessingAttempt.Rehydrate(
+      record.Id,
+      record.ImportedSourceId,
+      record.ProjectId,
+      record.ProcessorRole,
+      record.ProcessorIdentity,
+      record.ProcessorVersion,
+      record.RequestedAtUtc,
+      record.StartedAtUtc,
+      record.CompletedAtUtc,
+      record.AttemptNumber,
+      record.State,
+      record.FailureClassification,
+      record.FailureDetails,
+      record.InputContentHash,
+      record.OutputHash,
+      auditTrail);
+  }
+
+  public static DocumentProcessingAttemptRecord ToRecord(DocumentProcessingAttempt processingAttempt)
+  {
+    return new DocumentProcessingAttemptRecord
+    {
+      Id = processingAttempt.Id,
+      ImportedSourceId = processingAttempt.ImportedSourceId,
+      ProjectId = processingAttempt.ProjectId,
+      ProcessorRole = processingAttempt.ProcessorRole,
+      ProcessorIdentity = processingAttempt.ProcessorIdentity,
+      ProcessorVersion = processingAttempt.ProcessorVersion,
+      RequestedAtUtc = processingAttempt.RequestedAtUtc,
+      StartedAtUtc = processingAttempt.StartedAtUtc,
+      CompletedAtUtc = processingAttempt.CompletedAtUtc,
+      AttemptNumber = processingAttempt.AttemptNumber,
+      State = processingAttempt.State,
+      FailureClassification = processingAttempt.FailureClassification,
+      FailureDetails = processingAttempt.FailureDetails,
+      InputContentHash = processingAttempt.InputContentHash,
+      OutputHash = processingAttempt.OutputHash,
+    };
+  }
+
+  public static DocumentCandidate ToDomain(
+    DocumentCandidateRecord record,
+    IReadOnlyCollection<AuditEvent> auditTrail)
+  {
+    return DocumentCandidate.Rehydrate(
+      record.Id,
+      record.ProjectId,
+      record.ImportedSourceId,
+      record.ProcessingAttemptId,
+      record.CandidateType,
+      record.SchemaId,
+      record.SchemaVersion,
+      record.PayloadHash,
+      record.CanonicalPayload,
+      record.SourceContentHash,
+      record.SourceLocator,
+      record.ConfidenceBand,
+      DeserializeStringArray(record.UncertaintyCodesJson),
+      record.Status,
+      record.CreatedAtUtc,
+      record.ReviewedBy,
+      record.ReviewedAtUtc,
+      record.ReviewNotes,
+      auditTrail);
+  }
+
+  public static DocumentCandidateRecord ToRecord(DocumentCandidate documentCandidate)
+  {
+    return new DocumentCandidateRecord
+    {
+      Id = documentCandidate.Id,
+      ProjectId = documentCandidate.ProjectId,
+      ImportedSourceId = documentCandidate.ImportedSourceId,
+      ProcessingAttemptId = documentCandidate.ProcessingAttemptId,
+      CandidateType = documentCandidate.CandidateType,
+      SchemaId = documentCandidate.SchemaId,
+      SchemaVersion = documentCandidate.SchemaVersion,
+      PayloadHash = documentCandidate.PayloadHash,
+      CanonicalPayload = documentCandidate.CanonicalPayload,
+      SourceContentHash = documentCandidate.SourceContentHash,
+      SourceLocator = documentCandidate.SourceLocator,
+      ConfidenceBand = documentCandidate.ConfidenceBand,
+      UncertaintyCodesJson = SerializeStringArray(documentCandidate.UncertaintyCodes),
+      Status = documentCandidate.Status,
+      CreatedAtUtc = documentCandidate.CreatedAtUtc,
+      ReviewedBy = documentCandidate.ReviewedBy,
+      ReviewedAtUtc = documentCandidate.ReviewedAtUtc,
+      ReviewNotes = documentCandidate.ReviewNotes,
+    };
+  }
+
   private static string SerializeStringArray(IEnumerable<string> values)
   {
     return JsonSerializer.Serialize(

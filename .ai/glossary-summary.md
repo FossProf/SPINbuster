@@ -16,6 +16,11 @@ Purpose: Keep day-to-day terminology consistent while deferring authoritative de
 - Rule: Executable deterministic logic derived from authoritative requirements or approved policy.
 - Interpretation: Human or AI analysis of source material or observations, distinct from raw evidence.
 - Proposal: Non-authoritative suggested content, relationship, or classification.
+- Imported source: Immutable project-scoped registration of an original binary source plus its content identity.
+- Storage object: Provider-neutral immutable storage identity for preserved original bytes.
+- Import session: Durable batch-oriented record of one document import activity and its counts.
+- Processing attempt: Durable record of one deterministic document-processing execution attempt.
+- Document candidate: Non-authoritative processing output that may later be reviewed but is not authoritative knowledge by itself.
 - Relationship: Semantic connection among documents, revisions, fragments, assertions, requirements, observations, reports, or proposals.
 - Conflict: Explicit record of incompatible knowledge states that remains visible until resolved.
 - Applicability: Explicit determination of what knowledge applies to a scope, asset, activity, time range, or report.

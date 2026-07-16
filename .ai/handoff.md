@@ -1,7 +1,7 @@
 # Current State
 
 Repository status:
-`KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1` is released. Build passing. Desktop end-to-end tests `6/6`. Infrastructure tests `23/23`. Application tests `60/60`. Domain tests `48/48`. AI tests `6/6`. Architecture tests `16/16`. Warnings `0`.
+`KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1` remains the latest released baseline. The active review candidate is now `DOCUMENT-ENGINE-FOUNDATION-0.1-RC`. Build passing. Domain tests `52/52`. Application tests `66/66`. Documents tests `5/5`. Infrastructure tests `26/26`. Architecture tests `17/17`. Warnings `0`.
 
 Current branch:
 `main`
@@ -13,10 +13,10 @@ Latest released baseline:
 `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1`
 
 Active review candidate:
-`ENGINEERING-KNOWLEDGE-MODEL-0.1-RC`
+`DOCUMENT-ENGINE-FOUNDATION-0.1-RC`
 
 Next planned implementation package:
-`DOCUMENT-ENGINE-FOUNDATION-0.1-RC`
+`DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-RC`
 
 Recent accomplishments:
 
@@ -24,23 +24,24 @@ Recent accomplishments:
 - Added the first executable local Knowledge Engine workflow through the temporary Desktop host.
 - Added `AddKnowledgeCitation` plus `LoadProjectKnowledgeSnapshot` so the host remains thin and Application-driven.
 - Added SQLite-backed Desktop tests for successful Knowledge execution, reload, current revision selection, relationship traversal, citation reload, audit ordering, failure presentation, commit failure handling, and proof that report plus AI records remain unchanged.
-- Started the `ENGINEERING-KNOWLEDGE-MODEL-0.1-RC` specification package.
-- Added the authoritative engineering knowledge model, Document Engine boundary, and Rule Engine boundary specifications.
-- Added glossary and governance updates for knowledge concepts, subsystem ownership, provenance, authority, verification, and planned follow-on slices.
-- Added new Knowledge Engine EDRs for fragment identity, engineering assertion promotion, and the Document Engine ownership boundary.
+- Added the engineering object model and specification index.
+- Implemented the first durable Document Engine foundation across Domain, Application, Documents, and Infrastructure.
+- Added immutable storage-object identity, imported-source identity, import sessions, processing attempts, and non-authoritative document candidates.
+- Added deterministic SHA-256 hashing, media inspection, in-memory immutable storage, and deterministic fixture processing adapters.
+- Added SQLite persistence and the `DocumentEngineFoundationRc` migration.
 
 Current architectural decisions:
 
-- `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1` is the active released knowledge baseline.
-- `ENGINEERING-KNOWLEDGE-MODEL-0.1-RC` is a documentation and governance review candidate, not an implementation slice.
-- `DOCUMENT-ENGINE-FOUNDATION-0.1-RC` is the next planned implementation package after this specification package is reviewed and released.
+- `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1` remains the active released baseline.
+- `DOCUMENT-ENGINE-FOUNDATION-0.1-RC` is now the active review candidate.
+- The next planned package is `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-RC`.
 - `SPINbuster.Desktop` remains a temporary bootstrap host, not a MAUI application yet.
-- The Document Engine will own binary-source handling and non-authoritative processing outputs only.
+- The Document Engine owns binary-source handling and non-authoritative processing outputs only.
 - The Rule Engine will remain deterministic and separate from AI recommendations.
 - Knowledge Engine mutations still do not have a uniform `OperationId` replay contract; `EDR-KE-009` keeps that deferred before synchronization or automated ingestion.
 
 Next task:
-Complete governance review of `ENGINEERING-KNOWLEDGE-MODEL-0.1-RC`, then begin planning `DOCUMENT-ENGINE-FOUNDATION-0.1-RC`
+Complete architecture and governance review of `DOCUMENT-ENGINE-FOUNDATION-0.1-RC`, then begin `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-RC`
 
 Known issues:
 
@@ -48,7 +49,7 @@ Known issues:
 - The Desktop host is still a console bootstrapper and should not accumulate broader UI assumptions before the real client direction is chosen.
 - Human-accepted AI proposals still do not create authoritative report revisions; that boundary remains deferred by `EDR-AI-001`.
 - Knowledge Engine command idempotency is still deferred and must be designed before synchronization or automated ingestion work.
-- Document parsing, OCR, fragment promotion, assertion promotion, and broader retrieval remain conceptual only in the current package.
+- Document parsing, OCR, fragment promotion, assertion promotion, and broader retrieval remain deferred beyond the current foundation.
 
 Requested review:
 

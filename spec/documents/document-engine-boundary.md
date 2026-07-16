@@ -1,7 +1,7 @@
 # Document Engine Boundary
 
 Status: Review Candidate
-Baseline: `ENGINEERING-KNOWLEDGE-MODEL-0.1-RC`
+Baseline: `DOCUMENT-ENGINE-FOUNDATION-0.1-RC`
 
 ## Purpose
 
@@ -52,6 +52,8 @@ The future Document Engine may own:
 - assertion candidate
 
 These are not authoritative project facts by themselves.
+
+The current foundation review candidate now implements the durable identity and lifecycle layer for these records, while leaving parsing and promotion deferred.
 
 ## Ownership split
 

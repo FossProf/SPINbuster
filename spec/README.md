@@ -15,7 +15,7 @@ Purpose: Provide a fast navigation map for the authoritative engineering specifi
 - `spec/api/` is reserved for future API contracts and service-boundary specifications.
 - `spec/architecture/` defines cross-cutting system structure, subsystem boundaries, and architectural intent.
 - `spec/database/` defines persistence expectations, database behavior, and migration-oriented specifications.
-- `spec/documents/` defines the Document Engine boundary, including import, hashing, processing, and non-authoritative extraction responsibilities.
+- `spec/documents/` defines the Document Engine boundary and current durable foundation for import, hashing, processing attempts, and non-authoritative candidates.
 - `spec/knowledge/` defines the Knowledge Engine and the conceptual engineering knowledge model used across the repository.
 - `spec/requirements/` is reserved for future formal requirements specifications and milestone-scoped requirement sets.
 - `spec/rules/` defines the deterministic Rule Engine boundary and executable-rule ownership model.

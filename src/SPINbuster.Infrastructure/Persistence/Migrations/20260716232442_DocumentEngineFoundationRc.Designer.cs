@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SPINbuster.Infrastructure.Persistence;
 
@@ -10,9 +11,11 @@ using SPINbuster.Infrastructure.Persistence;
 namespace SPINbuster.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(SpinbusterDbContext))]
-    partial class SpinbusterDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260716232442_DocumentEngineFoundationRc")]
+    partial class DocumentEngineFoundationRc
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

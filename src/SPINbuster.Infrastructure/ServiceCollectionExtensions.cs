@@ -30,6 +30,11 @@ public static class ServiceCollectionExtensions
     services.AddScoped<IKnowledgeRevisionRepository, SqliteKnowledgeRevisionRepository>();
     services.AddScoped<IKnowledgeRelationshipRepository, SqliteKnowledgeRelationshipRepository>();
     services.AddScoped<IKnowledgeCitationRepository, SqliteKnowledgeCitationRepository>();
+    services.AddScoped<IStorageObjectRepository, SqliteStorageObjectRepository>();
+    services.AddScoped<IImportedDocumentSourceRepository, SqliteImportedDocumentSourceRepository>();
+    services.AddScoped<IDocumentImportSessionRepository, SqliteDocumentImportSessionRepository>();
+    services.AddScoped<IDocumentProcessingAttemptRepository, SqliteDocumentProcessingAttemptRepository>();
+    services.AddScoped<IDocumentCandidateRepository, SqliteDocumentCandidateRepository>();
     return services;
   }
 }

@@ -4,20 +4,20 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace SPINbuster.Infrastructure.Persistence.Migrations
 {
+  /// <inheritdoc />
+  public partial class KnowledgeEnginePersistenceSnapshotAlignment : Migration
+  {
     /// <inheritdoc />
-    public partial class KnowledgeEnginePersistenceSnapshotAlignment : Migration
+    protected override void Up(MigrationBuilder migrationBuilder)
     {
-        /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
 
-        }
-
-        /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
-
-        }
     }
+
+    /// <inheritdoc />
+    protected override void Down(MigrationBuilder migrationBuilder)
+    {
+
+    }
+  }
 }
 

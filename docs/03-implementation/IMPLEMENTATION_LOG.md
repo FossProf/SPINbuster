@@ -1,5 +1,16 @@
 # Implementation Log
 
+2026-07-16
+
+Completed:
+- Engineering object model and specification index
+- Document Engine durable foundation
+- Immutable source identity, import sessions, processing attempts, and candidate persistence
+- SQLite migration and verification for the Document Engine foundation
+
+Next:
+- Document Engine executable slice
+
 ## 2026-07-15
 
 Completed:

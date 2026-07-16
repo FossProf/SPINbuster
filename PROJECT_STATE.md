@@ -7,20 +7,21 @@
 
 ## Active Review Candidate
 
-- `ENGINEERING-KNOWLEDGE-MODEL-0.1-RC`
+- `DOCUMENT-ENGINE-FOUNDATION-0.1-RC`
 - Status: `Active`
 - Build: `Passing`
 - Warnings: `0`
-- Architecture tests: `16/16 passing`
-- Domain tests: `48/48 passing`
-- Application tests: `60/60 passing`
+- Architecture tests: `17/17 passing`
+- Domain tests: `52/52 passing`
+- Application tests: `66/66 passing`
+- Documents tests: `5/5 passing`
 - AI tests: `6/6 passing`
-- Infrastructure tests: `23/23 passing`
+- Infrastructure tests: `26/26 passing`
 - Desktop end-to-end tests: `6/6 passing`
 
 ## Next Planned Implementation Package
 
-- `DOCUMENT-ENGINE-FOUNDATION-0.1-RC`
+- `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-RC`
 
 ## Current Branch
 
@@ -32,7 +33,7 @@
 
 ## Current Implementation Phase
 
-- Engineering knowledge model review
+- Document Engine foundation review
 
 ## Current Milestone
 
@@ -72,18 +73,17 @@
 
 ## Immediate Next Task
 
-- Complete governance review of `ENGINEERING-KNOWLEDGE-MODEL-0.1-RC`
+- Complete architecture and governance review of `DOCUMENT-ENGINE-FOUNDATION-0.1-RC`
 
 ## Fast Context
 
 - The repository is the source of truth for project state and architecture.
 - Start every new AI session from `.ai/bootstrap.md`.
 - The current released behavior remains `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1`.
-- The current review package is primarily documentation and governance, not a code-expansion slice.
-- The next planned implementation package is `DOCUMENT-ENGINE-FOUNDATION-0.1-RC`.
+- The current review package is the first durable Document Engine foundation slice.
+- The next planned implementation package is `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-RC`.
 
 ## Current Capabilities
 
 - Current released capabilities remain unchanged from `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1`
-- The repository now additionally defines the authoritative conceptual engineering knowledge model
-- The repository now defines Document Engine and Rule Engine ownership boundaries for future implementation
+- The repository now includes a durable Document Engine foundation with immutable source identity, processing attempts, and non-authoritative candidates

@@ -18,6 +18,7 @@ internal static class SpinbusterModelConfiguration
     ConfigureAuditEvents(modelBuilder);
     ConfigureAiSubstrate(modelBuilder);
     ConfigureKnowledgeEngine(modelBuilder);
+    ConfigureDocumentEngine(modelBuilder);
   }
 
   private static void ConfigureProjects(ModelBuilder modelBuilder)
@@ -420,5 +421,109 @@ internal static class SpinbusterModelConfiguration
     citationBuilder.Property(record => record.QuotedOrSummarizedText).HasColumnType("TEXT");
     citationBuilder.HasIndex(record => record.CitedRevisionId);
     citationBuilder.HasIndex(record => new { record.CitedRevisionId, record.LocatorType, record.LocatorValue });
+  }
+
+  private static void ConfigureDocumentEngine(ModelBuilder modelBuilder)
+  {
+    var storageBuilder = modelBuilder.Entity<StorageObjectRecord>();
+    storageBuilder.ToTable("storage_objects");
+    storageBuilder.HasKey(record => record.Id);
+    storageBuilder.Property(record => record.Id).HasConversion(StronglyTypedIdValueConverters.StorageObjectId).ValueGeneratedNever();
+    storageBuilder.Property(record => record.StorageProviderKey).HasMaxLength(128).IsRequired();
+    storageBuilder.Property(record => record.ImmutableObjectKey).HasMaxLength(512).IsRequired();
+    storageBuilder.Property(record => record.ContentLength).IsRequired();
+    storageBuilder.Property(record => record.ContentHash).HasMaxLength(128).IsRequired();
+    storageBuilder.Property(record => record.HashAlgorithm).HasMaxLength(64).IsRequired();
+    storageBuilder.Property(record => record.HashAlgorithmVersion).IsRequired();
+    storageBuilder.Property(record => record.CreatedAtUtc).IsRequired();
+    storageBuilder.Property(record => record.EncryptionMetadataId).HasMaxLength(256);
+    storageBuilder.Property(record => record.AvailabilityState).IsRequired();
+    storageBuilder.HasIndex(record => new { record.ContentHash, record.HashAlgorithm, record.HashAlgorithmVersion }).IsUnique();
+    storageBuilder.HasIndex(record => new { record.StorageProviderKey, record.ImmutableObjectKey }).IsUnique();
+
+    var sessionBuilder = modelBuilder.Entity<DocumentImportSessionRecord>();
+    sessionBuilder.ToTable("document_import_sessions");
+    sessionBuilder.HasKey(record => record.Id);
+    sessionBuilder.Property(record => record.Id).HasConversion(StronglyTypedIdValueConverters.DocumentImportSessionId).ValueGeneratedNever();
+    sessionBuilder.Property(record => record.ProjectId).HasConversion(StronglyTypedIdValueConverters.ProjectId).IsRequired();
+    sessionBuilder.Property(record => record.InitiatedBy).HasMaxLength(256).IsRequired();
+    sessionBuilder.Property(record => record.StartedAtUtc).IsRequired();
+    sessionBuilder.Property(record => record.CompletedAtUtc).IsRequired(false);
+    sessionBuilder.Property(record => record.State).IsRequired();
+    sessionBuilder.Property(record => record.FailureSummary).HasColumnType("TEXT");
+    sessionBuilder.HasIndex(record => record.ProjectId);
+    sessionBuilder.HasIndex(record => record.State);
+
+    var sourceBuilder = modelBuilder.Entity<ImportedDocumentSourceRecord>();
+    sourceBuilder.ToTable("imported_document_sources");
+    sourceBuilder.HasKey(record => record.Id);
+    sourceBuilder.Property(record => record.Id).HasConversion(StronglyTypedIdValueConverters.ImportedSourceId).ValueGeneratedNever();
+    sourceBuilder.Property(record => record.ImportSessionId).HasConversion(StronglyTypedIdValueConverters.DocumentImportSessionId).IsRequired();
+    sourceBuilder.Property(record => record.ProjectId).HasConversion(StronglyTypedIdValueConverters.ProjectId).IsRequired();
+    sourceBuilder.Property(record => record.OriginalFileName).HasMaxLength(512).IsRequired();
+    sourceBuilder.Property(record => record.DeclaredMediaType).HasMaxLength(256);
+    sourceBuilder.Property(record => record.DetectedMediaType).HasMaxLength(256);
+    sourceBuilder.Property(record => record.ContentLength).IsRequired();
+    sourceBuilder.Property(record => record.ContentHash).HasMaxLength(128).IsRequired();
+    sourceBuilder.Property(record => record.HashAlgorithm).HasMaxLength(64).IsRequired();
+    sourceBuilder.Property(record => record.HashAlgorithmVersion).IsRequired();
+    sourceBuilder.Property(record => record.StorageObjectId).HasConversion(StronglyTypedIdValueConverters.StorageObjectId).IsRequired();
+    sourceBuilder.Property(record => record.SourceOrigin).IsRequired();
+    sourceBuilder.Property(record => record.ImportedBy).HasMaxLength(256).IsRequired();
+    sourceBuilder.Property(record => record.ImportedAtUtc).IsRequired();
+    sourceBuilder.Property(record => record.Status).IsRequired();
+    sourceBuilder.Property(record => record.ExternalSourceReference).HasMaxLength(256);
+    sourceBuilder.HasIndex(record => new { record.ProjectId, record.ContentHash, record.HashAlgorithm, record.HashAlgorithmVersion });
+    sourceBuilder.HasIndex(record => record.ImportSessionId);
+    sourceBuilder.HasIndex(record => record.StorageObjectId);
+    sourceBuilder.HasOne<DocumentImportSessionRecord>().WithMany().HasForeignKey(record => record.ImportSessionId).OnDelete(DeleteBehavior.Restrict);
+    sourceBuilder.HasOne<ProjectRecord>().WithMany().HasForeignKey(record => record.ProjectId).OnDelete(DeleteBehavior.Restrict);
+    sourceBuilder.HasOne<StorageObjectRecord>().WithMany().HasForeignKey(record => record.StorageObjectId).OnDelete(DeleteBehavior.Restrict);
+
+    var attemptBuilder = modelBuilder.Entity<DocumentProcessingAttemptRecord>();
+    attemptBuilder.ToTable("document_processing_attempts");
+    attemptBuilder.HasKey(record => record.Id);
+    attemptBuilder.Property(record => record.Id).HasConversion(StronglyTypedIdValueConverters.DocumentProcessingAttemptId).ValueGeneratedNever();
+    attemptBuilder.Property(record => record.ImportedSourceId).HasConversion(StronglyTypedIdValueConverters.ImportedSourceId).IsRequired();
+    attemptBuilder.Property(record => record.ProjectId).HasConversion(StronglyTypedIdValueConverters.ProjectId).IsRequired();
+    attemptBuilder.Property(record => record.ProcessorRole).HasMaxLength(128).IsRequired();
+    attemptBuilder.Property(record => record.ProcessorIdentity).HasMaxLength(128).IsRequired();
+    attemptBuilder.Property(record => record.ProcessorVersion).HasMaxLength(64).IsRequired();
+    attemptBuilder.Property(record => record.RequestedAtUtc).IsRequired();
+    attemptBuilder.Property(record => record.State).IsRequired();
+    attemptBuilder.Property(record => record.FailureClassification).IsRequired();
+    attemptBuilder.Property(record => record.FailureDetails).HasColumnType("TEXT");
+    attemptBuilder.Property(record => record.InputContentHash).HasMaxLength(128).IsRequired();
+    attemptBuilder.Property(record => record.OutputHash).HasMaxLength(128);
+    attemptBuilder.HasIndex(record => new { record.ImportedSourceId, record.AttemptNumber }).IsUnique();
+    attemptBuilder.HasIndex(record => record.ProjectId);
+    attemptBuilder.HasOne<ImportedDocumentSourceRecord>().WithMany().HasForeignKey(record => record.ImportedSourceId).OnDelete(DeleteBehavior.Restrict);
+
+    var candidateBuilder = modelBuilder.Entity<DocumentCandidateRecord>();
+    candidateBuilder.ToTable("document_candidates");
+    candidateBuilder.HasKey(record => record.Id);
+    candidateBuilder.Property(record => record.Id).HasConversion(StronglyTypedIdValueConverters.DocumentCandidateId).ValueGeneratedNever();
+    candidateBuilder.Property(record => record.ProjectId).HasConversion(StronglyTypedIdValueConverters.ProjectId).IsRequired();
+    candidateBuilder.Property(record => record.ImportedSourceId).HasConversion(StronglyTypedIdValueConverters.ImportedSourceId).IsRequired();
+    candidateBuilder.Property(record => record.ProcessingAttemptId).HasConversion(StronglyTypedIdValueConverters.DocumentProcessingAttemptId).IsRequired();
+    candidateBuilder.Property(record => record.CandidateType).IsRequired();
+    candidateBuilder.Property(record => record.SchemaId).HasMaxLength(128).IsRequired();
+    candidateBuilder.Property(record => record.SchemaVersion).HasMaxLength(64).IsRequired();
+    candidateBuilder.Property(record => record.PayloadHash).HasMaxLength(128).IsRequired();
+    candidateBuilder.Property(record => record.CanonicalPayload).HasColumnType("TEXT").IsRequired();
+    candidateBuilder.Property(record => record.SourceContentHash).HasMaxLength(128).IsRequired();
+    candidateBuilder.Property(record => record.SourceLocator).HasMaxLength(512);
+    candidateBuilder.Property(record => record.ConfidenceBand).IsRequired();
+    candidateBuilder.Property(record => record.UncertaintyCodesJson).HasColumnType("TEXT").IsRequired();
+    candidateBuilder.Property(record => record.Status).IsRequired();
+    candidateBuilder.Property(record => record.CreatedAtUtc).IsRequired();
+    candidateBuilder.Property(record => record.ReviewedBy).HasMaxLength(256);
+    candidateBuilder.Property(record => record.ReviewNotes).HasColumnType("TEXT");
+    candidateBuilder.HasIndex(record => record.ImportedSourceId);
+    candidateBuilder.HasIndex(record => record.ProcessingAttemptId);
+    candidateBuilder.HasIndex(record => new { record.SchemaId, record.SchemaVersion });
+    candidateBuilder.HasIndex(record => record.Status);
+    candidateBuilder.HasOne<ImportedDocumentSourceRecord>().WithMany().HasForeignKey(record => record.ImportedSourceId).OnDelete(DeleteBehavior.Restrict);
+    candidateBuilder.HasOne<DocumentProcessingAttemptRecord>().WithMany().HasForeignKey(record => record.ProcessingAttemptId).OnDelete(DeleteBehavior.Restrict);
   }
 }
