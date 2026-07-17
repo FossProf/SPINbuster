@@ -10,10 +10,10 @@ Active review candidate:
 DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-RC
 
 Next planned implementation package:
-DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-RC
+Determine from prototype review
 
 Status:
-Released baseline recorded; next package active
+Executable review candidate validated; prototype review and continuity update in progress
 
 Build:
 Passing
@@ -22,13 +22,13 @@ Warnings:
 0
 
 Domain tests:
-52/52 passing
+53/53 passing
 
 Architecture tests:
-17/17 passing
+20/20 passing
 
 Application tests:
-70/70 passing
+74/74 passing
 
 Infrastructure tests:
 27/27 passing
@@ -37,10 +37,10 @@ AI tests:
 6/6 passing
 
 Desktop end-to-end tests:
-6/6 passing
+13/13 passing
 
 Current task:
-Implement the first executable Document Engine workflow
+Record the `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-RC` prototype review and continuity state
 
 Required outcome:
 
@@ -50,18 +50,18 @@ Required outcome:
 - Present deterministic success and failure outcomes without widening the authoritative boundary.
 
 Next review:
-`DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-RC` executable and workflow review
+Prototype-review outcome and next-package selection for the Document Engine
 
 Known blockers:
 None
 
 Last completed:
-Released the Document Engine foundation baseline
+Finished the executable Document Engine Desktop/workflow hardening pass
 
 Proposed next direction:
 
-- Implement `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-RC`
-- Keep parsing, OCR, and promotion boundaries deferred until after the executable slice proves the foundation
+- Determine the next package from `docs/decisions/status/DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-PROTOTYPE-REVIEW.md`
+- Keep parsing, OCR, and promotion boundaries deferred until the prototype review explicitly advances them
 - Preserve the non-authoritative document-candidate boundary
 
 Current capabilities:
@@ -93,6 +93,9 @@ Current capabilities:
 - Register immutable imported document sources
 - Detect exact duplicate content deterministically
 - Persist import sessions, processing attempts, and non-authoritative document candidates
+- Execute the first deterministic Document Engine workflow through the Desktop host
+- Persist multi-source batch import state, processing outcomes, candidate review state, and document audit history
+- Reload project-scoped document workflow snapshots without mutating Knowledge, Report, or AI records
 
 Authoritative context:
 
@@ -106,6 +109,7 @@ Authoritative context:
 - `spec/documents/README.md`
 - `spec/documents/document-engine-boundary.md`
 - `spec/documents/document-engine-foundation.md`
+- `docs/decisions/status/DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-PROTOTYPE-REVIEW.md`
 - `spec/rules/README.md`
 - `spec/rules/rule-engine-boundary.md`
 - `docs/00-governance/ROADMAP.md`
@@ -121,7 +125,10 @@ Validation before completion:
 - `dotnet restore SPINbuster.sln --configfile NuGet.Config`
 - `dotnet build SPINbuster.sln --no-restore`
 - `dotnet test tests/SPINbuster.Architecture.Tests/SPINbuster.Architecture.Tests.csproj --no-build`
+- `dotnet test tests/SPINbuster.Application.Tests/SPINbuster.Application.Tests.csproj --no-build`
 - `dotnet test tests/SPINbuster.Documents.Tests/SPINbuster.Documents.Tests.csproj --no-build`
 - `dotnet test tests/SPINbuster.Infrastructure.Tests/SPINbuster.Infrastructure.Tests.csproj --no-build`
+- `dotnet test tests/SPINbuster.Desktop.Tests/SPINbuster.Desktop.Tests.csproj --no-build`
+- `dotnet run --project src/SPINbuster.Desktop/SPINbuster.Desktop.csproj --no-build`
 - `dotnet test SPINbuster.sln --no-build -m:1`
 - `git diff --check`

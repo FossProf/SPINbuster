@@ -2,6 +2,7 @@
   <ItemGroup>
     <ProjectReference Include="..\SPINbuster.AI\SPINbuster.AI.csproj" />
     <ProjectReference Include="..\SPINbuster.Application\SPINbuster.Application.csproj" />
+    <ProjectReference Include="..\SPINbuster.Documents\SPINbuster.Documents.csproj" />
     <ProjectReference Include="..\SPINbuster.Infrastructure\SPINbuster.Infrastructure.csproj" />
   </ItemGroup>
 

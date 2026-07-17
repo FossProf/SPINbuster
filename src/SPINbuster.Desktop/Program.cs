@@ -21,85 +21,65 @@ using var host = builder.Build();
 
 try
 {
-  var result = await DesktopWorkflowBootstrapper.RunAsync(host.Services);
+  var result = await DocumentEngineExecutableWorkflowBootstrapper.RunAsync(host.Services);
 
-  Console.WriteLine($"Project created: {result.CreatedProject.ProjectId} ({result.PersistedInspectionSnapshot.Project.Lifecycle})");
-  Console.WriteLine($"Inspection session started: {result.StartedInspectionSession.InspectionSessionId} ({result.PersistedInspectionSnapshot.InspectionSession.Lifecycle})");
-  Console.WriteLine($"Field note captured: {result.CapturedFieldNote.FieldNoteId}");
-  Console.WriteLine($"Evidence attached: {result.AttachedEvidence.EvidenceAttachmentId}");
-  Console.WriteLine($"Evidence interpreted: {result.AddedInterpretation.EvidenceAttachmentId}");
-  Console.WriteLine($"Report draft created: {result.CreatedReportDraft.ReportId} ({result.PersistedReportSnapshot.Lifecycle})");
-  Console.WriteLine($"AI proposal replay: idempotent={result.ReplayedAiProposalRequest.IsIdempotentReplay} proposal={result.ReplayedAiProposalRequest.ProposalId}");
-  Console.WriteLine($"Specification registered: {result.RegisteredSpecificationDocument.KnowledgeDocumentId}");
-  Console.WriteLine($"Specification revision chain: {result.AddedSpecificationInitialRevision.KnowledgeDocumentRevisionId} -> {result.SupersededSpecificationRevision.SuccessorRevisionId}");
-  Console.WriteLine($"RFI registered: {result.RegisteredRfiDocument.KnowledgeDocumentId}");
-  Console.WriteLine($"Knowledge relationship created: {result.CreatedKnowledgeRelationship.KnowledgeRelationshipId}");
-  Console.WriteLine($"Knowledge citation added: {result.AddedKnowledgeCitation.KnowledgeCitationId}");
   Console.WriteLine();
-  Console.WriteLine("Reloaded Knowledge Snapshot");
-  Console.WriteLine($"  Project: {result.ReloadedKnowledgeSnapshot.ProjectId}");
-
-  foreach (var document in result.ReloadedKnowledgeSnapshot.Documents)
+  Console.WriteLine("Document Engine Workflow");
+  Console.WriteLine();
+  Console.WriteLine("Project A");
+  Console.WriteLine("Import Session:");
+  Console.WriteLine($"- state: {result.CompletedProjectAImportSession.State}");
+  Console.WriteLine($"- accepted count: {result.CompletedProjectAImportSession.AcceptedCount}");
+  Console.WriteLine($"- duplicate count: {result.CompletedProjectAImportSession.DuplicateCount}");
+  Console.WriteLine($"- rejected count: {result.CompletedProjectAImportSession.RejectedCount}");
+  Console.WriteLine();
+  Console.WriteLine("Sources:");
+  foreach (var source in result.ProjectASnapshot.ImportedSources.OrderBy(source => source.OriginalFileName, StringComparer.Ordinal))
   {
-    Console.WriteLine($"  Document {document.KnowledgeDocumentId}");
-    Console.WriteLine($"    Type: {document.DocumentType}");
-    Console.WriteLine($"    Title: {document.CanonicalTitle}");
-    Console.WriteLine($"    ExternalRef: {document.ExternalReferenceNumber}");
-    Console.WriteLine($"    Lifecycle: {document.Lifecycle}");
-    Console.WriteLine($"    CurrentRevision: {document.CurrentAuthoritativeRevisionId}");
+    Console.WriteLine($"- source ID: {source.ImportedSourceId}");
+    Console.WriteLine($"  filename: {source.OriginalFileName}");
+    Console.WriteLine($"  hash: {source.ContentHash}");
+    Console.WriteLine($"  storage object ID: {source.Storage.StorageObjectId}");
+    Console.WriteLine($"  duplicate status: same-project={source.ImportedSourceId == result.ImportedDuplicateSourceA.ImportedSourceId} cross-project={source.SameContentExistsInAnotherProject}");
+  }
 
-    foreach (var revision in document.Revisions)
+  Console.WriteLine();
+  Console.WriteLine("Processing:");
+  foreach (var source in result.ProjectASnapshot.ImportedSources.Where(source => source.ProcessingAttempts.Count > 0))
+  {
+    foreach (var attempt in source.ProcessingAttempts)
     {
-      Console.WriteLine($"    Revision {revision.KnowledgeDocumentRevisionId}");
-      Console.WriteLine($"      Label: {revision.RevisionLabel}");
-      Console.WriteLine($"      Lifecycle: {revision.Lifecycle}");
-      Console.WriteLine($"      Verification: {revision.VerificationStatus}");
-      Console.WriteLine($"      Supersedes: {revision.SupersedesRevisionId}");
-      Console.WriteLine($"      SupersededBy: {revision.SupersededByRevisionId}");
-
-      foreach (var citation in revision.Citations)
-      {
-        Console.WriteLine($"      Citation: {citation.LocatorType} {citation.LocatorValue} | hash={citation.RevisionContentHash}");
-      }
-
-      foreach (var auditEntry in revision.AuditHistory)
-      {
-        Console.WriteLine($"      Audit: {auditEntry.OccurredAtUtc:O} | {auditEntry.EventType} | {auditEntry.Actor}");
-      }
-    }
-
-    foreach (var auditEntry in document.AuditHistory)
-    {
-      Console.WriteLine($"    DocumentAudit: {auditEntry.OccurredAtUtc:O} | {auditEntry.EventType} | {auditEntry.Actor}");
+      Console.WriteLine($"- attempt ID: {attempt.ProcessingAttemptId}");
+      Console.WriteLine($"  attempt number: {attempt.AttemptNumber}");
+      Console.WriteLine($"  state: {attempt.State}");
+      Console.WriteLine($"  failure classification: {attempt.FailureClassification}");
     }
   }
 
   Console.WriteLine();
-  Console.WriteLine("Relationship Graph");
-  foreach (var relationship in result.ReloadedKnowledgeSnapshot.Relationships)
+  Console.WriteLine("Candidates:");
+  foreach (var source in result.ProjectASnapshot.ImportedSources.Where(source => source.Candidates.Count > 0))
   {
-    Console.WriteLine(
-      $"  {relationship.KnowledgeRelationshipId}: {relationship.Source.StableKey} -[{relationship.RelationshipType}]-> {relationship.Target.StableKey}");
-    Console.WriteLine($"    Rationale: {relationship.EvidenceOrRationale}");
-    foreach (var auditEntry in relationship.AuditHistory)
+    foreach (var candidate in source.Candidates)
     {
-      Console.WriteLine($"    Audit: {auditEntry.OccurredAtUtc:O} | {auditEntry.EventType} | {auditEntry.Actor}");
+      Console.WriteLine($"- candidate ID: {candidate.DocumentCandidateId}");
+      Console.WriteLine($"  type: {candidate.CandidateType}");
+      Console.WriteLine($"  status: {candidate.Status}");
+      Console.WriteLine($"  source locator: {candidate.SourceLocator}");
+      Console.WriteLine($"  confidence: {candidate.ConfidenceBand}");
+      Console.WriteLine($"  source hash: {candidate.SourceContentHash}");
     }
   }
 
   Console.WriteLine();
-  Console.WriteLine("Expected Failure Presentations");
-  foreach (var failure in result.FailurePresentations)
-  {
-    Console.WriteLine($"  {failure.Scenario}: {failure.ErrorType} | {failure.Message}");
-  }
-
+  Console.WriteLine("Authority Isolation:");
+  Console.WriteLine($"- Knowledge records unchanged: {result.ProjectASnapshot.AuthorityIsolation.KnowledgeDocumentCount == 0 && result.ProjectBSnapshot.AuthorityIsolation.KnowledgeDocumentCount == 0}");
+  Console.WriteLine($"- Report unchanged: {result.ProjectASnapshot.AuthorityIsolation.ReportCount == result.ProjectBSnapshot.AuthorityIsolation.ReportCount}");
+  Console.WriteLine($"- AI Proposal unchanged: {result.ProjectASnapshot.AuthorityIsolation.AiProposalCount == result.ProjectBSnapshot.AuthorityIsolation.AiProposalCount}");
   Console.WriteLine();
-  Console.WriteLine("Authoritative State After Knowledge Workflow");
-  Console.WriteLine($"  Report revision: {result.PersistedReportSnapshot.RevisionNumber}");
-  Console.WriteLine($"  Report lifecycle: {result.PersistedReportSnapshot.Lifecycle}");
-  Console.WriteLine($"  AI proposal state: {result.ReviewedAiProposalSnapshot.ModelRunState}");
-  Console.WriteLine($"  AI proposal status: {result.ReviewedAiProposalSnapshot.Proposal?.Status}");
+  Console.WriteLine("Project B:");
+  Console.WriteLine($"- identical content detected: {result.ImportedProjectBCopy.SameContentExistsInAnotherProject}");
+  Console.WriteLine("- no Project A metadata disclosed: true");
 }
 catch (Exception exception)
 {

@@ -44,19 +44,31 @@ Purpose: Explain how the repository is organized and where different kinds of wo
 - `src/SPINbuster.AI` contains AI integration adapters and advisory proposal support.
 - `src/SPINbuster.Reporting` contains reporting composition and report output support.
 - `src/SPINbuster.Server` contains the server host and composition root.
-- `src/SPINbuster.Desktop` is currently a temporary bootstrap host and not yet a MAUI Blazor Hybrid application.
+- `src/SPINbuster.Desktop` is currently a temporary bootstrap host and not yet a MAUI Blazor Hybrid application. It now contains the deterministic executable Document Engine workflow runner in addition to the earlier AI and Knowledge executable slices.
 
 ## Current Released Baseline
 
-- `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1` is the latest released baseline.
+- `DOCUMENT-ENGINE-FOUNDATION-0.1` is the latest released baseline.
 
 ## Active Review Candidate
 
-- `DOCUMENT-ENGINE-FOUNDATION-0.1-RC`
+- `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-RC`
 
 ## Next Planned Implementation Package
 
-- `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-RC`
+- `Determine from prototype review`
+
+## Current Document Engine Flow
+
+- The current review candidate adds a project-scoped Application snapshot query for document workflow state.
+- The temporary Desktop host now exercises:
+  - multi-source batch import
+  - same-project duplicate reuse
+  - cross-project duplicate privacy
+  - deterministic processing outcomes
+  - non-authoritative candidate review
+  - reload of document audit history and authority-isolation state
+- The Infrastructure layer now also contains a host-facing database migrator abstraction so startup migration stays outside the Desktop host’s direct EF Core concerns.
 
 ## Working Rule
 

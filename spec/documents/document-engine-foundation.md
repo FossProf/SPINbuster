@@ -1,7 +1,7 @@
 # Document Engine Foundation
 
-Status: Review Candidate
-Baseline: `DOCUMENT-ENGINE-FOUNDATION-0.1-RC`
+Status: Released
+Baseline: `DOCUMENT-ENGINE-FOUNDATION-0.1`
 
 ## Purpose
 
@@ -96,6 +96,17 @@ Failed
 - Cross-project identical content may reuse the same storage object while keeping imported-source records project-scoped.
 - Cross-project duplicate checks must not reveal another project's metadata.
 
-## Next package
+## Executable follow-on
 
-After review and release of this foundation, the next expected package is the first executable document-import slice through a thin host workflow.
+The released foundation is now exercised by the active review candidate `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-RC`.
+
+That executable slice validated:
+
+- batch import behavior through one explicit session
+- deterministic processing-attempt durability
+- non-authoritative candidate review behavior
+- exact duplicate reuse
+- cross-project duplicate privacy
+- authority isolation for Knowledge, Report, and AI records
+
+The next package remains intentionally open in continuity state until the executable prototype review is accepted.

@@ -11,6 +11,25 @@ Completed:
 Next:
 - Document Engine executable slice
 
+## 2026-07-17
+
+Completed:
+
+- Document Engine executable Desktop workflow review candidate
+- Multi-source batch import through one deterministic import session
+- Project-scoped document workflow snapshot query
+- Deterministic document processing outcome persistence and reload
+- Non-authoritative candidate review persistence
+- Desktop Application-only composition hardening
+- Infrastructure database migrator abstraction for host startup
+- Audit-delta staging fix for repeated document aggregate mutations
+- SQLite document query-shaping hardening for `DateTimeOffset` ordering
+- Desktop tests for duplicate privacy, exact-byte reopen, durable failure handling, and commit-failure orphan behavior
+
+Next:
+
+- Determine the next package from `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-PROTOTYPE-REVIEW.md`
+
 ## 2026-07-15
 
 Completed:

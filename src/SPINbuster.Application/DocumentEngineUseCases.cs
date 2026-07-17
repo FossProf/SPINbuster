@@ -139,6 +139,8 @@ namespace SPINbuster.Application.UseCases.ImportDocumentSource
         throw new DomainInvariantException("Document import session project does not match the requested project.");
       }
 
+      var priorImportSessionAuditCount = importSession.AuditTrail.Count;
+
       await using var content = await EnsureReplayableContentAsync(command.Content, cancellationToken);
       if (content.Length <= 0)
       {
@@ -156,7 +158,7 @@ namespace SPINbuster.Application.UseCases.ImportDocumentSource
       {
         importSession.RecordRejectedSource(_currentUser.UserId.Value, _clock.UtcNow, "Imported content type is not supported by the current Document Engine foundation.");
         await _importSessionRepository.UpdateAsync(importSession, cancellationToken);
-        Internal.DocumentAuditStager.Stage(_auditRecorder, importSession.AuditTrail);
+        Internal.DocumentAuditStager.Stage(_auditRecorder, importSession.AuditTrail.Skip(priorImportSessionAuditCount));
         await _unitOfWork.CommitAsync(cancellationToken);
         throw new DomainInvariantException("Imported content type is not supported by the current Document Engine foundation.");
       }
@@ -183,7 +185,7 @@ namespace SPINbuster.Application.UseCases.ImportDocumentSource
       {
         importSession.RecordDuplicateSource(existingProjectSource.Id, _currentUser.UserId.Value, _clock.UtcNow);
         await _importSessionRepository.UpdateAsync(importSession, cancellationToken);
-        Internal.DocumentAuditStager.Stage(_auditRecorder, importSession.AuditTrail);
+        Internal.DocumentAuditStager.Stage(_auditRecorder, importSession.AuditTrail.Skip(priorImportSessionAuditCount));
         await _unitOfWork.CommitAsync(cancellationToken);
 
         return new ImportDocumentSourceResult(
@@ -223,7 +225,7 @@ namespace SPINbuster.Application.UseCases.ImportDocumentSource
       await _importedSourceRepository.AddAsync(importedSource, cancellationToken);
       await _importSessionRepository.UpdateAsync(importSession, cancellationToken);
       Internal.DocumentAuditStager.Stage(_auditRecorder, importedSource.AuditTrail);
-      Internal.DocumentAuditStager.Stage(_auditRecorder, importSession.AuditTrail);
+      Internal.DocumentAuditStager.Stage(_auditRecorder, importSession.AuditTrail.Skip(priorImportSessionAuditCount));
       await _unitOfWork.CommitAsync(cancellationToken);
 
       return new ImportDocumentSourceResult(
@@ -334,9 +336,10 @@ namespace SPINbuster.Application.UseCases.CompleteDocumentImportSession
       var importSession = await _importSessionRepository.GetByIdAsync(command.ImportSessionId, cancellationToken)
         ?? throw new ApplicationEntityNotFoundException(nameof(DocumentImportSession), command.ImportSessionId.ToString());
 
+      var priorAuditCount = importSession.AuditTrail.Count;
       importSession.Complete(_currentUser.UserId.Value, _clock.UtcNow);
       await _importSessionRepository.UpdateAsync(importSession, cancellationToken);
-      Internal.DocumentAuditStager.Stage(_auditRecorder, importSession.AuditTrail);
+      Internal.DocumentAuditStager.Stage(_auditRecorder, importSession.AuditTrail.Skip(priorAuditCount));
       await _unitOfWork.CommitAsync(cancellationToken);
 
       return new CompleteDocumentImportSessionResult(
@@ -620,11 +623,11 @@ namespace SPINbuster.Application.UseCases.RequestDocumentProcessing
         await PersistTerminalAttemptStateAsync(attempt, createdCandidates, cancellationToken);
         return CreateResult(attempt, source.Id, createdCandidates);
       }
-      catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+      catch (OperationCanceledException)
       {
         attempt.Cancel(_clock.UtcNow, "Document processing request was cancelled.");
         await PersistTerminalAttemptStateAsync(attempt, [], CancellationToken.None, finalizeSuccessfulValidation: false);
-        throw;
+        return CreateResult(attempt, source.Id, []);
       }
       catch (Exception exception)
       {

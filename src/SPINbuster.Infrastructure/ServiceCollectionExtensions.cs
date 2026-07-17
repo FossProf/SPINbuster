@@ -15,9 +15,11 @@ public static class ServiceCollectionExtensions
     string connectionString)
   {
     services.AddDbContext<SpinbusterDbContext>(options => options.UseSqlite(connectionString));
+    services.AddScoped<ISpinbusterDatabaseMigrator, SqliteDatabaseMigrator>();
     services.AddScoped<SqliteAuditRecorder>();
     services.AddScoped<IAuditRecorder>(serviceProvider => serviceProvider.GetRequiredService<SqliteAuditRecorder>());
-    services.AddScoped<IUnitOfWork, SqliteUnitOfWork>();
+    services.AddScoped<SqliteUnitOfWork>();
+    services.AddScoped<IUnitOfWork>(serviceProvider => serviceProvider.GetRequiredService<SqliteUnitOfWork>());
     services.AddScoped<IProjectRepository, SqliteProjectRepository>();
     services.AddScoped<IInspectionSessionRepository, SqliteInspectionSessionRepository>();
     services.AddScoped<IReportRepository, SqliteReportRepository>();

@@ -5,6 +5,7 @@ using SPINbuster.Application.UseCases.AcceptAiProposal;
 using SPINbuster.Application.UseCases.AddKnowledgeCitation;
 using SPINbuster.Application.UseCases.AttachEvidence;
 using SPINbuster.Application.UseCases.BeginDocumentImportSession;
+using SPINbuster.Application.UseCases.CompleteDocumentImportSession;
 using SPINbuster.Application.UseCases.BuildReportProposalContext;
 using SPINbuster.Application.UseCases.CreateReportDraft;
 using SPINbuster.Application.UseCases.CaptureFieldNote;
@@ -16,6 +17,7 @@ using SPINbuster.Application.UseCases.LoadAiProposalWorkflowSnapshot;
 using SPINbuster.Application.UseCases.LoadDocumentCandidates;
 using SPINbuster.Application.UseCases.LoadDocumentImportSession;
 using SPINbuster.Application.UseCases.LoadDocumentProcessingHistory;
+using SPINbuster.Application.UseCases.LoadProjectDocumentWorkflowSnapshot;
 using SPINbuster.Application.UseCases.LoadImportedDocumentSource;
 using SPINbuster.Application.UseCases.LoadInspectionWorkflowSnapshot;
 using SPINbuster.Application.UseCases.LoadKnowledgeDocument;
@@ -44,6 +46,7 @@ public static class ServiceCollectionExtensions
   {
     services.AddScoped<Abstractions.IAiProposalPayloadValidator, Internal.JsonAiProposalPayloadValidator>();
     services.AddScoped<ICommandHandler<BeginDocumentImportSessionCommand, BeginDocumentImportSessionResult>, BeginDocumentImportSessionUseCase>();
+    services.AddScoped<ICommandHandler<CompleteDocumentImportSessionCommand, CompleteDocumentImportSessionResult>, CompleteDocumentImportSessionUseCase>();
     services.AddScoped<ICommandHandler<CreateProjectCommand, CreateProjectResult>, CreateProjectUseCase>();
     services.AddScoped<ICommandHandler<ImportDocumentSourceCommand, ImportDocumentSourceResult>, ImportDocumentSourceUseCase>();
     services.AddScoped<ICommandHandler<StartInspectionSessionCommand, StartInspectionSessionResult>, StartInspectionSessionUseCase>();
@@ -71,6 +74,7 @@ public static class ServiceCollectionExtensions
     services.AddScoped<IQueryHandler<LoadDocumentCandidatesQuery, LoadDocumentCandidatesResult>, LoadDocumentCandidatesUseCase>();
     services.AddScoped<IQueryHandler<LoadDocumentImportSessionQuery, LoadDocumentImportSessionResult>, LoadDocumentImportSessionUseCase>();
     services.AddScoped<IQueryHandler<LoadDocumentProcessingHistoryQuery, LoadDocumentProcessingHistoryResult>, LoadDocumentProcessingHistoryUseCase>();
+    services.AddScoped<IQueryHandler<LoadProjectDocumentWorkflowSnapshotQuery, LoadProjectDocumentWorkflowSnapshotResult>, LoadProjectDocumentWorkflowSnapshotUseCase>();
     services.AddScoped<IQueryHandler<LoadImportedDocumentSourceQuery, LoadImportedDocumentSourceResult>, LoadImportedDocumentSourceUseCase>();
     services.AddScoped<IQueryHandler<LoadInspectionWorkflowSnapshotQuery, LoadInspectionWorkflowSnapshotResult>, LoadInspectionWorkflowSnapshotUseCase>();
     services.AddScoped<IQueryHandler<LoadKnowledgeDocumentQuery, LoadKnowledgeDocumentResult>, LoadKnowledgeDocumentUseCase>();

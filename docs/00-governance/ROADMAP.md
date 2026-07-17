@@ -25,11 +25,11 @@ Deferred
 
 ## Current Major Phase
 
-- Document Engine foundation - Active
+- Document Engine executable slice review candidate - Active
 
 ## Planned Implementation Packages
 
-- Document Engine executable slice - Planned
+- Determine from prototype review - Planned
 - Rule Engine foundation - Planned
 - Document ingestion and revision management - Planned
 - Retrieval and citations - Planned

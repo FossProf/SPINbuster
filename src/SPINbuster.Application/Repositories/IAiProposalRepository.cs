@@ -11,4 +11,6 @@ public interface IAiProposalRepository
   Task AddAsync(AiProposal proposal, CancellationToken cancellationToken = default);
 
   Task UpdateAsync(AiProposal proposal, CancellationToken cancellationToken = default);
+
+  Task<int> CountAsync(CancellationToken cancellationToken = default);
 }

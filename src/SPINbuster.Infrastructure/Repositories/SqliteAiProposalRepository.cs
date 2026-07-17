@@ -51,4 +51,9 @@ public sealed class SqliteAiProposalRepository : IAiProposalRepository
     _dbContext.Entry(trackedRecord).CurrentValues.SetValues(record);
     return Task.CompletedTask;
   }
+
+  public Task<int> CountAsync(CancellationToken cancellationToken = default)
+  {
+    return _dbContext.AiProposals.AsNoTracking().CountAsync(cancellationToken);
+  }
 }

@@ -63,6 +63,28 @@ public sealed class DocumentEngineDomainTests
   }
 
   [Fact]
+  public void ImportSessionAllowsRepeatedValidationAndImportingWithinOneBatch()
+  {
+    var session = new DocumentImportSession(
+      DocumentImportSessionId.New(),
+      ProjectId.New(),
+      "user@example.invalid",
+      new DateTimeOffset(2026, 7, 16, 12, 0, 0, TimeSpan.Zero));
+
+    session.BeginValidation("user@example.invalid", new DateTimeOffset(2026, 7, 16, 12, 1, 0, TimeSpan.Zero));
+    session.BeginImporting("user@example.invalid", new DateTimeOffset(2026, 7, 16, 12, 2, 0, TimeSpan.Zero));
+    session.RecordAcceptedSource(ImportedSourceId.New(), "user@example.invalid", new DateTimeOffset(2026, 7, 16, 12, 3, 0, TimeSpan.Zero));
+    session.BeginValidation("user@example.invalid", new DateTimeOffset(2026, 7, 16, 12, 4, 0, TimeSpan.Zero));
+    session.BeginImporting("user@example.invalid", new DateTimeOffset(2026, 7, 16, 12, 5, 0, TimeSpan.Zero));
+    session.RecordDuplicateSource(ImportedSourceId.New(), "user@example.invalid", new DateTimeOffset(2026, 7, 16, 12, 6, 0, TimeSpan.Zero));
+
+    Assert.Equal(DocumentImportSessionState.Importing, session.State);
+    Assert.Equal(2, session.SourceCount);
+    Assert.Equal(1, session.AcceptedCount);
+    Assert.Equal(1, session.DuplicateCount);
+  }
+
+  [Fact]
   public void ProcessingAttemptRejectsTerminalTransitionAfterFailure()
   {
     var attempt = new DocumentProcessingAttempt(

@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using SPINbuster.AI;
 using SPINbuster.Application;
 using SPINbuster.Application.Abstractions;
+using SPINbuster.Documents;
 using SPINbuster.Infrastructure;
 
 namespace SPINbuster.Desktop;
@@ -16,6 +17,7 @@ public static class DesktopCompositionRoot
   {
     services.AddSingleton(settings);
     services.AddSpinbusterApplication();
+    services.AddSpinbusterDocumentFoundationAdapters();
     services.AddSpinbusterDeterministicAi(new DeterministicAiProviderOptions
     {
       Scenario = settings.AiScenario,
@@ -24,6 +26,7 @@ public static class DesktopCompositionRoot
     services.AddScoped<IClock>(_ => new DeterministicClock(settings.InitialTimestampUtc));
     services.AddScoped<ICurrentUser>(_ => new FixedCurrentUser(settings.CurrentUserId));
     services.AddScoped<LocalVerticalSliceWorkflowRunner>();
+    services.AddScoped<DocumentEngineExecutableWorkflowRunner>();
   }
 
   public static DesktopWorkflowSettings LoadSettings(IConfiguration configuration)

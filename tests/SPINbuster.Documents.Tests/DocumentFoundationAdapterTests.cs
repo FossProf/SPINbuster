@@ -83,10 +83,10 @@ public sealed class DocumentFoundationAdapterTests
   }
 
   [Fact]
-  public async Task DeterministicDocumentProcessorProducesMetadataCandidate()
+  public async Task DeterministicDocumentProcessorProducesDeterministicMetadataAndFragmentCandidates()
   {
     var processor = new DeterministicDocumentProcessor();
-    await using var content = new MemoryStream(Encoding.UTF8.GetBytes("hello world"));
+    await using var content = new MemoryStream(Encoding.UTF8.GetBytes("Section 03 30 00 requires concrete curing in accordance with the approved project specifications."));
 
     var result = await processor.ProcessAsync(new DocumentProcessorRequest(
       ImportedSourceId.New(),
@@ -101,7 +101,8 @@ public sealed class DocumentFoundationAdapterTests
       content));
 
     Assert.True(result.Success);
-    Assert.Single(result.Candidates);
-    Assert.Equal(DocumentCandidateType.MetadataCandidate, result.Candidates.Single().CandidateType);
+    Assert.Equal(2, result.Candidates.Count);
+    Assert.Contains(result.Candidates, candidate => candidate.CandidateType == DocumentCandidateType.MetadataCandidate);
+    Assert.Contains(result.Candidates, candidate => candidate.CandidateType == DocumentCandidateType.FragmentCandidate && candidate.SourceLocator == "line:1");
   }
 }

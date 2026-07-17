@@ -23,7 +23,7 @@ SPINbuster is a layered .NET codebase with AI-assisted capabilities, governed by
 
 ## Next Planned Implementation Package
 
-- `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-RC`
+- `Determine from prototype review`
 
 ## Current Milestone
 
@@ -31,7 +31,7 @@ SPINbuster is a layered .NET codebase with AI-assisted capabilities, governed by
 
 ## Current Active Task
 
-- `Implement the first executable Document Engine workflow`
+- `Review and validate the first executable Document Engine workflow`
 
 ## Authoritative Files
 
@@ -42,6 +42,7 @@ SPINbuster is a layered .NET codebase with AI-assisted capabilities, governed by
 - `.ai/repository-map.md`
 - `docs/00-governance/AI_BOOTSTRAP.md`
 - Relevant `spec/` documents for the subsystem being changed
+- `docs/decisions/status/DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-PROTOTYPE-REVIEW.md`
 
 ## Bootstrap Reading Order
 

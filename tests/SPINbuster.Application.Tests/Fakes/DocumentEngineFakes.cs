@@ -21,6 +21,19 @@ internal sealed class FakeDocumentImportSessionRepository : IDocumentImportSessi
     return Task.CompletedTask;
   }
 
+  public Task<IReadOnlyCollection<DocumentImportSession>> GetByProjectAsync(
+    ProjectId projectId,
+    int maxResults,
+    CancellationToken cancellationToken = default)
+  {
+    return Task.FromResult<IReadOnlyCollection<DocumentImportSession>>(
+      _sessions.Values
+        .Where(item => item.ProjectId == projectId)
+        .OrderBy(item => item.StartedAtUtc)
+        .Take(maxResults)
+        .ToArray());
+  }
+
   public List<DocumentImportSession> UpdatedSessions { get; } = [];
 
   public Task UpdateAsync(DocumentImportSession importSession, CancellationToken cancellationToken = default)
@@ -81,7 +94,20 @@ internal sealed class FakeImportedDocumentSourceRepository : IImportedDocumentSo
       item.ProjectId == projectId
       && item.ContentHash == contentHash
       && item.HashAlgorithm == hashAlgorithm
-      && item.HashAlgorithmVersion == hashAlgorithmVersion));
+        && item.HashAlgorithmVersion == hashAlgorithmVersion));
+  }
+
+  public Task<IReadOnlyCollection<ImportedDocumentSource>> GetByProjectAsync(
+    ProjectId projectId,
+    int maxResults,
+    CancellationToken cancellationToken = default)
+  {
+    return Task.FromResult<IReadOnlyCollection<ImportedDocumentSource>>(
+      _sources.Values
+        .Where(item => item.ProjectId == projectId)
+        .OrderBy(item => item.ImportedAtUtc)
+        .Take(maxResults)
+        .ToArray());
   }
 
   public Task<bool> ExistsInOtherProjectsAsync(ProjectId projectId, string contentHash, string hashAlgorithm, int hashAlgorithmVersion, CancellationToken cancellationToken = default)

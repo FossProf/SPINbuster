@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using SPINbuster.Application.Abstractions;
 using SPINbuster.Domain;
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 
 namespace SPINbuster.Documents;
@@ -134,6 +135,9 @@ public sealed class BasicImportedContentInspector : IImportedContentInspector
 
 public sealed class InMemoryImmutableContentStore : IImmutableContentStore
 {
+  private const string SimulateReadUnavailableMarker = "SIMULATE_READ_UNAVAILABLE";
+  private const string SimulateReadFailureMarker = "SIMULATE_READ_FAILURE";
+  private const string SimulateWriteFailureMarker = "SIMULATE_WRITE_FAILURE";
   private readonly Dictionary<StorageObjectId, StoredObject> _objects = [];
 
   public bool SimulateUnavailableRead { get; set; }
@@ -167,6 +171,11 @@ public sealed class InMemoryImmutableContentStore : IImmutableContentStore
 
     await using var memory = new MemoryStream();
     await request.Content.CopyToAsync(memory, cancellationToken);
+    var text = TryReadText(memory.ToArray());
+    if (text.Contains(SimulateWriteFailureMarker, StringComparison.Ordinal))
+    {
+      throw new IOException("Simulated immutable content store write failure.");
+    }
 
     var storedObject = new StoredObject(
       request.StorageObjectId,
@@ -177,7 +186,9 @@ public sealed class InMemoryImmutableContentStore : IImmutableContentStore
       request.HashAlgorithm,
       request.HashAlgorithmVersion,
       request.CreatedAtUtc,
-      request.EncryptionMetadataId);
+      request.EncryptionMetadataId,
+      text.Contains(SimulateReadUnavailableMarker, StringComparison.Ordinal),
+      text.Contains(SimulateReadFailureMarker, StringComparison.Ordinal));
     _objects[request.StorageObjectId] = storedObject;
     return ToResult(storedObject);
   }
@@ -202,7 +213,23 @@ public sealed class InMemoryImmutableContentStore : IImmutableContentStore
         0));
     }
 
+    if (storedObject.SimulateReadFailure)
+    {
+      throw new IOException("Simulated immutable content store read failure.");
+    }
+
     if (SimulateUnavailableRead)
+    {
+      return Task.FromResult(new OpenImmutableContentResult(
+        Stream.Null,
+        StorageAvailabilityState.Unavailable,
+        storedObject.ContentHash,
+        storedObject.HashAlgorithm,
+        storedObject.HashAlgorithmVersion,
+        storedObject.Bytes.Length));
+    }
+
+    if (storedObject.SimulateReadUnavailable)
     {
       return Task.FromResult(new OpenImmutableContentResult(
         Stream.Null,
@@ -246,7 +273,14 @@ public sealed class InMemoryImmutableContentStore : IImmutableContentStore
     string HashAlgorithm,
     int HashAlgorithmVersion,
     DateTimeOffset CreatedAtUtc,
-    string? EncryptionMetadataId);
+    string? EncryptionMetadataId,
+    bool SimulateReadUnavailable,
+    bool SimulateReadFailure);
+
+  private static string TryReadText(byte[] bytes)
+  {
+    return Encoding.UTF8.GetString(bytes);
+  }
 }
 
 public sealed class DeterministicDocumentProcessor : IDocumentProcessor
@@ -288,14 +322,37 @@ public sealed class DeterministicDocumentProcessor : IDocumentProcessor
     DocumentProcessorRequest request,
     CancellationToken cancellationToken)
   {
+    cancellationToken.ThrowIfCancellationRequested();
+
     if (request.DetectedMediaType is null)
     {
       return new DocumentProcessorExecutionResult(
         false,
         null,
         DocumentProcessingFailureClassification.UnsupportedMediaType,
-        "Detected media type is not supported.",
+      "Detected media type is not supported.",
         []);
+    }
+
+    var fileName = request.OriginalFileName;
+    if (fileName.Contains("structured-failure", StringComparison.OrdinalIgnoreCase))
+    {
+      return new DocumentProcessorExecutionResult(
+        false,
+        null,
+        DocumentProcessingFailureClassification.ProviderUnavailable,
+        "Deterministic structured processor failure.",
+        []);
+    }
+
+    if (fileName.Contains("throws", StringComparison.OrdinalIgnoreCase))
+    {
+      throw new InvalidOperationException("Deterministic processor exception.");
+    }
+
+    if (fileName.Contains("cancel", StringComparison.OrdinalIgnoreCase))
+    {
+      throw new OperationCanceledException("Deterministic processor cancellation.", cancellationToken);
     }
 
     using var document = JsonDocument.Parse($$"""
@@ -306,7 +363,75 @@ public sealed class DeterministicDocumentProcessor : IDocumentProcessor
 }
 """);
 
+    using var fragmentDocument = JsonDocument.Parse($$"""
+{
+  "fragmentType": "TextFragment",
+  "sourceHash": "{{request.ContentHash}}",
+  "excerpt": "Section 03 30 00 requires concrete curing in accordance with the approved project specifications."
+}
+""");
+
     await Task.Yield();
+    if (fileName.Contains("malformed", StringComparison.OrdinalIgnoreCase))
+    {
+      return new DocumentProcessorExecutionResult(
+        true,
+        request.ContentHash,
+        DocumentProcessingFailureClassification.None,
+        null,
+        [
+          new DocumentProcessorCandidateResult(
+            DocumentCandidateType.MetadataCandidate,
+            "document-metadata-candidate",
+            "1.0.0",
+            default,
+            null,
+            ConfidenceBand.Medium,
+            ["invalid-json"],
+            DocumentProcessorCandidateOutcome.ReadyForReview),
+        ]);
+    }
+
+    if (fileName.Contains("schema-rejected", StringComparison.OrdinalIgnoreCase))
+    {
+      return new DocumentProcessorExecutionResult(
+        true,
+        request.ContentHash,
+        DocumentProcessingFailureClassification.None,
+        null,
+        [
+          new DocumentProcessorCandidateResult(
+            DocumentCandidateType.FragmentCandidate,
+            "document-fragment-candidate",
+            "1.0.0",
+            fragmentDocument.RootElement.Clone(),
+            "line:1",
+            ConfidenceBand.Low,
+            ["schema-rejected"],
+            DocumentProcessorCandidateOutcome.SchemaRejected),
+        ]);
+    }
+
+    if (fileName.Contains("policy-rejected", StringComparison.OrdinalIgnoreCase))
+    {
+      return new DocumentProcessorExecutionResult(
+        true,
+        request.ContentHash,
+        DocumentProcessingFailureClassification.None,
+        null,
+        [
+          new DocumentProcessorCandidateResult(
+            DocumentCandidateType.FragmentCandidate,
+            "document-fragment-candidate",
+            "1.0.0",
+            fragmentDocument.RootElement.Clone(),
+            "line:1",
+            ConfidenceBand.Low,
+            ["policy-rejected"],
+            DocumentProcessorCandidateOutcome.PolicyRejected),
+        ]);
+    }
+
     return new DocumentProcessorExecutionResult(
       true,
       request.ContentHash,
@@ -320,6 +445,15 @@ public sealed class DeterministicDocumentProcessor : IDocumentProcessor
           document.RootElement.Clone(),
           null,
           ConfidenceBand.High,
+          [],
+          DocumentProcessorCandidateOutcome.ReadyForReview),
+        new DocumentProcessorCandidateResult(
+          DocumentCandidateType.FragmentCandidate,
+          "document-fragment-candidate",
+          "1.0.0",
+          fragmentDocument.RootElement.Clone(),
+          "line:1",
+          ConfidenceBand.Medium,
           [],
           DocumentProcessorCandidateOutcome.ReadyForReview),
       ]);

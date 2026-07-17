@@ -163,6 +163,11 @@ namespace SPINbuster.Application.Repositories
   {
     Task<ImportedDocumentSource?> GetByIdAsync(ImportedSourceId importedSourceId, CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyCollection<ImportedDocumentSource>> GetByProjectAsync(
+      ProjectId projectId,
+      int maxResults,
+      CancellationToken cancellationToken = default);
+
     Task<ImportedDocumentSource?> GetByProjectAndContentHashAsync(
       ProjectId projectId,
       string contentHash,
@@ -188,6 +193,11 @@ namespace SPINbuster.Application.Repositories
   public interface IDocumentImportSessionRepository
   {
     Task<DocumentImportSession?> GetByIdAsync(DocumentImportSessionId importSessionId, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyCollection<DocumentImportSession>> GetByProjectAsync(
+      ProjectId projectId,
+      int maxResults,
+      CancellationToken cancellationToken = default);
 
     Task AddAsync(DocumentImportSession importSession, CancellationToken cancellationToken = default);
 

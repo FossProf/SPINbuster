@@ -191,6 +191,11 @@ internal sealed class FakeReportRepository : IReportRepository
     AddedReports.Add(report);
     return Task.CompletedTask;
   }
+
+  public Task<int> CountAsync(CancellationToken cancellationToken = default)
+  {
+    return Task.FromResult(_reports.Count);
+  }
 }
 
 internal sealed class FakeContextManifestRepository : IContextManifestRepository
@@ -311,6 +316,11 @@ internal sealed class FakeAiProposalRepository : IAiProposalRepository
     _proposals[proposal.Id] = proposal;
     UpdatedProposals.Add(proposal);
     return Task.CompletedTask;
+  }
+
+  public Task<int> CountAsync(CancellationToken cancellationToken = default)
+  {
+    return Task.FromResult(_proposals.Count);
   }
 }
 

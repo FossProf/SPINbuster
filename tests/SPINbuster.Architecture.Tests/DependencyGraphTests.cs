@@ -16,7 +16,7 @@ public sealed class DependencyGraphTests
       ["SPINbuster.Documents"] = ["SPINbuster.Application", "SPINbuster.Shared"],
       ["SPINbuster.Reporting"] = ["SPINbuster.Application", "SPINbuster.Shared"],
       ["SPINbuster.Server"] = ["SPINbuster.Application", "SPINbuster.Infrastructure", "SPINbuster.AI", "SPINbuster.Rules", "SPINbuster.Documents", "SPINbuster.Reporting", "SPINbuster.Shared"],
-      ["SPINbuster.Desktop"] = ["SPINbuster.AI", "SPINbuster.Application", "SPINbuster.Infrastructure"],
+      ["SPINbuster.Desktop"] = ["SPINbuster.AI", "SPINbuster.Application", "SPINbuster.Documents", "SPINbuster.Infrastructure"],
     };
 
   [Fact]
@@ -291,6 +291,53 @@ public sealed class DependencyGraphTests
   }
 
   [Fact]
+  public void DesktopProjectDoesNotUseEfCoreInfrastructureOrStorageImplementationsDirectly()
+  {
+    var repoRoot = FindRepositoryRoot();
+    var desktopFiles = Directory
+      .EnumerateFiles(Path.Combine(repoRoot, "src", "SPINbuster.Desktop"), "*.cs", SearchOption.AllDirectories)
+      .ToArray();
+
+    foreach (var desktopFile in desktopFiles)
+    {
+      var contents = File.ReadAllText(desktopFile);
+      Assert.DoesNotContain("DbContext", contents, StringComparison.Ordinal);
+      Assert.DoesNotContain("SpinbusterDbContext", contents, StringComparison.Ordinal);
+      Assert.DoesNotContain("Infrastructure.Persistence.Records", contents, StringComparison.Ordinal);
+      Assert.DoesNotContain("IImmutableContentStore", contents, StringComparison.Ordinal);
+      Assert.DoesNotContain("InMemoryImmutableContentStore", contents, StringComparison.Ordinal);
+    }
+  }
+
+  [Fact]
+  public void DesktopProjectDoesNotCallDomainMutationApisDirectly()
+  {
+    var repoRoot = FindRepositoryRoot();
+    var desktopFiles = Directory
+      .EnumerateFiles(Path.Combine(repoRoot, "src", "SPINbuster.Desktop"), "*.cs", SearchOption.AllDirectories)
+      .ToArray();
+    var forbiddenTokens = new[]
+    {
+      ".Activate(",
+      ".StartSession(",
+      ".CaptureFieldNote(",
+      ".AttachEvidence(",
+      ".Interpret(",
+      ".CreateDraft(",
+      ".Accept(",
+      ".Reject(",
+      ".BeginImporting(",
+      ".Complete(",
+    };
+
+    foreach (var desktopFile in desktopFiles)
+    {
+      var contents = File.ReadAllText(desktopFile);
+      Assert.DoesNotContain(forbiddenTokens, token => contents.Contains(token, StringComparison.Ordinal));
+    }
+  }
+
+  [Fact]
   public void DocumentApplicationContractsDoNotLeakProviderSpecificTypes()
   {
     var repoRoot = FindRepositoryRoot();
@@ -309,6 +356,27 @@ public sealed class DependencyGraphTests
       Assert.DoesNotContain("Google.", contents, StringComparison.Ordinal);
       Assert.DoesNotContain("Sqlite", contents, StringComparison.Ordinal);
       Assert.DoesNotContain("DbContext", contents, StringComparison.Ordinal);
+    }
+  }
+
+  [Fact]
+  public void DocumentSnapshotContractsDoNotLeakStreamsPathsOrMutableInfrastructureTypes()
+  {
+    var repoRoot = FindRepositoryRoot();
+    var snapshotFiles = Directory
+      .EnumerateFiles(Path.Combine(repoRoot, "src", "SPINbuster.Application", "UseCases", "LoadProjectDocumentWorkflowSnapshot"), "*.cs", SearchOption.AllDirectories)
+      .ToArray();
+
+    foreach (var snapshotFile in snapshotFiles)
+    {
+      var contents = File.ReadAllText(snapshotFile);
+      Assert.DoesNotContain("Stream", contents, StringComparison.Ordinal);
+      Assert.DoesNotContain("FileInfo", contents, StringComparison.Ordinal);
+      Assert.DoesNotContain("DirectoryInfo", contents, StringComparison.Ordinal);
+      Assert.DoesNotContain("FileStream", contents, StringComparison.Ordinal);
+      Assert.DoesNotContain("Path.", contents, StringComparison.Ordinal);
+      Assert.DoesNotContain("DbContext", contents, StringComparison.Ordinal);
+      Assert.DoesNotContain("Sqlite", contents, StringComparison.Ordinal);
     }
   }
 

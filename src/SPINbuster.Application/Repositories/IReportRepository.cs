@@ -10,4 +10,6 @@ public interface IReportRepository
   Task<Report?> GetByOperationIdAsync(OperationId operationId, CancellationToken cancellationToken = default);
 
   Task AddAsync(Report report, OperationId operationId, CancellationToken cancellationToken = default);
+
+  Task<int> CountAsync(CancellationToken cancellationToken = default);
 }

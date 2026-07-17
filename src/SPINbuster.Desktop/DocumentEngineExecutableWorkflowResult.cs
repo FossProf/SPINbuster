@@ -1,0 +1,37 @@
+using SPINbuster.Application.UseCases.BeginDocumentImportSession;
+using SPINbuster.Application.UseCases.CompleteDocumentImportSession;
+using SPINbuster.Application.UseCases.CreateProject;
+using SPINbuster.Application.UseCases.ImportDocumentSource;
+using SPINbuster.Application.UseCases.LoadProjectDocumentWorkflowSnapshot;
+using SPINbuster.Application.UseCases.RecordDocumentCandidateReview;
+using SPINbuster.Application.UseCases.RequestDocumentProcessing;
+using SPINbuster.Domain;
+
+namespace SPINbuster.Desktop;
+
+public sealed record DocumentEngineExecutableWorkflowResult(
+  CreateProjectResult CreatedProjectA,
+  BeginDocumentImportSessionResult BeganProjectAImportSession,
+  ImportDocumentSourceResult ImportedSourceA,
+  ImportDocumentSourceResult ImportedSourceB,
+  ImportDocumentSourceResult ImportedDuplicateSourceA,
+  CompleteDocumentImportSessionResult CompletedProjectAImportSession,
+  RequestDocumentProcessingResult RequestedSourceAProcessing,
+  RecordDocumentCandidateReviewResult HumanAcceptedCandidate,
+  RecordDocumentCandidateReviewResult RejectedCandidate,
+  LoadProjectDocumentWorkflowSnapshotResult ProjectASnapshot,
+  LoadProjectDocumentWorkflowSnapshotResult ReplayedProjectASnapshot,
+  CreateProjectResult CreatedProjectB,
+  BeginDocumentImportSessionResult BeganProjectBImportSession,
+  ImportDocumentSourceResult ImportedProjectBCopy,
+  CompleteDocumentImportSessionResult CompletedProjectBImportSession,
+  LoadProjectDocumentWorkflowSnapshotResult ProjectBSnapshot,
+  IReadOnlyList<DocumentEngineProcessingScenarioResult> ProcessingScenarios,
+  IReadOnlyList<DesktopWorkflowFailurePresentation> FailurePresentations);
+
+public sealed record DocumentEngineProcessingScenarioResult(
+  string Scenario,
+  ImportedSourceId ImportedSourceId,
+  DocumentProcessingAttemptState State,
+  DocumentProcessingFailureClassification FailureClassification,
+  IReadOnlyList<DocumentCandidateStatus> CandidateStatuses);

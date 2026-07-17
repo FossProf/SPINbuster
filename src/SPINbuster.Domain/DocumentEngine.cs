@@ -507,7 +507,8 @@ public sealed class DocumentImportSession : AuditableEntity
 
   public void BeginValidation(string actor, DateTimeOffset occurredAtUtc)
   {
-    TransitionTo([DocumentImportSessionState.Created, DocumentImportSessionState.Validating], DocumentImportSessionState.Validating, nameof(BeginValidation));
+    // A batch session may validate multiple sources before explicit completion.
+    TransitionTo([DocumentImportSessionState.Created, DocumentImportSessionState.Validating, DocumentImportSessionState.Importing], DocumentImportSessionState.Validating, nameof(BeginValidation));
     AppendAuditEvent(CreateAuditEvent(
       "DocumentImportValidationStarted",
       actor,

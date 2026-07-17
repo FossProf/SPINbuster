@@ -54,6 +54,36 @@ public sealed class DocumentEngineUseCaseTests
   }
 
   [Fact]
+  public async Task ImportDocumentSourceAllowsMultipleSourcesWithinOneActiveBatch()
+  {
+    var fixture = CreateFixture();
+    var importSession = await StartSessionAsync(fixture);
+    var useCase = CreateImportUseCase(fixture);
+
+    await useCase.HandleAsync(new ImportDocumentSourceCommand(
+      importSession,
+      fixture.ProjectId,
+      "detail-a.pdf",
+      "application/pdf",
+      ImportedSourceOrigin.LocalFile,
+      null,
+      CreateContent("hello world")));
+    var second = await useCase.HandleAsync(new ImportDocumentSourceCommand(
+      importSession,
+      fixture.ProjectId,
+      "detail-b.pdf",
+      "application/pdf",
+      ImportedSourceOrigin.LocalFile,
+      null,
+      CreateContent("goodbye world")));
+
+    Assert.False(second.ReusedExistingProjectSource);
+    Assert.Equal(2, fixture.ImportedSourceRepository.AddedSources.Count);
+    Assert.Equal(2, fixture.ImportSessionRepository.UpdatedSessions.Last().AcceptedCount);
+    Assert.Equal(DocumentImportSessionState.Importing, fixture.ImportSessionRepository.UpdatedSessions.Last().State);
+  }
+
+  [Fact]
   public async Task ImportDocumentSourceReusesExactDuplicateWithinProject()
   {
     var fixture = CreateFixture();

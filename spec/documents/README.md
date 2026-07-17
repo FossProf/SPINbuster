@@ -8,7 +8,7 @@ The Document Engine will convert binary source material into non-authoritative c
 
 ## Current boundary
 
-The repository now contains the first durable Document Engine foundation review candidate.
+The repository now contains the released durable Document Engine foundation and the first executable Document Engine review candidate.
 
 Current foundation responsibilities include:
 
@@ -32,6 +32,20 @@ Future responsibilities still include:
 The Document Engine does not own authoritative engineering truth.
 
 Authoritative promotion remains an Application and Knowledge Engine workflow decision.
+
+## Executable review-candidate status
+
+The active review candidate validates:
+
+- multi-source batch import
+- exact duplicate handling
+- privacy-safe cross-project duplicate reporting
+- deterministic processing-attempt and candidate persistence
+- explicit review disposition for non-authoritative candidates
+- Application-only Desktop composition
+- authority isolation from Knowledge, Report, and AI records
+
+See `docs/decisions/status/DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-PROTOTYPE-REVIEW.md` for the current prototype assessment and next-package recommendation.
 
 ## Current non-goals
 

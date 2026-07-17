@@ -11,17 +11,17 @@
 - Status: `Active`
 - Build: `Passing`
 - Warnings: `0`
-- Architecture tests: `17/17 passing`
-- Domain tests: `52/52 passing`
-- Application tests: `70/70 passing`
+- Architecture tests: `20/20 passing`
+- Domain tests: `53/53 passing`
+- Application tests: `74/74 passing`
 - Documents tests: `5/5 passing`
 - AI tests: `6/6 passing`
 - Infrastructure tests: `27/27 passing`
-- Desktop end-to-end tests: `6/6 passing`
+- Desktop end-to-end tests: `13/13 passing`
 
 ## Next Planned Implementation Package
 
-- `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-RC`
+- `Determine from prototype review`
 
 ## Current Branch
 
@@ -29,11 +29,11 @@
 
 ## Last Completed Milestone
 
-- Document Engine foundation released
+- Document Engine executable slice hardening and validation completed
 
 ## Current Implementation Phase
 
-- Document Engine executable slice planning
+- Document Engine executable slice review candidate validation
 
 ## Current Milestone
 
@@ -73,17 +73,18 @@
 
 ## Immediate Next Task
 
-- Implement `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-RC`
+- Record the executable-slice prototype review and select the next package
 
 ## Fast Context
 
 - The repository is the source of truth for project state and architecture.
 - Start every new AI session from `.ai/bootstrap.md`.
 - The current released behavior includes `DOCUMENT-ENGINE-FOUNDATION-0.1`.
-- The next active package is the first executable Document Engine slice.
-- The next planned implementation package is `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-RC`.
+- The active review candidate is the first executable Document Engine slice.
+- The next planned implementation package is `Determine from prototype review`.
 
 ## Current Capabilities
 
 - Current released capabilities remain unchanged from `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1`
 - The repository now includes a durable Document Engine foundation with immutable source identity, processing attempts, and non-authoritative candidates
+- The repository now also includes a deterministic executable Document Engine workflow through the temporary Desktop host

@@ -89,4 +89,9 @@ public sealed class SqliteReportRepository : IReportRepository
     _dbContext.Reports.Add(reportRecord);
     return Task.CompletedTask;
   }
+
+  public Task<int> CountAsync(CancellationToken cancellationToken = default)
+  {
+    return _dbContext.Reports.AsNoTracking().CountAsync(cancellationToken);
+  }
 }

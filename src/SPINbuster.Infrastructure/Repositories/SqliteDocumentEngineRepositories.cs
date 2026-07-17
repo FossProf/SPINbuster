@@ -72,6 +72,41 @@ public sealed class SqliteImportedDocumentSourceRepository : IImportedDocumentSo
     return InfrastructureMapper.ToDomain(record, storage, auditTrail);
   }
 
+  public async Task<IReadOnlyCollection<ImportedDocumentSource>> GetByProjectAsync(
+    ProjectId projectId,
+    int maxResults,
+    CancellationToken cancellationToken = default)
+  {
+    var records = await _dbContext.ImportedDocumentSources
+      .AsNoTracking()
+      .Where(item => item.ProjectId == projectId)
+      .ToArrayAsync(cancellationToken);
+    records = records
+      .OrderBy(item => item.ImportedAtUtc)
+      .ThenBy(item => item.Id)
+      .Take(maxResults)
+      .ToArray();
+
+    if (records.Length == 0)
+    {
+      return [];
+    }
+
+    var storageIds = records.Select(record => record.StorageObjectId).Distinct().ToArray();
+    var storageById = await _dbContext.StorageObjects
+      .AsNoTracking()
+      .Where(item => storageIds.Contains(item.Id))
+      .ToDictionaryAsync(item => item.Id, cancellationToken);
+    var auditMap = await LoadAuditTrailMapAsync(nameof(ImportedDocumentSource), records.Select(item => item.Id.ToString()).ToArray(), cancellationToken);
+
+    return records
+      .Select(record => InfrastructureMapper.ToDomain(
+        record,
+        storageById[record.StorageObjectId],
+        auditMap.TryGetValue(record.Id.ToString(), out var auditTrail) ? auditTrail : []))
+      .ToArray();
+  }
+
   public async Task<ImportedDocumentSource?> GetByProjectAndContentHashAsync(
     ProjectId projectId,
     string contentHash,
@@ -120,10 +155,12 @@ public sealed class SqliteImportedDocumentSourceRepository : IImportedDocumentSo
     var records = await _dbContext.ImportedDocumentSources
       .AsNoTracking()
       .Where(item => item.ImportSessionId == importSessionId)
+      .ToArrayAsync(cancellationToken);
+    records = records
       .OrderBy(item => item.ImportedAtUtc)
       .ThenBy(item => item.Id)
       .Take(maxResults)
-      .ToArrayAsync(cancellationToken);
+      .ToArray();
 
     if (records.Length == 0)
     {
@@ -193,6 +230,41 @@ public sealed class SqliteDocumentImportSessionRepository : IDocumentImportSessi
     return InfrastructureMapper.ToDomain(record, auditTrail.Select(InfrastructureMapper.ToDomain).ToArray());
   }
 
+  public async Task<IReadOnlyCollection<DocumentImportSession>> GetByProjectAsync(
+    ProjectId projectId,
+    int maxResults,
+    CancellationToken cancellationToken = default)
+  {
+    var records = await _dbContext.DocumentImportSessions.AsNoTracking()
+      .Where(item => item.ProjectId == projectId)
+      .ToArrayAsync(cancellationToken);
+    records = records
+      .OrderBy(item => item.StartedAtUtc)
+      .ThenBy(item => item.Id)
+      .Take(maxResults)
+      .ToArray();
+
+    if (records.Length == 0)
+    {
+      return [];
+    }
+
+    var auditMap = await _dbContext.AuditEvents.AsNoTracking()
+      .Where(item => item.SubjectType == nameof(DocumentImportSession) && records.Select(record => record.Id.ToString()).Contains(item.SubjectId))
+      .ToArrayAsync(cancellationToken);
+
+    return records
+      .Select(record => InfrastructureMapper.ToDomain(
+        record,
+        auditMap
+          .Where(item => item.SubjectId == record.Id.ToString())
+          .Select(InfrastructureMapper.ToDomain)
+          .OrderBy(item => item.OccurredAtUtc)
+          .ThenBy(item => item.Id.Value)
+          .ToArray()))
+      .ToArray();
+  }
+
   public Task AddAsync(DocumentImportSession importSession, CancellationToken cancellationToken = default)
   {
     _dbContext.DocumentImportSessions.Add(InfrastructureMapper.ToRecord(importSession));
@@ -249,9 +321,11 @@ public sealed class SqliteDocumentProcessingAttemptRepository : IDocumentProcess
   {
     var records = await _dbContext.DocumentProcessingAttempts.AsNoTracking()
       .Where(item => item.ImportedSourceId == importedSourceId)
+      .ToArrayAsync(cancellationToken);
+    records = records
       .OrderBy(item => item.AttemptNumber)
       .Take(maxResults)
-      .ToArrayAsync(cancellationToken);
+      .ToArray();
     var auditMap = await LoadAuditTrailMapAsync(records.Select(item => item.Id).ToArray(), cancellationToken);
     return records.Select(item => InfrastructureMapper.ToDomain(item, auditMap.TryGetValue(item.Id, out var auditTrail) ? auditTrail : [])).ToArray();
   }
@@ -322,10 +396,12 @@ public sealed class SqliteDocumentCandidateRepository : IDocumentCandidateReposi
   {
     var records = await _dbContext.DocumentCandidates.AsNoTracking()
       .Where(item => item.ImportedSourceId == importedSourceId)
+      .ToArrayAsync(cancellationToken);
+    records = records
       .OrderBy(item => item.CreatedAtUtc)
       .ThenBy(item => item.Id)
       .Take(maxResults)
-      .ToArrayAsync(cancellationToken);
+      .ToArray();
     var auditMap = await LoadAuditTrailMapAsync(records.Select(item => item.Id).ToArray(), cancellationToken);
     return records.Select(item => InfrastructureMapper.ToDomain(item, auditMap.TryGetValue(item.Id, out var auditTrail) ? auditTrail : [])).ToArray();
   }
@@ -337,10 +413,12 @@ public sealed class SqliteDocumentCandidateRepository : IDocumentCandidateReposi
   {
     var records = await _dbContext.DocumentCandidates.AsNoTracking()
       .Where(item => item.ProcessingAttemptId == processingAttemptId)
+      .ToArrayAsync(cancellationToken);
+    records = records
       .OrderBy(item => item.CreatedAtUtc)
       .ThenBy(item => item.Id)
       .Take(maxResults)
-      .ToArrayAsync(cancellationToken);
+      .ToArray();
     var auditMap = await LoadAuditTrailMapAsync(records.Select(item => item.Id).ToArray(), cancellationToken);
     return records.Select(item => InfrastructureMapper.ToDomain(item, auditMap.TryGetValue(item.Id, out var auditTrail) ? auditTrail : [])).ToArray();
   }
