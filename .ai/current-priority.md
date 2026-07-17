@@ -6,11 +6,14 @@ Prototype Vertical Slice
 Latest released baseline:
 LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1
 
+Current documentation review candidate:
+ARCHITECTURE-VISION-2.0-RC
+
 Next active package:
 PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC
 
 Status:
-Local filesystem storage adapter released
+Architecture vision and roadmap governance refresh in review-candidate state
 
 Build:
 Passing
@@ -37,17 +40,19 @@ Desktop end-to-end tests:
 23/23 passing
 
 Current task:
-Begin `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`
+Complete `ARCHITECTURE-VISION-2.0-RC` without changing production code, tests, or migrations
 
 Required outcome:
 
-- Preserve exact-byte document storage across provider restart with the local filesystem adapter.
-- Keep SQLite metadata and filesystem bytes consistent through integrity validation and repeated execution.
-- Preserve prior data and expose bounded orphan visibility without widening the authoritative boundary.
-- Leave the in-memory adapter fixture-only and keep Desktop composition free of raw storage I/O.
+- Rewrite the roadmap around capability evolution instead of isolated implementation slices.
+- Preserve every released milestone as historical record.
+- Define the long-term layered and capability architecture constitution for SPINbuster.
+- Establish engine ownership boundaries and platform completion criteria.
+- Keep the repository in its current released state while improving long-term planning clarity.
+- Do not modify production code, tests, migrations, or project structure.
 
 Next review:
-Parsing and fragment foundation boundary review
+Architecture-vision and roadmap governance review before additional implementation packages begin
 
 Known blockers:
 None
@@ -60,6 +65,7 @@ Proposed next direction:
 - Begin `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`
 - Preserve the non-authoritative document-candidate boundary
 - Keep OCR, AI extraction, and reconciliation workflows deferred until fragment contracts are explicit
+- Use capability-phase planning rather than slice-only planning for future governance updates
 
 Current capabilities:
 
@@ -119,20 +125,11 @@ Authoritative context:
 - `docs/decisions/edr/EDR-KE-010-knowledge-fragment-identity.md`
 - `docs/decisions/edr/EDR-KE-011-engineering-assertion-promotion.md`
 - `docs/decisions/edr/EDR-KE-012-document-engine-ownership-boundary.md`
+- `docs/00-governance/ROADMAP.md`
 
 Validation before completion:
 
 - `dotnet format SPINbuster.sln --no-restore`
-- `dotnet restore SPINbuster.sln --configfile NuGet.Config`
 - `dotnet build SPINbuster.sln --no-restore`
-- `dotnet tool run dotnet-ef migrations has-pending-model-changes --no-build --project src/SPINbuster.Infrastructure --startup-project src/SPINbuster.Server --context SPINbuster.Infrastructure.Persistence.SpinbusterDbContext`
-- `dotnet test tests/SPINbuster.Domain.Tests/SPINbuster.Domain.Tests.csproj --no-build`
-- `dotnet test tests/SPINbuster.Architecture.Tests/SPINbuster.Architecture.Tests.csproj --no-build`
-- `dotnet test tests/SPINbuster.Application.Tests/SPINbuster.Application.Tests.csproj --no-build`
-- `dotnet test tests/SPINbuster.Documents.Tests/SPINbuster.Documents.Tests.csproj --no-build`
-- `dotnet test tests/SPINbuster.Infrastructure.Tests/SPINbuster.Infrastructure.Tests.csproj --no-build`
-- `dotnet test tests/SPINbuster.Desktop.Tests/SPINbuster.Desktop.Tests.csproj --no-build`
-- `dotnet run --project src/SPINbuster.Desktop/SPINbuster.Desktop.csproj --no-build`
 - `dotnet test SPINbuster.sln --no-build -m:1`
 - `git diff --check`
-- `git diff --name-only -- src/SPINbuster.Infrastructure/Persistence/Migrations`

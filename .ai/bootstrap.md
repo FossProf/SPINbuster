@@ -4,14 +4,16 @@ Purpose: This is the single bootstrap entry point for new AI sessions working on
 
 ## What Is SPINbuster?
 
-SPINbuster is a layered .NET codebase with AI-assisted capabilities, governed by repository specifications and architecture guardrails. The repository is the source of truth; chats are not.
+SPINbuster is an offline-first engineering knowledge platform with layered code architecture and engine-based capability architecture. The repository is the source of truth; chats are not.
 
 ## Current Project Status
 
 - Repository scaffold exists and builds successfully.
 - Architecture guardrails are in place and passing.
-- The repository includes the released `AI-DRAFT-PROPOSAL-SLICE-0.1` baseline, the released `AI-PROPOSAL-EXECUTABLE-SLICE-0.1` Desktop executable workflow, the released `KNOWLEDGE-ENGINE-PERSISTENCE-0.1` SQLite persistence baseline, and the released `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1` executable Knowledge Engine baseline.
+- The repository includes released foundations for Application, Infrastructure, AI proposal workflows, Knowledge Engine workflows, Document Engine workflows, and the local filesystem storage adapter.
 - The latest released baseline is `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1`.
+- The roadmap is now organized by long-term capability evolution rather than isolated implementation slices.
+- The current documentation review candidate is `ARCHITECTURE-VISION-2.0-RC`.
 
 ## Latest Released Baseline
 
@@ -21,9 +23,9 @@ SPINbuster is a layered .NET codebase with AI-assisted capabilities, governed by
 
 - `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`
 
-## Next Planned Package
+## Current Documentation Review Candidate
 
-- `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`
+- `ARCHITECTURE-VISION-2.0-RC`
 
 ## Current Milestone
 
@@ -31,7 +33,7 @@ SPINbuster is a layered .NET codebase with AI-assisted capabilities, governed by
 
 ## Current Active Task
 
-- `Begin the parsing-and-fragment foundation review candidate`
+- `Complete the architecture-vision governance package before additional implementation packages begin`
 
 ## Authoritative Files
 
@@ -40,9 +42,13 @@ SPINbuster is a layered .NET codebase with AI-assisted capabilities, governed by
 - `.ai/handoff.md`
 - `.ai/coding-rules.md`
 - `.ai/repository-map.md`
+- `docs/00-governance/ARCHITECTURE_VISION.md`
+- `docs/00-governance/CAPABILITY_MATRIX.md`
+- `docs/00-governance/PLATFORM_COMPLETION_CRITERIA.md`
 - `docs/00-governance/AI_BOOTSTRAP.md`
 - Relevant `spec/` documents for the subsystem being changed
-- `docs/decisions/status/LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1-RC-PROTOTYPE-REVIEW.md`
+- `docs/00-governance/ROADMAP.md`
+- `docs/decisions/adr/ADR-ARCH-001-platform-engine-model.md`
 
 ## Bootstrap Reading Order
 

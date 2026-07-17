@@ -35,6 +35,8 @@ Completed:
 - Application-level immutable-store failure classification for persisted-byte workflows
 - `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1` approved for release
 - Released baseline `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1`
+- Began `ROADMAP-V2.0-RC` to reorganize planning around capability evolution while preserving released slice history
+- Began `ARCHITECTURE-VISION-2.0-RC` to define the long-term platform constitution, engine model, and completion criteria
 
 Next:
 

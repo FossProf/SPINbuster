@@ -1,7 +1,7 @@
 # Current State
 
 Repository status:
-`LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1` is the latest released baseline. The next active package is `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`. Build passing. Domain tests `53/53`. Application tests `74/74`. Documents tests `28/28`. Infrastructure tests `27/27`. Architecture tests `21/21`. Desktop tests `23/23`. Warnings `0`.
+`LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1` is the latest released baseline. `ARCHITECTURE-VISION-2.0-RC` is in progress as the current documentation-only review candidate. The next active implementation package remains `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`. Build passing. Domain tests `53/53`. Application tests `74/74`. Documents tests `28/28`. Infrastructure tests `27/27`. Architecture tests `21/21`. Desktop tests `23/23`. Warnings `0`.
 
 Current branch:
 `main`
@@ -12,7 +12,10 @@ Current milestone:
 Latest released baseline:
 `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1`
 
-Next active package:
+Current documentation review candidate:
+`ARCHITECTURE-VISION-2.0-RC`
+
+Next active implementation package:
 `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`
 
 Recent accomplishments:
@@ -40,11 +43,14 @@ Recent accomplishments:
 - Corrected the Desktop default durable storage root to `%LOCALAPPDATA%\\SPINbuster\\document-content`.
 - Added restart, repeated-run, corruption, orphan, configuration, and no-absolute-path Desktop tests against the real local filesystem adapter.
 - Added Application-level immutable content store failure classification so orchestration can distinguish missing, unavailable, access-denied, integrity, cancellation, and I/O outcomes without filesystem-specific leakage.
+- Completed `ROADMAP-V2.0-RC` as the baseline governance refresh organized around capability evolution while preserving released slice history.
+- Began `ARCHITECTURE-VISION-2.0-RC` to define the long-term platform constitution, engine ownership model, and platform completion criteria.
 
 Current architectural decisions:
 
 - `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1` is now the active released baseline.
-- The next active package is `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`.
+- The next active implementation package is `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`.
+- The current governance work is `ARCHITECTURE-VISION-2.0-RC`, a documentation-only architecture constitution pass that does not change release state.
 - `SPINbuster.Desktop` remains a temporary bootstrap host, not a MAUI application yet.
 - The Document Engine owns binary-source handling and non-authoritative processing outputs only.
 - The Desktop host composes document workflow behavior through Application commands and queries only.
@@ -54,7 +60,7 @@ Current architectural decisions:
 - Knowledge Engine mutations still do not have a uniform `OperationId` replay contract; `EDR-KE-009` keeps that deferred before synchronization or automated ingestion.
 
 Next task:
-Begin `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`
+Finish `ARCHITECTURE-VISION-2.0-RC`, then resume `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`
 
 Known issues:
 
@@ -68,8 +74,8 @@ Known issues:
 
 Requested review:
 
-- Confirm the parsing-and-fragment foundation boundary before implementation begins
-- Confirm the non-authoritative fragment-candidate model remains the correct next increment
+- Confirm the architecture vision and capability matrix reflect the intended long-term platform constitution
+- Confirm `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC` remains the correct next implementation package
 
 Current capabilities:
 

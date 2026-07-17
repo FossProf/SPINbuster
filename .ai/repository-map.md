@@ -15,7 +15,11 @@ Purpose: Explain how the repository is organized and where different kinds of wo
 ## Documentation And Decision Layout
 
 - `docs/00-governance/` contains the durable repository governance layer.
+- `docs/00-governance/ARCHITECTURE_VISION.md` defines the long-term platform constitution, including Layered Architecture and Capability Architecture.
+- `docs/00-governance/CAPABILITY_MATRIX.md` assigns single-engine ownership for platform capabilities.
+- `docs/00-governance/PLATFORM_COMPLETION_CRITERIA.md` defines objective completion gates for architecture, feature completeness, and commercial readiness.
 - `docs/00-governance/ROADMAP.md` records the strategic roadmap and milestone direction.
+- `docs/00-governance/ROADMAP.md` now organizes future work by capability evolution rather than only by isolated implementation slices.
 - `docs/decisions/adr/` contains architecture decision records.
 - `docs/decisions/edr/` contains engineering and product decision records.
 - `docs/decisions/status/` contains baseline, review, and status records.
@@ -49,11 +53,11 @@ Purpose: Explain how the repository is organized and where different kinds of wo
 
 ## Current Released Baseline
 
-- `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1` is the latest released baseline.
+- `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1` is the latest released baseline.
 
-## Active Review Candidate
+## Next Active Package
 
-- `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1-RC`
+- `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`
 
 ## Next Planned Package
 
@@ -62,7 +66,7 @@ Purpose: Explain how the repository is organized and where different kinds of wo
 ## Current Document Engine Flow
 
 - The released executable slice adds a project-scoped Application snapshot query for document workflow state.
-- The current review candidate replaces the Desktop host's fixture-only document bytes with a local filesystem immutable content store.
+- The released local filesystem storage adapter replaces the Desktop host's fixture-only document bytes with a local filesystem immutable content store.
 - The temporary Desktop host now exercises:
   - multi-source batch import
   - same-project duplicate reuse
@@ -83,3 +87,5 @@ Start from `.ai/` for navigation.
 Read `PROJECT_STATE.md` first when rapid project-state context is needed.
 Use `spec/` as the source of truth for design and behavior.
 Use `docs/` for explanatory and reader-friendly material.
+Treat roadmap capability phases as planning groupings, not as code dependency diagrams.
+Treat Layered Architecture as the dependency model and Capability Architecture as the ownership model.

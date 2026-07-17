@@ -19,7 +19,7 @@
 
 ## Current Implementation Phase
 
-- Parsing and fragment foundation preparation
+- Architecture vision and capability-planning refresh
 
 ## Current Milestone
 
@@ -61,14 +61,15 @@
 
 ## Immediate Next Task
 
-- Begin `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`
+- Complete `ARCHITECTURE-VISION-2.0-RC`, then resume `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`
 
 ## Fast Context
 
 - The repository is the source of truth for project state and architecture.
 - Start every new AI session from `.ai/bootstrap.md`.
 - The current released behavior includes `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1`.
-- The next active package is `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`.
+- The current documentation review candidate is `ARCHITECTURE-VISION-2.0-RC`.
+- The next active implementation package remains `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`.
 
 ## Current Capabilities
 
