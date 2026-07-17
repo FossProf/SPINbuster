@@ -2,14 +2,10 @@
 
 ## Latest Released Baseline
 
-- `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1`
+- `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1`
 - Status: `Released`
 
-## Active Review Candidate
-
-- `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1-RC`
-
-## Next Planned Package
+## Next Active Package
 
 - `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`
 
@@ -19,11 +15,11 @@
 
 ## Last Completed Milestone
 
-- Document Engine executable slice released
+- Local filesystem storage adapter released
 
 ## Current Implementation Phase
 
-- Local filesystem storage-adapter review-candidate validation
+- Parsing and fragment foundation preparation
 
 ## Current Milestone
 
@@ -65,15 +61,14 @@
 
 ## Immediate Next Task
 
-- Complete review and validation for `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1-RC`, then begin `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`
+- Begin `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`
 
 ## Fast Context
 
 - The repository is the source of truth for project state and architecture.
 - Start every new AI session from `.ai/bootstrap.md`.
-- The current released behavior includes `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1`.
-- The active review candidate is `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1-RC`.
-- The next planned package is `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`.
+- The current released behavior includes `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1`.
+- The next active package is `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`.
 
 ## Current Capabilities
 

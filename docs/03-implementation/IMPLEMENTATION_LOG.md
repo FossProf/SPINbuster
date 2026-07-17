@@ -33,6 +33,8 @@ Completed:
 - Restart and repeated-run proof against the same SQLite database and storage root
 - Missing-file, corrupt-file, orphan-visibility, and default-root-policy hardening
 - Application-level immutable-store failure classification for persisted-byte workflows
+- `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1` approved for release
+- Released baseline `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1`
 
 Next:
 

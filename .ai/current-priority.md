@@ -4,16 +4,13 @@ Current milestone:
 Prototype Vertical Slice
 
 Latest released baseline:
-DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1
+LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1
 
-Active review candidate:
-LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1-RC
-
-Next planned package:
+Next active package:
 PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC
 
 Status:
-Local filesystem storage-adapter review candidate implemented and under validation
+Local filesystem storage adapter released
 
 Build:
 Passing
@@ -40,7 +37,7 @@ Desktop end-to-end tests:
 23/23 passing
 
 Current task:
-Finalize `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1-RC` review evidence, validation, and review-only commit
+Begin `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`
 
 Required outcome:
 
@@ -50,13 +47,13 @@ Required outcome:
 - Leave the in-memory adapter fixture-only and keep Desktop composition free of raw storage I/O.
 
 Next review:
-Prototype review for the local filesystem storage adapter and readiness for parsing plus fragment work
+Parsing and fragment foundation boundary review
 
 Known blockers:
 None
 
 Last completed:
-Filesystem adapter restart, repeated-run, corruption, and orphan hardening validated locally
+Released `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1`
 
 Proposed next direction:
 

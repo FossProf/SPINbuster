@@ -1,10 +1,10 @@
 # LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1-RC Prototype Review
 
 Date: 2026-07-17
-Status: Review Candidate
+Status: Released
 Latest released baseline: `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1`
-Active review candidate: `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1-RC`
-Next planned package: `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`
+Released baseline: `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1`
+Next active package: `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`
 
 ## Validation snapshot
 

@@ -25,7 +25,7 @@ Deferred
 
 ## Current Major Phase
 
-- Local filesystem storage adapter review candidate - Active
+- Parsing and fragment foundation review candidate - Active
 
 ## Planned Implementation Packages
 

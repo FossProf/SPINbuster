@@ -11,16 +11,15 @@ SPINbuster is a layered .NET codebase with AI-assisted capabilities, governed by
 - Repository scaffold exists and builds successfully.
 - Architecture guardrails are in place and passing.
 - The repository includes the released `AI-DRAFT-PROPOSAL-SLICE-0.1` baseline, the released `AI-PROPOSAL-EXECUTABLE-SLICE-0.1` Desktop executable workflow, the released `KNOWLEDGE-ENGINE-PERSISTENCE-0.1` SQLite persistence baseline, and the released `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1` executable Knowledge Engine baseline.
-- The latest released baseline is `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1`.
-- The active review candidate is `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1-RC`.
+- The latest released baseline is `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1`.
 
 ## Latest Released Baseline
 
-- `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1`
+- `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1`
 
-## Active Review Candidate
+## Next Active Package
 
-- `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1-RC`
+- `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`
 
 ## Next Planned Package
 
@@ -32,7 +31,7 @@ SPINbuster is a layered .NET codebase with AI-assisted capabilities, governed by
 
 ## Current Active Task
 
-- `Complete the local filesystem storage-adapter review candidate validation and review commit`
+- `Begin the parsing-and-fragment foundation review candidate`
 
 ## Authoritative Files
 
