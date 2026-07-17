@@ -4,16 +4,13 @@ Current milestone:
 Prototype Vertical Slice
 
 Latest released baseline:
-DOCUMENT-ENGINE-FOUNDATION-0.1
+DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1
 
-Active review candidate:
-DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-RC
-
-Next planned implementation package:
-Determine from prototype review
+Next active package:
+LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1-RC
 
 Status:
-Executable review candidate validated; prototype review and continuity update in progress
+Document Engine executable slice released; next package baton prepared
 
 Build:
 Passing
@@ -37,10 +34,10 @@ AI tests:
 6/6 passing
 
 Desktop end-to-end tests:
-13/13 passing
+16/16 passing
 
 Current task:
-Record the `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-RC` prototype review and continuity state
+Begin `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1-RC`
 
 Required outcome:
 
@@ -50,19 +47,19 @@ Required outcome:
 - Present deterministic success and failure outcomes without widening the authoritative boundary.
 
 Next review:
-Prototype-review outcome and next-package selection for the Document Engine
+Local filesystem storage-adapter boundary and validation plan
 
 Known blockers:
 None
 
 Last completed:
-Finished the executable Document Engine Desktop/workflow hardening pass
+Released `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1`
 
 Proposed next direction:
 
-- Determine the next package from `docs/decisions/status/DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-PROTOTYPE-REVIEW.md`
-- Keep parsing, OCR, and promotion boundaries deferred until the prototype review explicitly advances them
+- Implement the local filesystem storage adapter beneath the existing Document Engine foundation
 - Preserve the non-authoritative document-candidate boundary
+- Keep parsing, OCR, and promotion boundaries deferred until the filesystem adapter is validated
 
 Current capabilities:
 

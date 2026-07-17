@@ -15,7 +15,7 @@ Next:
 
 Completed:
 
-- Document Engine executable Desktop workflow review candidate
+- Document Engine executable Desktop workflow
 - Multi-source batch import through one deterministic import session
 - Project-scoped document workflow snapshot query
 - Deterministic document processing outcome persistence and reload
@@ -25,10 +25,12 @@ Completed:
 - Audit-delta staging fix for repeated document aggregate mutations
 - SQLite document query-shaping hardening for `DateTimeOffset` ordering
 - Desktop tests for duplicate privacy, exact-byte reopen, durable failure handling, and commit-failure orphan behavior
+- Repeated-execution hardening for reused SQLite databases
+- Released baseline `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1`
 
 Next:
 
-- Determine the next package from `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-PROTOTYPE-REVIEW.md`
+- `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1-RC`
 
 ## 2026-07-15
 

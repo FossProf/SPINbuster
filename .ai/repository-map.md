@@ -48,25 +48,22 @@ Purpose: Explain how the repository is organized and where different kinds of wo
 
 ## Current Released Baseline
 
-- `DOCUMENT-ENGINE-FOUNDATION-0.1` is the latest released baseline.
+- `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1` is the latest released baseline.
 
-## Active Review Candidate
+## Next Active Package
 
-- `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-RC`
-
-## Next Planned Implementation Package
-
-- `Determine from prototype review`
+- `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1-RC`
 
 ## Current Document Engine Flow
 
-- The current review candidate adds a project-scoped Application snapshot query for document workflow state.
+- The released executable slice adds a project-scoped Application snapshot query for document workflow state.
 - The temporary Desktop host now exercises:
   - multi-source batch import
   - same-project duplicate reuse
   - cross-project duplicate privacy
   - deterministic processing outcomes
   - non-authoritative candidate review
+  - repeated execution on reused SQLite databases without mutating prior runs
   - reload of document audit history and authority-isolation state
 - The Infrastructure layer now also contains a host-facing database migrator abstraction so startup migration stays outside the Desktop host’s direct EF Core concerns.
 

@@ -1,7 +1,7 @@
 # Current State
 
 Repository status:
-`DOCUMENT-ENGINE-FOUNDATION-0.1` is the latest released baseline. The active review candidate is `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-RC`. Build passing. Domain tests `53/53`. Application tests `74/74`. Documents tests `5/5`. Infrastructure tests `27/27`. Architecture tests `20/20`. Desktop tests `13/13`. Warnings `0`.
+`DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1` is the latest released baseline. The next active package is `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1-RC`. Build passing. Domain tests `53/53`. Application tests `74/74`. Documents tests `5/5`. Infrastructure tests `27/27`. Architecture tests `20/20`. Desktop tests `16/16`. Warnings `0`.
 
 Current branch:
 `main`
@@ -10,13 +10,10 @@ Current milestone:
 `Prototype Vertical Slice`
 
 Latest released baseline:
-`DOCUMENT-ENGINE-FOUNDATION-0.1`
+`DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1`
 
-Active review candidate:
-`DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-RC`
-
-Next planned implementation package:
-`Determine from prototype review`
+Next active package:
+`LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1-RC`
 
 Recent accomplishments:
 
@@ -37,12 +34,13 @@ Recent accomplishments:
 - Hardened batch import lifecycle semantics so one import session can validate and import multiple sources before explicit completion.
 - Hardened SQLite document query shaping to avoid provider translation failures for `DateTimeOffset` ordering.
 - Added Desktop tests for multi-source import, exact-byte reopen, deterministic processing outcomes, review persistence, duplicate privacy, and commit-failure orphan behavior.
+- Hardened the executable workflow for repeated execution on reused SQLite databases by scoping each run to current-run IDs, unique fixture filenames, and unique fixture content.
+- Released baseline `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1`.
 
 Current architectural decisions:
 
-- `DOCUMENT-ENGINE-FOUNDATION-0.1` is now the active released baseline.
-- `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-RC` is now the active review candidate.
-- The next planned package remains `Determine from prototype review` until the review-candidate disposition is recorded.
+- `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1` is now the active released baseline.
+- The next active package is `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1-RC`.
 - `SPINbuster.Desktop` remains a temporary bootstrap host, not a MAUI application yet.
 - The Document Engine owns binary-source handling and non-authoritative processing outputs only.
 - The Desktop host composes document workflow behavior through Application commands and queries only.
@@ -51,7 +49,7 @@ Current architectural decisions:
 - Knowledge Engine mutations still do not have a uniform `OperationId` replay contract; `EDR-KE-009` keeps that deferred before synchronization or automated ingestion.
 
 Next task:
-Record the `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-RC` prototype review and choose the next package
+Begin the local filesystem storage-adapter review candidate
 
 Known issues:
 
@@ -64,13 +62,12 @@ Known issues:
 
 Requested review:
 
-- Confirm the `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-PROTOTYPE-REVIEW.md` conclusions
-- Confirm whether the next package should be local filesystem storage, parsing and fragment foundation, or candidate-promotion design
-- Confirm that the review candidate is documented as active and not falsely recorded as released
+- Confirm the storage-adapter boundary before implementation begins
+- Confirm the local filesystem adapter remains infrastructure-local and does not widen the authoritative document boundary
 
 Current capabilities:
 
-- Current released code behavior now includes `DOCUMENT-ENGINE-FOUNDATION-0.1`
+- Current released code behavior now includes `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1`
 - The repository now also contains an authoritative conceptual engineering knowledge model
 - The repository now includes the released durable Document Engine foundation beneath the future executable slice
-- The repository now includes a deterministic executable Document Engine workflow that persists import sessions, duplicates, processing attempts, review state, and audit history without mutating authoritative Knowledge, Report, or AI records
+- The repository now includes a deterministic executable Document Engine workflow that persists import sessions, duplicates, processing attempts, review state, and audit history without mutating authoritative Knowledge, Report, or AI records, including repeated execution on a reused SQLite database

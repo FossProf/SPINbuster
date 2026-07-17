@@ -25,11 +25,11 @@ Deferred
 
 ## Current Major Phase
 
-- Document Engine executable slice review candidate - Active
+- Local filesystem storage adapter review candidate - Active
 
 ## Planned Implementation Packages
 
-- Determine from prototype review - Planned
+- Local filesystem storage adapter - Planned
 - Rule Engine foundation - Planned
 - Document ingestion and revision management - Planned
 - Retrieval and citations - Planned

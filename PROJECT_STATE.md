@@ -2,26 +2,12 @@
 
 ## Latest Released Baseline
 
-- `DOCUMENT-ENGINE-FOUNDATION-0.1`
+- `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1`
 - Status: `Released`
 
-## Active Review Candidate
+## Next Active Package
 
-- `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-RC`
-- Status: `Active`
-- Build: `Passing`
-- Warnings: `0`
-- Architecture tests: `20/20 passing`
-- Domain tests: `53/53 passing`
-- Application tests: `74/74 passing`
-- Documents tests: `5/5 passing`
-- AI tests: `6/6 passing`
-- Infrastructure tests: `27/27 passing`
-- Desktop end-to-end tests: `13/13 passing`
-
-## Next Planned Implementation Package
-
-- `Determine from prototype review`
+- `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1-RC`
 
 ## Current Branch
 
@@ -29,11 +15,11 @@
 
 ## Last Completed Milestone
 
-- Document Engine executable slice hardening and validation completed
+- Document Engine executable slice released
 
 ## Current Implementation Phase
 
-- Document Engine executable slice review candidate validation
+- Local filesystem storage-adapter review-candidate preparation
 
 ## Current Milestone
 
@@ -73,15 +59,14 @@
 
 ## Immediate Next Task
 
-- Record the executable-slice prototype review and select the next package
+- Begin `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1-RC`
 
 ## Fast Context
 
 - The repository is the source of truth for project state and architecture.
 - Start every new AI session from `.ai/bootstrap.md`.
-- The current released behavior includes `DOCUMENT-ENGINE-FOUNDATION-0.1`.
-- The active review candidate is the first executable Document Engine slice.
-- The next planned implementation package is `Determine from prototype review`.
+- The current released behavior includes `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1`.
+- The next active package is `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1-RC`.
 
 ## Current Capabilities
 

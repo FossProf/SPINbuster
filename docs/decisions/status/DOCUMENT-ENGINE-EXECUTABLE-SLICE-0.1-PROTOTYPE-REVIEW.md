@@ -1,9 +1,9 @@
 # DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1 Prototype Review
 
 Date: 2026-07-17
-Status: Review Candidate Assessment
-Latest released baseline: `DOCUMENT-ENGINE-FOUNDATION-0.1`
-Active review candidate: `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-RC`
+Status: Released
+Latest released baseline: `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1`
+Next active package: `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1-RC`
 
 ## Validation snapshot
 
@@ -12,7 +12,7 @@ Active review candidate: `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-RC`
 - Documents tests: `5/5`
 - Infrastructure tests: `27/27`
 - Architecture tests: `20/20`
-- Desktop tests: `13/13`
+- Desktop tests: `16/16`
 
 ## Behavior validated
 
