@@ -41,7 +41,7 @@ public sealed class DocumentEngineExecutableWorkflowTests
       Assert.Equal(0, result.ProjectASnapshot.AuthorityIsolation.ReportCount);
       Assert.Equal(0, result.ProjectASnapshot.AuthorityIsolation.AiProposalCount);
 
-      var projectASource = result.ProjectASnapshot.ImportedSources.Single(source => source.ImportedSourceId == result.ImportedSourceA.ImportedSourceId);
+      var projectASource = GetImportedSource(result.ProjectASnapshot, result.ImportedSourceA.ImportedSourceId);
       Assert.Equal(2, projectASource.Candidates.Count);
       Assert.Contains(projectASource.Candidates, candidate => candidate.Status == DocumentCandidateStatus.HumanAccepted);
       Assert.Contains(projectASource.Candidates, candidate => candidate.Status == DocumentCandidateStatus.Rejected);
@@ -82,12 +82,13 @@ public sealed class DocumentEngineExecutableWorkflowTests
         50));
 
       Assert.True(reloadedSnapshot.ImportSessions.Count >= initialResult.ReplayedProjectASnapshot.ImportSessions.Count);
-      Assert.Equal(
-        initialResult.ReplayedProjectASnapshot.ImportSessions[0].ImportSessionId,
-        reloadedSnapshot.ImportSessions[0].ImportSessionId);
+      var reloadedImportSession = GetImportSession(reloadedSnapshot, initialResult.BeganProjectAImportSession.ImportSessionId);
+      var originalImportSession = GetImportSession(initialResult.ReplayedProjectASnapshot, initialResult.BeganProjectAImportSession.ImportSessionId);
+      Assert.Equal(originalImportSession.ImportSessionId, reloadedImportSession.ImportSessionId);
+      Assert.Equal(originalImportSession.State, reloadedImportSession.State);
 
-      var reloadedPrimarySource = reloadedSnapshot.ImportedSources.Single(source => source.ImportedSourceId == initialResult.ImportedSourceA.ImportedSourceId);
-      var originalPrimarySource = initialResult.ProjectASnapshot.ImportedSources.Single(source => source.ImportedSourceId == initialResult.ImportedSourceA.ImportedSourceId);
+      var reloadedPrimarySource = GetImportedSource(reloadedSnapshot, initialResult.ImportedSourceA.ImportedSourceId);
+      var originalPrimarySource = GetImportedSource(initialResult.ProjectASnapshot, initialResult.ImportedSourceA.ImportedSourceId);
       Assert.Equal(originalPrimarySource.ContentHash, reloadedPrimarySource.ContentHash);
       Assert.Equal(
         originalPrimarySource.Candidates.Select(candidate => (candidate.DocumentCandidateId, candidate.Status)),
@@ -111,7 +112,7 @@ public sealed class DocumentEngineExecutableWorkflowTests
     {
       using var serviceProvider = CreateServiceProvider(connectionString);
       var result = await DocumentEngineExecutableWorkflowBootstrapper.RunAsync(serviceProvider);
-      var source = result.ProjectASnapshot.ImportedSources.Single(item => item.ImportedSourceId == result.ImportedSourceA.ImportedSourceId);
+      var source = GetImportedSource(result.ProjectASnapshot, result.ImportedSourceA.ImportedSourceId);
       var store = serviceProvider.GetRequiredService<IImmutableContentStore>();
 
       var reopened = await store.OpenReadAsync(source.Storage.StorageObjectId);
@@ -305,6 +306,203 @@ public sealed class DocumentEngineExecutableWorkflowTests
     }
   }
 
+  [Fact]
+  public async Task WorkflowCanRunTwiceAgainstTheSameDatabaseWithoutMutatingPriorData()
+  {
+    var databasePath = CreateDatabasePath();
+    var connectionString = $"Data Source={databasePath}";
+
+    try
+    {
+      DocumentEngineExecutableWorkflowResult firstRun;
+      string firstRunSignature;
+      using (var firstProvider = CreateServiceProvider(connectionString))
+      {
+        firstRun = await DocumentEngineExecutableWorkflowBootstrapper.RunAsync(firstProvider);
+        var completedFirstRunSnapshot = await LoadSnapshotAsync(firstProvider, firstRun.CreatedProjectA.ProjectId);
+        firstRunSignature = CreateProjectSnapshotSignature(completedFirstRunSnapshot);
+      }
+
+      using var secondProvider = CreateServiceProvider(connectionString);
+      var secondRun = await DocumentEngineExecutableWorkflowBootstrapper.RunAsync(secondProvider);
+      var preservedFirstRunSnapshot = await LoadSnapshotAsync(secondProvider, firstRun.CreatedProjectA.ProjectId);
+
+      Assert.Equal(DocumentImportSessionState.Completed, secondRun.CompletedProjectAImportSession.State);
+      Assert.Equal(2, GetImportedSource(secondRun.ProjectASnapshot, secondRun.ImportedSourceA.ImportedSourceId).Candidates.Count);
+      Assert.Equal(firstRunSignature, CreateProjectSnapshotSignature(preservedFirstRunSnapshot));
+      Assert.Equal(0, secondRun.ProjectASnapshot.AuthorityIsolation.KnowledgeDocumentCount);
+      Assert.Equal(0, secondRun.ProjectASnapshot.AuthorityIsolation.ReportCount);
+      Assert.Equal(0, secondRun.ProjectASnapshot.AuthorityIsolation.AiProposalCount);
+      Assert.NotEqual(firstRun.CreatedProjectA.ProjectId, secondRun.CreatedProjectA.ProjectId);
+      Assert.NotEqual(firstRun.ImportedSourceA.ImportedSourceId, secondRun.ImportedSourceA.ImportedSourceId);
+      Assert.NotEqual(firstRun.ImportedSourceA.ContentHash, secondRun.ImportedSourceA.ContentHash);
+    }
+    finally
+    {
+      DeleteIfPresent(databasePath);
+    }
+  }
+
+  [Fact]
+  public async Task WorkflowSucceedsWhenUnrelatedProjectsAndDocumentRecordsAlreadyExist()
+  {
+    var databasePath = CreateDatabasePath();
+    var connectionString = $"Data Source={databasePath}";
+
+    try
+    {
+      using var serviceProvider = CreateServiceProvider(connectionString);
+      await DocumentEngineExecutableWorkflowBootstrapper.MigrateAsync(serviceProvider);
+      var seededProject = await SeedProjectWithImportedSourceAsync(
+        serviceProvider,
+        "Existing Project",
+        "existing-specification.txt",
+        "Existing deterministic specification content.",
+        completeImportSession: true);
+      var seededSnapshotBeforeRun = await LoadSnapshotAsync(serviceProvider, seededProject.ProjectId);
+
+      var result = await DocumentEngineExecutableWorkflowBootstrapper.RunAsync(serviceProvider);
+      var seededSnapshotAfterRun = await LoadSnapshotAsync(serviceProvider, seededProject.ProjectId);
+
+      Assert.Equal(CreateProjectSnapshotSignature(seededSnapshotBeforeRun), CreateProjectSnapshotSignature(seededSnapshotAfterRun));
+      Assert.Equal(DocumentImportSessionState.Completed, result.CompletedProjectAImportSession.State);
+      Assert.Equal(0, result.ProjectASnapshot.AuthorityIsolation.KnowledgeDocumentCount);
+      Assert.Equal(0, result.ProjectASnapshot.AuthorityIsolation.ReportCount);
+      Assert.Equal(0, result.ProjectASnapshot.AuthorityIsolation.AiProposalCount);
+    }
+    finally
+    {
+      DeleteIfPresent(databasePath);
+    }
+  }
+
+  [Fact]
+  public async Task WorkflowSucceedsWhenAPreviousIncompleteDocumentWorkflowExists()
+  {
+    var databasePath = CreateDatabasePath();
+    var connectionString = $"Data Source={databasePath}";
+
+    try
+    {
+      using var serviceProvider = CreateServiceProvider(connectionString);
+      await DocumentEngineExecutableWorkflowBootstrapper.MigrateAsync(serviceProvider);
+      var incompleteProject = await SeedProjectWithImportedSourceAsync(
+        serviceProvider,
+        "Incomplete Project",
+        "incomplete-source.txt",
+        "Incomplete deterministic import source.",
+        completeImportSession: false);
+      var incompleteSnapshotBeforeRun = await LoadSnapshotAsync(serviceProvider, incompleteProject.ProjectId);
+
+      var result = await DocumentEngineExecutableWorkflowBootstrapper.RunAsync(serviceProvider);
+      var incompleteSnapshotAfterRun = await LoadSnapshotAsync(serviceProvider, incompleteProject.ProjectId);
+
+      Assert.Equal(CreateProjectSnapshotSignature(incompleteSnapshotBeforeRun), CreateProjectSnapshotSignature(incompleteSnapshotAfterRun));
+      Assert.Equal(
+        DocumentImportSessionState.Importing,
+        GetImportSession(incompleteSnapshotAfterRun, incompleteProject.ImportSessionId).State);
+      Assert.Equal(DocumentImportSessionState.Completed, result.CompletedProjectAImportSession.State);
+      Assert.Equal(0, result.ProjectASnapshot.AuthorityIsolation.KnowledgeDocumentCount);
+      Assert.Equal(0, result.ProjectASnapshot.AuthorityIsolation.ReportCount);
+      Assert.Equal(0, result.ProjectASnapshot.AuthorityIsolation.AiProposalCount);
+    }
+    finally
+    {
+      DeleteIfPresent(databasePath);
+    }
+  }
+
+  private static ProjectDocumentImportSessionSnapshot GetImportSession(
+    LoadProjectDocumentWorkflowSnapshotResult snapshot,
+    DocumentImportSessionId importSessionId)
+  {
+    return RequireSingleMatch(
+      snapshot.ImportSessions,
+      session => session.ImportSessionId == importSessionId,
+      $"import session {importSessionId}");
+  }
+
+  private static ProjectImportedDocumentSourceSnapshot GetImportedSource(
+    LoadProjectDocumentWorkflowSnapshotResult snapshot,
+    ImportedSourceId importedSourceId)
+  {
+    return RequireSingleMatch(
+      snapshot.ImportedSources,
+      source => source.ImportedSourceId == importedSourceId,
+      $"imported source {importedSourceId}");
+  }
+
+  private static T RequireSingleMatch<T>(
+    IEnumerable<T> items,
+    Func<T, bool> predicate,
+    string description)
+  {
+    var matches = items.Where(predicate).Take(2).ToArray();
+    return matches.Length switch
+    {
+      1 => matches[0],
+      0 => throw new Xunit.Sdk.XunitException($"Expected exactly one {description}, but none were found."),
+      _ => throw new Xunit.Sdk.XunitException($"Expected exactly one {description}, but multiple matches were found."),
+    };
+  }
+
+  private static string CreateProjectSnapshotSignature(LoadProjectDocumentWorkflowSnapshotResult snapshot)
+  {
+    return string.Join(
+      "|",
+      snapshot.ImportSessions
+        .OrderBy(session => session.ImportSessionId.Value)
+        .Select(session => $"{session.ImportSessionId}:{session.State}:{session.SourceCount}:{session.AcceptedCount}:{session.DuplicateCount}:{session.RejectedCount}:{session.CompletedAtUtc:O}"),
+      string.Join(
+        "|",
+        snapshot.ImportedSources
+          .OrderBy(source => source.ImportedSourceId.Value)
+          .Select(source =>
+            $"{source.ImportedSourceId}:{source.ImportSessionId}:{source.OriginalFileName}:{source.ContentHash}:{source.Status}:{string.Join(",", source.ProcessingAttempts.OrderBy(attempt => attempt.ProcessingAttemptId.Value).Select(attempt => $"{attempt.ProcessingAttemptId}:{attempt.State}:{attempt.FailureClassification}"))}:{string.Join(",", source.Candidates.OrderBy(candidate => candidate.DocumentCandidateId.Value).Select(candidate => $"{candidate.DocumentCandidateId}:{candidate.CandidateType}:{candidate.Status}"))}")));
+  }
+
+  private static async Task<LoadProjectDocumentWorkflowSnapshotResult> LoadSnapshotAsync(
+    IServiceProvider rootServiceProvider,
+    ProjectId projectId)
+  {
+    await using var scope = rootServiceProvider.CreateAsyncScope();
+    var query = scope.ServiceProvider.GetRequiredService<IQueryHandler<LoadProjectDocumentWorkflowSnapshotQuery, LoadProjectDocumentWorkflowSnapshotResult>>();
+    return await query.HandleAsync(new LoadProjectDocumentWorkflowSnapshotQuery(projectId, 50, 100, 20, 50, 50));
+  }
+
+  private static async Task<SeededDocumentProject> SeedProjectWithImportedSourceAsync(
+    IServiceProvider rootServiceProvider,
+    string projectName,
+    string fileName,
+    string content,
+    bool completeImportSession)
+  {
+    await using var scope = rootServiceProvider.CreateAsyncScope();
+    var createProject = scope.ServiceProvider.GetRequiredService<ICommandHandler<CreateProjectCommand, CreateProjectResult>>();
+    var beginImportSession = scope.ServiceProvider.GetRequiredService<ICommandHandler<BeginDocumentImportSessionCommand, BeginDocumentImportSessionResult>>();
+    var importSource = scope.ServiceProvider.GetRequiredService<ICommandHandler<ImportDocumentSourceCommand, ImportDocumentSourceResult>>();
+    var completeImportSessionCommand = scope.ServiceProvider.GetRequiredService<ICommandHandler<CompleteDocumentImportSessionCommand, CompleteDocumentImportSessionResult>>();
+
+    var project = await createProject.HandleAsync(new CreateProjectCommand(projectName));
+    var importSession = await beginImportSession.HandleAsync(new BeginDocumentImportSessionCommand(project.ProjectId));
+    await using var contentStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(content));
+    var importedSource = await importSource.HandleAsync(new ImportDocumentSourceCommand(
+      importSession.ImportSessionId,
+      project.ProjectId,
+      fileName,
+      "text/plain",
+      ImportedSourceOrigin.LocalFile,
+      null,
+      contentStream));
+
+    if (completeImportSession)
+    {
+      await completeImportSessionCommand.HandleAsync(new CompleteDocumentImportSessionCommand(importSession.ImportSessionId));
+    }
+
+    return new SeededDocumentProject(project.ProjectId, importSession.ImportSessionId, importedSource.ImportedSourceId);
+  }
+
   private static string CreateDatabasePath()
   {
     return Path.Combine(Path.GetTempPath(), "spinbuster-tests", $"{Guid.NewGuid():N}.sqlite");
@@ -397,4 +595,9 @@ public sealed class DocumentEngineExecutableWorkflowTests
       await _inner.CommitAsync(cancellationToken);
     }
   }
+
+  private sealed record SeededDocumentProject(
+    ProjectId ProjectId,
+    DocumentImportSessionId ImportSessionId,
+    ImportedSourceId ImportedSourceId);
 }

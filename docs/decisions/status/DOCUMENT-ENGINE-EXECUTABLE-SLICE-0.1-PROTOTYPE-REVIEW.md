@@ -137,6 +137,13 @@ Active review candidate: `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-RC`
 - Parser and fragment-candidate contracts are the next major content-model design pressure after a real filesystem adapter exists.
 - Candidate-promotion design should remain deferred until richer parsing and fragment semantics exist.
 
+## Environmental note: Windows apphost execution
+
+- On the current Windows review machine, the generated `SPINbuster.Desktop.exe` apphost may still fail to launch with `Access is denied` even when the managed `SPINbuster.Desktop.dll` runs successfully.
+- The executable slice itself is not dependent on that apphost behavior: the managed DLL path exercises startup migration, repeated execution, persistence reload, and authority-isolation behavior successfully.
+- Treat this as an environment-specific Windows/apphost policy issue for the temporary bootstrap host, not as a product defect in the Document Engine workflow.
+- Continue validating the workflow through the managed DLL path until the local machine policy or apphost behavior is resolved.
+
 ## Recommended next package
 
 Recommendation: `a. local filesystem storage adapter`

@@ -15,6 +15,8 @@ namespace SPINbuster.Desktop;
 
 public sealed class DocumentEngineExecutableWorkflowRunner
 {
+  private const string DocumentCandidateTypeSchemaId = "document-metadata-candidate";
+  private const string FragmentCandidateTypeSchemaId = "document-fragment-candidate";
   private readonly ICommandHandler<BeginDocumentImportSessionCommand, BeginDocumentImportSessionResult> _beginDocumentImportSession;
   private readonly ICommandHandler<CompleteDocumentImportSessionCommand, CompleteDocumentImportSessionResult> _completeDocumentImportSession;
   private readonly ICommandHandler<CreateProjectCommand, CreateProjectResult> _createProject;
@@ -43,32 +45,33 @@ public sealed class DocumentEngineExecutableWorkflowRunner
 
   public async Task<DocumentEngineExecutableWorkflowResult> RunAsync(CancellationToken cancellationToken = default)
   {
-    var createdProjectA = await _createProject.HandleAsync(new CreateProjectCommand("Project A"), cancellationToken);
+    var runScope = WorkflowRunScope.Create();
+    var createdProjectA = await _createProject.HandleAsync(new CreateProjectCommand(runScope.ProjectAName), cancellationToken);
     var beganProjectAImportSession = await _beginDocumentImportSession.HandleAsync(
       new BeginDocumentImportSessionCommand(createdProjectA.ProjectId),
       cancellationToken);
 
-    var sourceABytes = CreateContentBytes("Section 03 30 00 requires concrete curing in accordance with the approved project specifications.");
-    var sourceBBytes = CreateContentBytes("Field observation: concrete placement was completed and wet curing was initiated.");
+    var sourceABytes = CreateContentBytes(runScope, "Section 03 30 00 requires concrete curing in accordance with the approved project specifications.");
+    var sourceBBytes = CreateContentBytes(runScope, "Field observation: concrete placement was completed and wet curing was initiated.");
 
     var importedSourceA = await ImportAsync(
       beganProjectAImportSession.ImportSessionId,
       createdProjectA.ProjectId,
-      "concrete-specification.txt",
+      runScope.PrimarySourceFileName,
       "text/plain",
       sourceABytes,
       cancellationToken);
     var importedSourceB = await ImportAsync(
       beganProjectAImportSession.ImportSessionId,
       createdProjectA.ProjectId,
-      "field-observation.txt",
+      runScope.SecondarySourceFileName,
       "text/plain",
       sourceBBytes,
       cancellationToken);
     var importedDuplicateSourceA = await ImportAsync(
       beganProjectAImportSession.ImportSessionId,
       createdProjectA.ProjectId,
-      "duplicate-concrete-specification.txt",
+      runScope.DuplicateSourceFileName,
       "text/plain",
       sourceABytes,
       cancellationToken);
@@ -81,21 +84,29 @@ public sealed class DocumentEngineExecutableWorkflowRunner
       cancellationToken);
 
     var projectASnapshotBeforeReview = await LoadSnapshotAsync(createdProjectA.ProjectId, cancellationToken);
-    var reviewableCandidates = projectASnapshotBeforeReview.ImportedSources
-      .Single(source => source.ImportedSourceId == importedSourceA.ImportedSourceId)
-      .Candidates
-      .Where(candidate => candidate.Status == DocumentCandidateStatus.ReadyForReview)
-      .OrderBy(candidate => candidate.CreatedAtUtc)
+    var primarySourceBeforeReview = GetImportedSourceSnapshot(projectASnapshotBeforeReview, importedSourceA.ImportedSourceId);
+    var createdPrimarySourceCandidates = requestedSourceAProcessing.CandidateIds
+      .Select(candidateId => GetCandidateSnapshot(primarySourceBeforeReview, candidateId))
       .ToArray();
+    var acceptedCandidateToReview = GetReadyForReviewCandidate(
+      createdPrimarySourceCandidates,
+      DocumentCandidateType.MetadataCandidate,
+      DocumentCandidateTypeSchemaId,
+      "current-run metadata review candidate");
+    var rejectedCandidateToReview = GetReadyForReviewCandidate(
+      createdPrimarySourceCandidates,
+      DocumentCandidateType.FragmentCandidate,
+      FragmentCandidateTypeSchemaId,
+      "current-run fragment review candidate");
     var humanAcceptedCandidate = await _recordDocumentCandidateReview.HandleAsync(
       new RecordDocumentCandidateReviewCommand(
-        reviewableCandidates[0].DocumentCandidateId,
+        acceptedCandidateToReview.DocumentCandidateId,
         DocumentCandidateReviewDisposition.HumanAccepted,
         "Deterministic document review acceptance."),
       cancellationToken);
     var rejectedCandidate = await _recordDocumentCandidateReview.HandleAsync(
       new RecordDocumentCandidateReviewCommand(
-        reviewableCandidates[1].DocumentCandidateId,
+        rejectedCandidateToReview.DocumentCandidateId,
         DocumentCandidateReviewDisposition.Rejected,
         "Deterministic document review rejection."),
       cancellationToken);
@@ -103,14 +114,14 @@ public sealed class DocumentEngineExecutableWorkflowRunner
     var projectASnapshot = await LoadSnapshotAsync(createdProjectA.ProjectId, cancellationToken);
     var replayedProjectASnapshot = await LoadSnapshotAsync(createdProjectA.ProjectId, cancellationToken);
 
-    var createdProjectB = await _createProject.HandleAsync(new CreateProjectCommand("Project B"), cancellationToken);
+    var createdProjectB = await _createProject.HandleAsync(new CreateProjectCommand(runScope.ProjectBName), cancellationToken);
     var beganProjectBImportSession = await _beginDocumentImportSession.HandleAsync(
       new BeginDocumentImportSessionCommand(createdProjectB.ProjectId),
       cancellationToken);
     var importedProjectBCopy = await ImportAsync(
       beganProjectBImportSession.ImportSessionId,
       createdProjectB.ProjectId,
-      "shared-copy.txt",
+      runScope.ProjectBCopyFileName,
       "text/plain",
       sourceABytes,
       cancellationToken);
@@ -119,8 +130,8 @@ public sealed class DocumentEngineExecutableWorkflowRunner
       cancellationToken);
     var projectBSnapshot = await LoadSnapshotAsync(createdProjectB.ProjectId, cancellationToken);
 
-    var processingScenarios = await RunProcessingScenariosAsync(createdProjectA.ProjectId, cancellationToken);
-    var failurePresentations = await RunExpectedFailureScenariosAsync(createdProjectA.ProjectId, cancellationToken);
+    var processingScenarios = await RunProcessingScenariosAsync(createdProjectA.ProjectId, runScope, cancellationToken);
+    var failurePresentations = await RunExpectedFailureScenariosAsync(createdProjectA.ProjectId, runScope, cancellationToken);
 
     return new DocumentEngineExecutableWorkflowResult(
       createdProjectA,
@@ -145,6 +156,7 @@ public sealed class DocumentEngineExecutableWorkflowRunner
 
   private async Task<IReadOnlyList<DocumentEngineProcessingScenarioResult>> RunProcessingScenariosAsync(
     ProjectId projectId,
+    WorkflowRunScope runScope,
     CancellationToken cancellationToken)
   {
     var scenarios = new List<DocumentEngineProcessingScenarioResult>();
@@ -152,50 +164,62 @@ public sealed class DocumentEngineExecutableWorkflowRunner
     async Task AddScenarioAsync(string scenario, string fileName, string content, CancellationToken token = default)
     {
       var effectiveToken = token == default ? cancellationToken : token;
-      var source = await CreateStandaloneSourceAsync(projectId, fileName, content, cancellationToken);
+      var source = await CreateStandaloneSourceAsync(projectId, WithRunScope(fileName, runScope), content, cancellationToken);
+      RequestDocumentProcessingResult processingResult;
       try
       {
-        await _requestDocumentProcessing.HandleAsync(
+        processingResult = await _requestDocumentProcessing.HandleAsync(
           new RequestDocumentProcessingCommand(source.ImportedSourceId, projectId),
           effectiveToken);
       }
       catch (OperationCanceledException)
       {
+        var snapshotAfterCancellation = await LoadSnapshotAsync(projectId, cancellationToken);
+        var sourceSnapshotAfterCancellation = GetImportedSourceSnapshot(snapshotAfterCancellation, source.ImportedSourceId);
+        var cancelledAttempt = RequireSingleMatch(
+          sourceSnapshotAfterCancellation.ProcessingAttempts,
+          attempt => attempt.State == DocumentProcessingAttemptState.Cancelled,
+          $"cancelled processing attempt for scenario '{scenario}'");
+        scenarios.Add(new DocumentEngineProcessingScenarioResult(
+          scenario,
+          source.ImportedSourceId,
+          cancelledAttempt.State,
+          cancelledAttempt.FailureClassification,
+          []));
+        return;
       }
 
       var snapshot = await LoadSnapshotAsync(projectId, cancellationToken);
-      var sourceSnapshot = snapshot.ImportedSources.Single(item => item.ImportedSourceId == source.ImportedSourceId);
-      var latestAttempt = sourceSnapshot.ProcessingAttempts
-        .OrderByDescending(item => item.AttemptNumber)
-        .FirstOrDefault();
-      if (latestAttempt is null)
-      {
-        throw new InvalidOperationException($"Processing scenario '{scenario}' did not persist a durable processing attempt.");
-      }
+      var sourceSnapshot = GetImportedSourceSnapshot(snapshot, source.ImportedSourceId);
+      var scopedAttempt = GetProcessingAttemptSnapshot(sourceSnapshot, processingResult.ProcessingAttemptId);
+      var scopedCandidateStatuses = processingResult.CandidateIds
+        .Select(candidateId => GetCandidateSnapshot(sourceSnapshot, candidateId).Status)
+        .ToArray();
 
       scenarios.Add(new DocumentEngineProcessingScenarioResult(
         scenario,
         source.ImportedSourceId,
-        latestAttempt.State,
-        latestAttempt.FailureClassification,
-        sourceSnapshot.Candidates.Select(candidate => candidate.Status).ToArray()));
+        scopedAttempt.State,
+        scopedAttempt.FailureClassification,
+        scopedCandidateStatuses));
     }
 
-    await AddScenarioAsync("storage-read-unavailable", "storage-read-unavailable.txt", "SIMULATE_READ_UNAVAILABLE", cancellationToken);
-    await AddScenarioAsync("storage-read-throws", "storage-read-throws.txt", "SIMULATE_READ_FAILURE", cancellationToken);
-    await AddScenarioAsync("structured-failure", "structured-failure.txt", "processor structured failure", cancellationToken);
-    await AddScenarioAsync("processor-throws", "processor-throws.txt", "processor throws", cancellationToken);
-    await AddScenarioAsync("processor-cancelled", "processor-cancel.txt", "processor cancellation", cancellationToken);
+    await AddScenarioAsync("storage-read-unavailable", "storage-read-unavailable.txt", CreateScopedContent(runScope, "SIMULATE_READ_UNAVAILABLE"), cancellationToken);
+    await AddScenarioAsync("storage-read-throws", "storage-read-throws.txt", CreateScopedContent(runScope, "SIMULATE_READ_FAILURE"), cancellationToken);
+    await AddScenarioAsync("structured-failure", "structured-failure.txt", CreateScopedContent(runScope, "processor structured failure"), cancellationToken);
+    await AddScenarioAsync("processor-throws", "processor-throws.txt", CreateScopedContent(runScope, "processor throws"), cancellationToken);
+    await AddScenarioAsync("processor-cancelled", "processor-cancel.txt", CreateScopedContent(runScope, "processor cancellation"), cancellationToken);
 
-    await AddScenarioAsync("malformed-candidate", "malformed.txt", "malformed candidate", cancellationToken);
-    await AddScenarioAsync("schema-rejected", "schema-rejected.txt", "schema rejected candidate", cancellationToken);
-    await AddScenarioAsync("policy-rejected", "policy-rejected.txt", "policy rejected candidate", cancellationToken);
+    await AddScenarioAsync("malformed-candidate", "malformed.txt", CreateScopedContent(runScope, "malformed candidate"), cancellationToken);
+    await AddScenarioAsync("schema-rejected", "schema-rejected.txt", CreateScopedContent(runScope, "schema rejected candidate"), cancellationToken);
+    await AddScenarioAsync("policy-rejected", "policy-rejected.txt", CreateScopedContent(runScope, "policy rejected candidate"), cancellationToken);
 
     return scenarios;
   }
 
   private async Task<IReadOnlyList<DesktopWorkflowFailurePresentation>> RunExpectedFailureScenariosAsync(
     ProjectId projectId,
+    WorkflowRunScope runScope,
     CancellationToken cancellationToken)
   {
     var failures = new List<DesktopWorkflowFailurePresentation>();
@@ -205,7 +229,13 @@ public sealed class DocumentEngineExecutableWorkflowRunner
       async () =>
       {
         var session = await _beginDocumentImportSession.HandleAsync(new BeginDocumentImportSessionCommand(projectId), cancellationToken);
-        await ImportAsync(session.ImportSessionId, projectId, "unsupported.bin", "application/octet-stream", CreateContentBytes("binary"), cancellationToken);
+        await ImportAsync(
+          session.ImportSessionId,
+          projectId,
+          WithRunScope("unsupported.bin", runScope),
+          "application/octet-stream",
+          CreateContentBytes(runScope, "binary"),
+          cancellationToken);
       }));
 
     failures.Add(await CaptureExpectedFailureAsync(
@@ -213,7 +243,13 @@ public sealed class DocumentEngineExecutableWorkflowRunner
       async () =>
       {
         var session = await _beginDocumentImportSession.HandleAsync(new BeginDocumentImportSessionCommand(projectId), cancellationToken);
-        await ImportAsync(session.ImportSessionId, projectId, "too-large.txt", "text/plain", new byte[11 * 1024 * 1024], cancellationToken);
+        await ImportAsync(
+          session.ImportSessionId,
+          projectId,
+          WithRunScope("too-large.txt", runScope),
+          "text/plain",
+          CreateLargeScopedContent(runScope),
+          cancellationToken);
       }));
 
     failures.Add(await CaptureExpectedFailureAsync(
@@ -221,7 +257,13 @@ public sealed class DocumentEngineExecutableWorkflowRunner
       async () =>
       {
         var session = await _beginDocumentImportSession.HandleAsync(new BeginDocumentImportSessionCommand(projectId), cancellationToken);
-        await ImportAsync(session.ImportSessionId, projectId, "storage-write-failure.txt", "text/plain", CreateContentBytes("SIMULATE_WRITE_FAILURE"), cancellationToken);
+        await ImportAsync(
+          session.ImportSessionId,
+          projectId,
+          WithRunScope("storage-write-failure.txt", runScope),
+          "text/plain",
+          CreateContentBytes(runScope, "SIMULATE_WRITE_FAILURE"),
+          cancellationToken);
       }));
 
     failures.Add(await CaptureExpectedFailureAsync(
@@ -230,17 +272,28 @@ public sealed class DocumentEngineExecutableWorkflowRunner
       {
         var session = await _beginDocumentImportSession.HandleAsync(new BeginDocumentImportSessionCommand(projectId), cancellationToken);
         await _completeDocumentImportSession.HandleAsync(new CompleteDocumentImportSessionCommand(session.ImportSessionId), cancellationToken);
-        await ImportAsync(session.ImportSessionId, projectId, "late-import.txt", "text/plain", CreateContentBytes("late import"), cancellationToken);
+        await ImportAsync(
+          session.ImportSessionId,
+          projectId,
+          WithRunScope("late-import.txt", runScope),
+          "text/plain",
+          CreateContentBytes(runScope, "late import"),
+          cancellationToken);
       }));
 
     failures.Add(await CaptureExpectedFailureAsync(
       "invalid-candidate-review-transition",
       async () =>
       {
-        var source = await CreateStandaloneSourceAsync(projectId, "review-invalid.txt", "review invalid", cancellationToken);
-        await _requestDocumentProcessing.HandleAsync(new RequestDocumentProcessingCommand(source.ImportedSourceId, projectId), cancellationToken);
+        var source = await CreateStandaloneSourceAsync(projectId, WithRunScope("review-invalid.txt", runScope), CreateScopedContent(runScope, "review invalid"), cancellationToken);
+        var processingResult = await _requestDocumentProcessing.HandleAsync(new RequestDocumentProcessingCommand(source.ImportedSourceId, projectId), cancellationToken);
         var snapshot = await LoadSnapshotAsync(projectId, cancellationToken);
-        var candidate = snapshot.ImportedSources.Single(item => item.ImportedSourceId == source.ImportedSourceId).Candidates[0];
+        var sourceSnapshot = GetImportedSourceSnapshot(snapshot, source.ImportedSourceId);
+        var candidate = GetReadyForReviewCandidate(
+          processingResult.CandidateIds.Select(candidateId => GetCandidateSnapshot(sourceSnapshot, candidateId)).ToArray(),
+          DocumentCandidateType.MetadataCandidate,
+          DocumentCandidateTypeSchemaId,
+          "invalid-transition review candidate");
         await _recordDocumentCandidateReview.HandleAsync(
           new RecordDocumentCandidateReviewCommand(candidate.DocumentCandidateId, DocumentCandidateReviewDisposition.HumanAccepted, "first pass"),
           cancellationToken);
@@ -265,7 +318,7 @@ public sealed class DocumentEngineExecutableWorkflowRunner
     CancellationToken cancellationToken)
   {
     var session = await _beginDocumentImportSession.HandleAsync(new BeginDocumentImportSessionCommand(projectId), cancellationToken);
-    var importResult = await ImportAsync(session.ImportSessionId, projectId, fileName, "text/plain", CreateContentBytes(content), cancellationToken);
+    var importResult = await ImportAsync(session.ImportSessionId, projectId, fileName, "text/plain", Encoding.UTF8.GetBytes(content), cancellationToken);
     await _completeDocumentImportSession.HandleAsync(new CompleteDocumentImportSessionCommand(session.ImportSessionId), cancellationToken);
     return importResult;
   }
@@ -298,7 +351,79 @@ public sealed class DocumentEngineExecutableWorkflowRunner
       cancellationToken);
   }
 
-  private static byte[] CreateContentBytes(string text) => Encoding.UTF8.GetBytes(text);
+  private static ProjectImportedDocumentSourceSnapshot GetImportedSourceSnapshot(
+    LoadProjectDocumentWorkflowSnapshotResult snapshot,
+    ImportedSourceId importedSourceId)
+  {
+    return RequireSingleMatch(
+      snapshot.ImportedSources,
+      source => source.ImportedSourceId == importedSourceId,
+      $"imported source {importedSourceId}");
+  }
+
+  private static ProjectDocumentProcessingAttemptSnapshot GetProcessingAttemptSnapshot(
+    ProjectImportedDocumentSourceSnapshot sourceSnapshot,
+    DocumentProcessingAttemptId processingAttemptId)
+  {
+    return RequireSingleMatch(
+      sourceSnapshot.ProcessingAttempts,
+      attempt => attempt.ProcessingAttemptId == processingAttemptId,
+      $"processing attempt {processingAttemptId} for source {sourceSnapshot.ImportedSourceId}");
+  }
+
+  private static ProjectDocumentCandidateSnapshot GetCandidateSnapshot(
+    ProjectImportedDocumentSourceSnapshot sourceSnapshot,
+    DocumentCandidateId documentCandidateId)
+  {
+    return RequireSingleMatch(
+      sourceSnapshot.Candidates,
+      candidate => candidate.DocumentCandidateId == documentCandidateId,
+      $"candidate {documentCandidateId} for source {sourceSnapshot.ImportedSourceId}");
+  }
+
+  private static ProjectDocumentCandidateSnapshot GetReadyForReviewCandidate(
+    IReadOnlyList<ProjectDocumentCandidateSnapshot> candidates,
+    DocumentCandidateType candidateType,
+    string schemaId,
+    string description)
+  {
+    return RequireSingleMatch(
+      candidates,
+      candidate => candidate.CandidateType == candidateType
+        && string.Equals(candidate.SchemaId, schemaId, StringComparison.Ordinal)
+        && candidate.Status == DocumentCandidateStatus.ReadyForReview,
+      description);
+  }
+
+  private static T RequireSingleMatch<T>(
+    IEnumerable<T> values,
+    Func<T, bool> predicate,
+    string description)
+  {
+    var matches = values.Where(predicate).Take(2).ToArray();
+    return matches.Length switch
+    {
+      1 => matches[0],
+      0 => throw new InvalidOperationException($"Expected exactly one {description}, but none were found."),
+      _ => throw new InvalidOperationException($"Expected exactly one {description}, but multiple matches were found."),
+    };
+  }
+
+  private static byte[] CreateContentBytes(WorkflowRunScope runScope, string text) => Encoding.UTF8.GetBytes(CreateScopedContent(runScope, text));
+
+  private static string CreateScopedContent(WorkflowRunScope runScope, string text) => $"run-scope={runScope.Suffix}{Environment.NewLine}{text}";
+
+  private static byte[] CreateLargeScopedContent(WorkflowRunScope runScope)
+  {
+    return Encoding.UTF8.GetBytes(CreateScopedContent(runScope, new string('x', 11 * 1024 * 1024)));
+  }
+
+  private static string WithRunScope(string fileName, WorkflowRunScope runScope)
+  {
+    var extension = Path.GetExtension(fileName);
+    var baseName = Path.GetFileNameWithoutExtension(fileName);
+    return $"{baseName}-{runScope.Suffix}{extension}";
+  }
 
   private static async Task<DesktopWorkflowFailurePresentation> CaptureExpectedFailureAsync(
     string scenario,
@@ -319,5 +444,28 @@ public sealed class DocumentEngineExecutableWorkflowRunner
     }
 
     throw new InvalidOperationException($"Expected failure scenario '{scenario}' completed successfully.");
+  }
+
+  private sealed record WorkflowRunScope(
+    string Suffix,
+    string ProjectAName,
+    string ProjectBName,
+    string PrimarySourceFileName,
+    string SecondarySourceFileName,
+    string DuplicateSourceFileName,
+    string ProjectBCopyFileName)
+  {
+    public static WorkflowRunScope Create()
+    {
+      var suffix = Guid.NewGuid().ToString("N")[..8];
+      return new WorkflowRunScope(
+        suffix,
+        $"Project A {suffix}",
+        $"Project B {suffix}",
+        $"concrete-specification-{suffix}.txt",
+        $"field-observation-{suffix}.txt",
+        $"duplicate-concrete-specification-{suffix}.txt",
+        $"shared-copy-{suffix}.txt");
+    }
   }
 }
