@@ -1,5 +1,6 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using SPINbuster.Application;
@@ -10,27 +11,65 @@ using SPINbuster.Application.UseCases.CompleteDocumentImportSession;
 using SPINbuster.Application.UseCases.CreateProject;
 using SPINbuster.Application.UseCases.ImportDocumentSource;
 using SPINbuster.Application.UseCases.LoadProjectDocumentWorkflowSnapshot;
+using SPINbuster.Application.UseCases.RequestDocumentProcessing;
+using SPINbuster.Desktop;
 using SPINbuster.Domain;
+using SPINbuster.Documents;
 using SPINbuster.Infrastructure.Persistence;
 using SPINbuster.Infrastructure.Services;
 using System.Globalization;
+using System.Text;
 
 namespace SPINbuster.Desktop.Tests;
 
 public sealed class DocumentEngineExecutableWorkflowTests
 {
   [Fact]
+  public void DefaultDocumentStorageRootUsesLocalApplicationDataInsteadOfBuildOutput()
+  {
+    var configuration = new ConfigurationBuilder().AddInMemoryCollection().Build();
+
+    var settings = DesktopCompositionRoot.LoadDocumentStorageSettings(configuration);
+    var appDataRoot = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+    var baseDirectory = Path.GetFullPath(AppContext.BaseDirectory);
+    var resolvedRoot = Path.GetFullPath(settings.RootPath);
+
+    Assert.StartsWith(
+      Path.GetFullPath(appDataRoot).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar,
+      resolvedRoot,
+      StringComparison.OrdinalIgnoreCase);
+    Assert.False(IsPathUnderRoot(resolvedRoot, baseDirectory));
+    Assert.DoesNotContain($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", resolvedRoot, StringComparison.OrdinalIgnoreCase);
+    Assert.DoesNotContain($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", resolvedRoot, StringComparison.OrdinalIgnoreCase);
+  }
+
+  [Fact]
+  public void RelativeConfiguredDocumentStorageRootResolvesAgainstCurrentWorkingDirectory()
+  {
+    var configuration = new ConfigurationBuilder()
+      .AddInMemoryCollection(new Dictionary<string, string?>
+      {
+        ["DocumentStorage:RootPath"] = Path.Combine("test-storage", "immutable-content"),
+      })
+      .Build();
+
+    var settings = DesktopCompositionRoot.LoadDocumentStorageSettings(configuration);
+    var expectedRoot = Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, "test-storage", "immutable-content"));
+
+    Assert.Equal(expectedRoot, settings.RootPath);
+  }
+
+  [Fact]
   public async Task WorkflowRunsMultiSourceDocumentSliceAndPreservesAuthorityIsolation()
   {
-    var databasePath = CreateDatabasePath();
-    var connectionString = $"Data Source={databasePath}";
+    var environment = CreateEnvironmentPaths();
 
     try
     {
-      using var serviceProvider = CreateServiceProvider(connectionString);
+      using var serviceProvider = CreateServiceProvider(environment);
       var result = await DocumentEngineExecutableWorkflowBootstrapper.RunAsync(serviceProvider);
 
-      Assert.True(File.Exists(databasePath));
+      Assert.True(File.Exists(environment.DatabasePath));
       Assert.Equal(DocumentImportSessionState.Completed, result.CompletedProjectAImportSession.State);
       Assert.Equal(2, result.CompletedProjectAImportSession.AcceptedCount);
       Assert.Equal(1, result.CompletedProjectAImportSession.DuplicateCount);
@@ -50,25 +89,24 @@ public sealed class DocumentEngineExecutableWorkflowTests
     }
     finally
     {
-      DeleteIfPresent(databasePath);
+      DeleteEnvironmentIfPresent(environment);
     }
   }
 
   [Fact]
   public async Task WorkflowSnapshotReloadsFromFreshProviderWithoutMutation()
   {
-    var databasePath = CreateDatabasePath();
-    var connectionString = $"Data Source={databasePath}";
+    var environment = CreateEnvironmentPaths();
 
     try
     {
       DocumentEngineExecutableWorkflowResult initialResult;
-      using (var firstProvider = CreateServiceProvider(connectionString))
+      using (var firstProvider = CreateServiceProvider(environment))
       {
         initialResult = await DocumentEngineExecutableWorkflowBootstrapper.RunAsync(firstProvider);
       }
 
-      using var secondProvider = CreateServiceProvider(connectionString);
+      using var secondProvider = CreateServiceProvider(environment);
       await DocumentEngineExecutableWorkflowBootstrapper.MigrateAsync(secondProvider);
       await using var scope = secondProvider.CreateAsyncScope();
       var query = scope.ServiceProvider.GetRequiredService<IQueryHandler<LoadProjectDocumentWorkflowSnapshotQuery, LoadProjectDocumentWorkflowSnapshotResult>>();
@@ -98,63 +136,112 @@ public sealed class DocumentEngineExecutableWorkflowTests
     }
     finally
     {
-      DeleteIfPresent(databasePath);
+      DeleteEnvironmentIfPresent(environment);
     }
   }
 
   [Fact]
-  public async Task WorkflowAllowsExactByteReopenWithoutExposingPaths()
+  public async Task FirstProviderStoresAndSecondProviderReopensExistingSourceWithoutExposingPhysicalPaths()
   {
-    var databasePath = CreateDatabasePath();
-    var connectionString = $"Data Source={databasePath}";
+    var environment = CreateEnvironmentPaths();
 
     try
     {
-      using var serviceProvider = CreateServiceProvider(connectionString);
-      var result = await DocumentEngineExecutableWorkflowBootstrapper.RunAsync(serviceProvider);
-      var source = GetImportedSource(result.ProjectASnapshot, result.ImportedSourceA.ImportedSourceId);
-      var store = serviceProvider.GetRequiredService<IImmutableContentStore>();
+      StorageObjectId storageObjectId;
+      string expectedHash;
+      using (var firstProvider = CreateServiceProvider(environment))
+      {
+        var result = await DocumentEngineExecutableWorkflowBootstrapper.RunAsync(firstProvider);
+        var source = GetImportedSource(result.ProjectASnapshot, result.ImportedSourceA.ImportedSourceId);
+        storageObjectId = source.Storage.StorageObjectId;
+        expectedHash = source.ContentHash;
+      }
 
-      var reopened = await store.OpenReadAsync(source.Storage.StorageObjectId);
+      using var secondProvider = CreateServiceProvider(environment);
+      var store = secondProvider.GetRequiredService<IImmutableContentStore>();
+      var reopened = await store.OpenReadAsync(storageObjectId);
       await using var stream = reopened.Content;
       using var memory = new MemoryStream();
       await stream.CopyToAsync(memory);
-      var reopenedText = System.Text.Encoding.UTF8.GetString(memory.ToArray());
+      var reopenedText = Encoding.UTF8.GetString(memory.ToArray());
 
       Assert.Equal(StorageAvailabilityState.Available, reopened.AvailabilityState);
-      Assert.Equal(source.ContentHash, reopened.ContentHash);
+      Assert.Equal(expectedHash, reopened.ContentHash);
       Assert.Contains("Section 03 30 00 requires concrete curing", reopenedText, StringComparison.Ordinal);
-      Assert.DoesNotContain(source.Storage.ImmutableObjectKey, char.IsWhiteSpace);
+      Assert.DoesNotContain(environment.StorageRootPath, reopenedText, StringComparison.OrdinalIgnoreCase);
     }
     finally
     {
-      DeleteIfPresent(databasePath);
+      DeleteEnvironmentIfPresent(environment);
+    }
+  }
+
+  [Fact]
+  public async Task SecondProviderProcessesPriorSourceCreatedByDisposedProvider()
+  {
+    var environment = CreateEnvironmentPaths();
+
+    try
+    {
+      SeededDocumentProject seededProject;
+      using (var firstProvider = CreateServiceProvider(environment))
+      {
+        await DocumentEngineExecutableWorkflowBootstrapper.MigrateAsync(firstProvider);
+        seededProject = await SeedProjectWithImportedSourceAsync(
+          firstProvider,
+          "Restart Proof Project",
+          "restart-proof.txt",
+          "Restart proof deterministic content.",
+          completeImportSession: true);
+      }
+
+      using var secondProvider = CreateServiceProvider(environment);
+      await DocumentEngineExecutableWorkflowBootstrapper.MigrateAsync(secondProvider);
+      await using var scope = secondProvider.CreateAsyncScope();
+      var requestProcessing = scope.ServiceProvider.GetRequiredService<ICommandHandler<RequestDocumentProcessingCommand, RequestDocumentProcessingResult>>();
+
+      var result = await requestProcessing.HandleAsync(
+        new RequestDocumentProcessingCommand(seededProject.ImportedSourceId, seededProject.ProjectId));
+
+      var snapshot = await LoadSnapshotAsync(secondProvider, seededProject.ProjectId);
+      var source = GetImportedSource(snapshot, seededProject.ImportedSourceId);
+      var attempt = RequireSingleMatch(
+        source.ProcessingAttempts,
+        candidate => candidate.ProcessingAttemptId == result.ProcessingAttemptId,
+        $"restart-proof processing attempt {result.ProcessingAttemptId}");
+
+      Assert.Equal(DocumentProcessingAttemptState.Completed, attempt.State);
+      Assert.Equal(DocumentProcessingFailureClassification.None, attempt.FailureClassification);
+      Assert.Equal(2, result.CandidateCount);
+      Assert.Equal(2, source.Candidates.Count);
+      Assert.Equal(0, snapshot.AuthorityIsolation.KnowledgeDocumentCount);
+      Assert.Equal(0, snapshot.AuthorityIsolation.ReportCount);
+      Assert.Equal(0, snapshot.AuthorityIsolation.AiProposalCount);
+    }
+    finally
+    {
+      DeleteEnvironmentIfPresent(environment);
     }
   }
 
   [Fact]
   public async Task WorkflowPersistsDeterministicProcessingTerminalScenarios()
   {
-    var databasePath = CreateDatabasePath();
-    var connectionString = $"Data Source={databasePath}";
+    var environment = CreateEnvironmentPaths();
 
     try
     {
-      using var serviceProvider = CreateServiceProvider(connectionString);
+      using var serviceProvider = CreateServiceProvider(environment);
       var result = await DocumentEngineExecutableWorkflowBootstrapper.RunAsync(serviceProvider);
 
-      Assert.Contains(result.ProcessingScenarios, scenario =>
-        scenario.Scenario == "storage-read-unavailable"
-        && scenario.State == DocumentProcessingAttemptState.Failed
-        && scenario.FailureClassification == DocumentProcessingFailureClassification.StorageUnavailable);
-      Assert.Contains(result.ProcessingScenarios, scenario =>
-        scenario.Scenario == "storage-read-throws"
-        && scenario.State == DocumentProcessingAttemptState.Failed
-        && scenario.FailureClassification == DocumentProcessingFailureClassification.Unknown);
       Assert.Contains(result.ProcessingScenarios, scenario =>
         scenario.Scenario == "structured-failure"
         && scenario.State == DocumentProcessingAttemptState.Failed
         && scenario.FailureClassification == DocumentProcessingFailureClassification.ProviderUnavailable);
+      Assert.Contains(result.ProcessingScenarios, scenario =>
+        scenario.Scenario == "processor-throws"
+        && scenario.State == DocumentProcessingAttemptState.Failed
+        && scenario.FailureClassification == DocumentProcessingFailureClassification.Unknown);
       Assert.Contains(result.ProcessingScenarios, scenario =>
         scenario.Scenario == "processor-cancelled"
         && scenario.State == DocumentProcessingAttemptState.Cancelled
@@ -168,26 +255,24 @@ public sealed class DocumentEngineExecutableWorkflowTests
     }
     finally
     {
-      DeleteIfPresent(databasePath);
+      DeleteEnvironmentIfPresent(environment);
     }
   }
 
   [Fact]
   public async Task WorkflowCapturesExpectedFailurePresentationsWithoutCrashing()
   {
-    var databasePath = CreateDatabasePath();
-    var connectionString = $"Data Source={databasePath}";
+    var environment = CreateEnvironmentPaths();
 
     try
     {
-      using var serviceProvider = CreateServiceProvider(connectionString);
+      using var serviceProvider = CreateServiceProvider(environment);
       var result = await DocumentEngineExecutableWorkflowBootstrapper.RunAsync(serviceProvider);
 
       Assert.Equal(
         [
           "unsupported-media-type",
           "maximum-size-exceeded",
-          "storage-write-failure",
           "duplicate-into-completed-session",
           "invalid-candidate-review-transition",
           "snapshot-invalid-bounds",
@@ -197,19 +282,18 @@ public sealed class DocumentEngineExecutableWorkflowTests
     }
     finally
     {
-      DeleteIfPresent(databasePath);
+      DeleteEnvironmentIfPresent(environment);
     }
   }
 
   [Fact]
-  public async Task CommitFailureAfterContentStorageLeavesNoPartialDatabaseState()
+  public async Task CommitFailureAfterContentStorageLeavesOrphanVisibleWithoutPartialDatabaseState()
   {
-    var databasePath = CreateDatabasePath();
-    var connectionString = $"Data Source={databasePath}";
+    var environment = CreateEnvironmentPaths();
 
     try
     {
-      using var serviceProvider = CreateServiceProvider(connectionString, services =>
+      using var serviceProvider = CreateServiceProvider(environment, services =>
       {
         services.RemoveAll<IUnitOfWork>();
         services.AddScoped<IUnitOfWork>(serviceProvider =>
@@ -221,14 +305,16 @@ public sealed class DocumentEngineExecutableWorkflowTests
       var createProject = scope.ServiceProvider.GetRequiredService<ICommandHandler<CreateProjectCommand, CreateProjectResult>>();
       var beginImport = scope.ServiceProvider.GetRequiredService<ICommandHandler<BeginDocumentImportSessionCommand, BeginDocumentImportSessionResult>>();
       var import = scope.ServiceProvider.GetRequiredService<ICommandHandler<ImportDocumentSourceCommand, ImportDocumentSourceResult>>();
-      var store = scope.ServiceProvider.GetRequiredService<IImmutableContentStore>();
+      var store = scope.ServiceProvider.GetRequiredService<LocalFileSystemImmutableContentStore>();
 
+      var orphanBytes = Encoding.UTF8.GetBytes("orphan candidate");
+      var orphanHash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(orphanBytes));
       var project = await createProject.HandleAsync(new CreateProjectCommand("Commit Failure Project"));
       var session = await beginImport.HandleAsync(new BeginDocumentImportSessionCommand(project.ProjectId));
 
       await Assert.ThrowsAsync<InvalidOperationException>(async () =>
       {
-        await using var content = new MemoryStream(System.Text.Encoding.UTF8.GetBytes("orphan candidate"));
+        await using var content = new MemoryStream(orphanBytes);
         await import.HandleAsync(new ImportDocumentSourceCommand(
           session.ImportSessionId,
           project.ProjectId,
@@ -239,34 +325,35 @@ public sealed class DocumentEngineExecutableWorkflowTests
           content));
       });
 
-      await using var verificationScope = serviceProvider.CreateAsyncScope();
-      var dbContext = verificationScope.ServiceProvider.GetRequiredService<SpinbusterDbContext>();
-      await dbContext.Database.OpenConnectionAsync();
-      await using var command = dbContext.Database.GetDbConnection().CreateCommand();
-      command.CommandText = "SELECT COUNT(*) FROM imported_document_sources";
-      var importedSourceCount = Convert.ToInt64(await command.ExecuteScalarAsync(), CultureInfo.InvariantCulture);
+      var counts = await QueryDocumentStateCountsAsync(serviceProvider);
+      var inventory = await store.ListStoredObjectsAsync(10);
 
-      Assert.Equal(0L, importedSourceCount);
-      Assert.NotNull(await store.FindByHashAsync(
-        Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes("orphan candidate"))),
-        "SHA-256",
-        1));
+      Assert.Equal(0L, counts.StorageObjectCount);
+      Assert.Equal(0L, counts.ImportedSourceCount);
+      Assert.Equal(0L, counts.ProcessingAttemptCount);
+      Assert.Equal(0L, counts.CandidateCount);
+      Assert.Equal(0L, counts.KnowledgeDocumentCount);
+      Assert.Equal(0L, counts.ReportCount);
+      Assert.Equal(0L, counts.AiProposalCount);
+      Assert.NotNull(await store.FindByHashAsync(orphanHash, "SHA-256", 1));
+      var orphan = Assert.Single(inventory, item => string.Equals(item.ContentHash, orphanHash, StringComparison.Ordinal));
+      Assert.DoesNotContain(environment.StorageRootPath, orphan.ProviderRelativeObjectKey, StringComparison.OrdinalIgnoreCase);
+      Assert.False(Path.IsPathRooted(orphan.ProviderRelativeObjectKey));
     }
     finally
     {
-      DeleteIfPresent(databasePath);
+      DeleteEnvironmentIfPresent(environment);
     }
   }
 
   [Fact]
   public async Task SameFileNameWithDifferentBytesIsNotTreatedAsDuplicate()
   {
-    var databasePath = CreateDatabasePath();
-    var connectionString = $"Data Source={databasePath}";
+    var environment = CreateEnvironmentPaths();
 
     try
     {
-      using var serviceProvider = CreateServiceProvider(connectionString);
+      using var serviceProvider = CreateServiceProvider(environment);
       await DocumentEngineExecutableWorkflowBootstrapper.MigrateAsync(serviceProvider);
       await using var scope = serviceProvider.CreateAsyncScope();
       var createProject = scope.ServiceProvider.GetRequiredService<ICommandHandler<CreateProjectCommand, CreateProjectResult>>();
@@ -276,7 +363,7 @@ public sealed class DocumentEngineExecutableWorkflowTests
 
       var project = await createProject.HandleAsync(new CreateProjectCommand("Filename Duplicate Check"));
       var session = await beginImport.HandleAsync(new BeginDocumentImportSessionCommand(project.ProjectId));
-      await using var firstContent = new MemoryStream(System.Text.Encoding.UTF8.GetBytes("first bytes"));
+      await using var firstContent = new MemoryStream(Encoding.UTF8.GetBytes("first bytes"));
       var first = await import.HandleAsync(new ImportDocumentSourceCommand(
         session.ImportSessionId,
         project.ProjectId,
@@ -285,7 +372,7 @@ public sealed class DocumentEngineExecutableWorkflowTests
         ImportedSourceOrigin.LocalFile,
         null,
         firstContent));
-      await using var secondContent = new MemoryStream(System.Text.Encoding.UTF8.GetBytes("second bytes"));
+      await using var secondContent = new MemoryStream(Encoding.UTF8.GetBytes("second bytes"));
       var second = await import.HandleAsync(new ImportDocumentSourceCommand(
         session.ImportSessionId,
         project.ProjectId,
@@ -302,28 +389,27 @@ public sealed class DocumentEngineExecutableWorkflowTests
     }
     finally
     {
-      DeleteIfPresent(databasePath);
+      DeleteEnvironmentIfPresent(environment);
     }
   }
 
   [Fact]
-  public async Task WorkflowCanRunTwiceAgainstTheSameDatabaseWithoutMutatingPriorData()
+  public async Task WorkflowCanRunTwiceAgainstTheSameDatabaseAndStorageRootWithoutMutatingPriorData()
   {
-    var databasePath = CreateDatabasePath();
-    var connectionString = $"Data Source={databasePath}";
+    var environment = CreateEnvironmentPaths();
 
     try
     {
       DocumentEngineExecutableWorkflowResult firstRun;
       string firstRunSignature;
-      using (var firstProvider = CreateServiceProvider(connectionString))
+      using (var firstProvider = CreateServiceProvider(environment))
       {
         firstRun = await DocumentEngineExecutableWorkflowBootstrapper.RunAsync(firstProvider);
         var completedFirstRunSnapshot = await LoadSnapshotAsync(firstProvider, firstRun.CreatedProjectA.ProjectId);
         firstRunSignature = CreateProjectSnapshotSignature(completedFirstRunSnapshot);
       }
 
-      using var secondProvider = CreateServiceProvider(connectionString);
+      using var secondProvider = CreateServiceProvider(environment);
       var secondRun = await DocumentEngineExecutableWorkflowBootstrapper.RunAsync(secondProvider);
       var preservedFirstRunSnapshot = await LoadSnapshotAsync(secondProvider, firstRun.CreatedProjectA.ProjectId);
 
@@ -339,19 +425,18 @@ public sealed class DocumentEngineExecutableWorkflowTests
     }
     finally
     {
-      DeleteIfPresent(databasePath);
+      DeleteEnvironmentIfPresent(environment);
     }
   }
 
   [Fact]
   public async Task WorkflowSucceedsWhenUnrelatedProjectsAndDocumentRecordsAlreadyExist()
   {
-    var databasePath = CreateDatabasePath();
-    var connectionString = $"Data Source={databasePath}";
+    var environment = CreateEnvironmentPaths();
 
     try
     {
-      using var serviceProvider = CreateServiceProvider(connectionString);
+      using var serviceProvider = CreateServiceProvider(environment);
       await DocumentEngineExecutableWorkflowBootstrapper.MigrateAsync(serviceProvider);
       var seededProject = await SeedProjectWithImportedSourceAsync(
         serviceProvider,
@@ -372,19 +457,18 @@ public sealed class DocumentEngineExecutableWorkflowTests
     }
     finally
     {
-      DeleteIfPresent(databasePath);
+      DeleteEnvironmentIfPresent(environment);
     }
   }
 
   [Fact]
   public async Task WorkflowSucceedsWhenAPreviousIncompleteDocumentWorkflowExists()
   {
-    var databasePath = CreateDatabasePath();
-    var connectionString = $"Data Source={databasePath}";
+    var environment = CreateEnvironmentPaths();
 
     try
     {
-      using var serviceProvider = CreateServiceProvider(connectionString);
+      using var serviceProvider = CreateServiceProvider(environment);
       await DocumentEngineExecutableWorkflowBootstrapper.MigrateAsync(serviceProvider);
       var incompleteProject = await SeedProjectWithImportedSourceAsync(
         serviceProvider,
@@ -408,7 +492,161 @@ public sealed class DocumentEngineExecutableWorkflowTests
     }
     finally
     {
-      DeleteIfPresent(databasePath);
+      DeleteEnvironmentIfPresent(environment);
+    }
+  }
+
+  [Fact]
+  public async Task MissingPhysicalFileCreatesExplicitTerminalFailedProcessingAttempt()
+  {
+    var environment = CreateEnvironmentPaths();
+
+    try
+    {
+      SeededDocumentProject seededProject;
+      ProjectDocumentStorageSnapshot storedContent;
+      using (var firstProvider = CreateServiceProvider(environment))
+      {
+        await DocumentEngineExecutableWorkflowBootstrapper.MigrateAsync(firstProvider);
+        seededProject = await SeedProjectWithImportedSourceAsync(
+          firstProvider,
+          "Missing File Project",
+          "missing-file.txt",
+          "Deterministic missing file content.",
+          completeImportSession: true);
+        var snapshot = await LoadSnapshotAsync(firstProvider, seededProject.ProjectId);
+        storedContent = GetImportedSource(snapshot, seededProject.ImportedSourceId).Storage;
+      }
+
+      File.Delete(GetPhysicalObjectPath(environment.StorageRootPath, storedContent.ImmutableObjectKey));
+
+      using var secondProvider = CreateServiceProvider(environment);
+      await DocumentEngineExecutableWorkflowBootstrapper.MigrateAsync(secondProvider);
+      await using var scope = secondProvider.CreateAsyncScope();
+      var requestProcessing = scope.ServiceProvider.GetRequiredService<ICommandHandler<RequestDocumentProcessingCommand, RequestDocumentProcessingResult>>();
+
+      var result = await requestProcessing.HandleAsync(
+        new RequestDocumentProcessingCommand(seededProject.ImportedSourceId, seededProject.ProjectId));
+
+      var snapshotAfterFailure = await LoadSnapshotAsync(secondProvider, seededProject.ProjectId);
+      var sourceAfterFailure = GetImportedSource(snapshotAfterFailure, seededProject.ImportedSourceId);
+      var attemptAfterFailure = GetProcessingAttemptSnapshot(sourceAfterFailure, result.ProcessingAttemptId);
+
+      Assert.Equal(DocumentProcessingAttemptState.Failed, attemptAfterFailure.State);
+      Assert.Equal(DocumentProcessingFailureClassification.StorageUnavailable, attemptAfterFailure.FailureClassification);
+      Assert.Equal(0, result.CandidateCount);
+      Assert.Equal(0, snapshotAfterFailure.AuthorityIsolation.KnowledgeDocumentCount);
+      Assert.Equal(0, snapshotAfterFailure.AuthorityIsolation.ReportCount);
+      Assert.Equal(0, snapshotAfterFailure.AuthorityIsolation.AiProposalCount);
+    }
+    finally
+    {
+      DeleteEnvironmentIfPresent(environment);
+    }
+  }
+
+  [Fact]
+  public async Task CorruptPhysicalFileProducesIntegrityFailureAndTerminalAttemptState()
+  {
+    var environment = CreateEnvironmentPaths();
+
+    try
+    {
+      SeededDocumentProject seededProject;
+      ProjectDocumentStorageSnapshot storedContent;
+      using (var firstProvider = CreateServiceProvider(environment))
+      {
+        await DocumentEngineExecutableWorkflowBootstrapper.MigrateAsync(firstProvider);
+        seededProject = await SeedProjectWithImportedSourceAsync(
+          firstProvider,
+          "Corrupt File Project",
+          "corrupt-file.txt",
+          "Deterministic corrupt file content.",
+          completeImportSession: true);
+        var snapshot = await LoadSnapshotAsync(firstProvider, seededProject.ProjectId);
+        storedContent = GetImportedSource(snapshot, seededProject.ImportedSourceId).Storage;
+      }
+
+      File.WriteAllText(GetPhysicalObjectPath(environment.StorageRootPath, storedContent.ImmutableObjectKey), "corrupted bytes");
+
+      using var secondProvider = CreateServiceProvider(environment);
+      await DocumentEngineExecutableWorkflowBootstrapper.MigrateAsync(secondProvider);
+      await using var scope = secondProvider.CreateAsyncScope();
+      var requestProcessing = scope.ServiceProvider.GetRequiredService<ICommandHandler<RequestDocumentProcessingCommand, RequestDocumentProcessingResult>>();
+
+      var result = await requestProcessing.HandleAsync(
+        new RequestDocumentProcessingCommand(seededProject.ImportedSourceId, seededProject.ProjectId));
+
+      var snapshotAfterFailure = await LoadSnapshotAsync(secondProvider, seededProject.ProjectId);
+      var sourceAfterFailure = GetImportedSource(snapshotAfterFailure, seededProject.ImportedSourceId);
+      var attemptAfterFailure = GetProcessingAttemptSnapshot(sourceAfterFailure, result.ProcessingAttemptId);
+
+      Assert.Equal(DocumentProcessingAttemptState.Failed, attemptAfterFailure.State);
+      Assert.Equal(DocumentProcessingFailureClassification.ValidationFailed, attemptAfterFailure.FailureClassification);
+      Assert.Equal(0, result.CandidateCount);
+      Assert.Equal(0, snapshotAfterFailure.AuthorityIsolation.KnowledgeDocumentCount);
+      Assert.Equal(0, snapshotAfterFailure.AuthorityIsolation.ReportCount);
+      Assert.Equal(0, snapshotAfterFailure.AuthorityIsolation.AiProposalCount);
+    }
+    finally
+    {
+      DeleteEnvironmentIfPresent(environment);
+    }
+  }
+
+  [Fact]
+  public async Task FormatterAndSnapshotDoNotExposeAbsoluteStoragePaths()
+  {
+    var environment = CreateEnvironmentPaths();
+
+    try
+    {
+      using var serviceProvider = CreateServiceProvider(environment);
+      var result = await DocumentEngineExecutableWorkflowBootstrapper.RunAsync(serviceProvider);
+      var output = DocumentEngineExecutableWorkflowConsoleFormatter.Format(result);
+
+      Assert.All(result.ProjectASnapshot.ImportedSources, source =>
+      {
+        Assert.DoesNotContain(environment.StorageRootPath, source.Storage.ImmutableObjectKey, StringComparison.OrdinalIgnoreCase);
+        Assert.False(Path.IsPathRooted(source.Storage.ImmutableObjectKey));
+      });
+      Assert.DoesNotContain(environment.StorageRootPath, output, StringComparison.OrdinalIgnoreCase);
+      Assert.DoesNotContain(environment.DatabasePath, output, StringComparison.OrdinalIgnoreCase);
+      Assert.DoesNotContain("C:\\", output, StringComparison.OrdinalIgnoreCase);
+    }
+    finally
+    {
+      DeleteEnvironmentIfPresent(environment);
+    }
+  }
+
+  [Fact]
+  public async Task InvalidStorageConfigurationFailsWithClassifiedValidationError()
+  {
+    var environment = CreateEnvironmentPaths();
+
+    try
+    {
+      Directory.CreateDirectory(environment.WorkingRootPath);
+      File.WriteAllText(environment.StorageRootPath, "not a directory");
+      using var serviceProvider = CreateServiceProvider(environment);
+
+      var exception = await Assert.ThrowsAsync<ImmutableContentStoreException>(async () =>
+        await DocumentEngineExecutableWorkflowBootstrapper.RunAsync(serviceProvider));
+
+      Assert.Equal(ImmutableContentStoreFailureClassification.RootUnavailable, exception.FailureClassification);
+      Assert.DoesNotContain(environment.StorageRootPath, exception.ToString(), StringComparison.OrdinalIgnoreCase);
+    }
+    finally
+    {
+      if (Directory.Exists(environment.WorkingRootPath))
+      {
+        DeleteEnvironmentIfPresent(environment);
+      }
+      else if (File.Exists(environment.StorageRootPath))
+      {
+        File.Delete(environment.StorageRootPath);
+      }
     }
   }
 
@@ -430,6 +668,16 @@ public sealed class DocumentEngineExecutableWorkflowTests
       snapshot.ImportedSources,
       source => source.ImportedSourceId == importedSourceId,
       $"imported source {importedSourceId}");
+  }
+
+  private static ProjectDocumentProcessingAttemptSnapshot GetProcessingAttemptSnapshot(
+    ProjectImportedDocumentSourceSnapshot sourceSnapshot,
+    DocumentProcessingAttemptId processingAttemptId)
+  {
+    return RequireSingleMatch(
+      sourceSnapshot.ProcessingAttempts,
+      attempt => attempt.ProcessingAttemptId == processingAttemptId,
+      $"processing attempt {processingAttemptId}");
   }
 
   private static T RequireSingleMatch<T>(
@@ -485,7 +733,7 @@ public sealed class DocumentEngineExecutableWorkflowTests
 
     var project = await createProject.HandleAsync(new CreateProjectCommand(projectName));
     var importSession = await beginImportSession.HandleAsync(new BeginDocumentImportSessionCommand(project.ProjectId));
-    await using var contentStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(content));
+    await using var contentStream = new MemoryStream(Encoding.UTF8.GetBytes(content));
     var importedSource = await importSource.HandleAsync(new ImportDocumentSourceCommand(
       importSession.ImportSessionId,
       project.ProjectId,
@@ -503,17 +751,69 @@ public sealed class DocumentEngineExecutableWorkflowTests
     return new SeededDocumentProject(project.ProjectId, importSession.ImportSessionId, importedSource.ImportedSourceId);
   }
 
-  private static string CreateDatabasePath()
+  private static async Task<DocumentStateCounts> QueryDocumentStateCountsAsync(IServiceProvider rootServiceProvider)
   {
-    return Path.Combine(Path.GetTempPath(), "spinbuster-tests", $"{Guid.NewGuid():N}.sqlite");
+    await using var scope = rootServiceProvider.CreateAsyncScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<SpinbusterDbContext>();
+    await dbContext.Database.OpenConnectionAsync();
+
+    async Task<long> ScalarAsync(string sql)
+    {
+      await using var command = dbContext.Database.GetDbConnection().CreateCommand();
+      command.CommandText = sql;
+      return Convert.ToInt64(await command.ExecuteScalarAsync(), CultureInfo.InvariantCulture);
+    }
+
+    return new DocumentStateCounts(
+      await ScalarAsync("SELECT COUNT(*) FROM storage_objects"),
+      await ScalarAsync("SELECT COUNT(*) FROM imported_document_sources"),
+      await ScalarAsync("SELECT COUNT(*) FROM document_processing_attempts"),
+      await ScalarAsync("SELECT COUNT(*) FROM document_candidates"),
+      await ScalarAsync("SELECT COUNT(*) FROM knowledge_documents"),
+      await ScalarAsync("SELECT COUNT(*) FROM reports"),
+      await ScalarAsync("SELECT COUNT(*) FROM ai_proposals"));
+  }
+
+  private static TestEnvironmentPaths CreateEnvironmentPaths()
+  {
+    var workingRootPath = Path.Combine(Path.GetTempPath(), "spinbuster-tests", Guid.NewGuid().ToString("N"));
+    return new TestEnvironmentPaths(
+      workingRootPath,
+      Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.sqlite"),
+      Path.Combine(workingRootPath, "immutable-content"));
+  }
+
+  private static string GetPhysicalObjectPath(string storageRootPath, string immutableObjectKey)
+  {
+    return Path.Combine(storageRootPath, immutableObjectKey.Replace('/', Path.DirectorySeparatorChar));
   }
 
   private static ServiceProvider CreateServiceProvider(
-    string connectionString,
+    TestEnvironmentPaths environment,
     Action<IServiceCollection>? configureServices = null)
   {
+    Directory.CreateDirectory(environment.WorkingRootPath);
+
     var services = new ServiceCollection();
-    DesktopCompositionRoot.ConfigureServices(services, connectionString, new DesktopWorkflowSettings(
+    var documentStorageSettings = new DesktopDocumentStorageSettings(
+      environment.StorageRootPath,
+      true,
+      true,
+      true,
+      true,
+      256);
+    DesktopCompositionRoot.ConfigureServices(
+      services,
+      $"Data Source={environment.DatabasePath}",
+      CreateSettings(),
+      documentStorageSettings);
+    configureServices?.Invoke(services);
+    return services.BuildServiceProvider();
+  }
+
+  private static DesktopWorkflowSettings CreateSettings()
+  {
+    return new DesktopWorkflowSettings(
       "desktop.bootstrap@local.invalid",
       "Document Engine Executable Slice",
       "Initial Inspection Session",
@@ -551,25 +851,45 @@ public sealed class DocumentEngineExecutableWorkflowTests
       "RFI-027 clarifies the revised curing requirement.",
       "Section 3.6.B",
       "Provide curing protection immediately after finishing.",
-      new DateTimeOffset(2026, 7, 17, 9, 0, 0, TimeSpan.Zero)));
-    configureServices?.Invoke(services);
-    return services.BuildServiceProvider();
+      new DateTimeOffset(2026, 7, 17, 9, 0, 0, TimeSpan.Zero));
   }
 
-  private static void DeleteIfPresent(string databasePath)
+  private static void DeleteEnvironmentIfPresent(TestEnvironmentPaths environment)
   {
     SqliteConnection.ClearAllPools();
 
-    if (File.Exists(databasePath))
+    if (File.Exists(environment.DatabasePath))
     {
       try
       {
-        File.Delete(databasePath);
+        File.Delete(environment.DatabasePath);
       }
       catch (IOException)
       {
       }
     }
+
+    if (Directory.Exists(environment.WorkingRootPath))
+    {
+      try
+      {
+        Directory.Delete(environment.WorkingRootPath, recursive: true);
+      }
+      catch (IOException)
+      {
+      }
+    }
+    else if (File.Exists(environment.StorageRootPath))
+    {
+      File.Delete(environment.StorageRootPath);
+    }
+  }
+
+  private static bool IsPathUnderRoot(string path, string root)
+  {
+    var normalizedPath = Path.GetFullPath(path).TrimEnd(Path.DirectorySeparatorChar);
+    var normalizedRoot = Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar);
+    return normalizedPath.StartsWith(normalizedRoot + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
   }
 
   private sealed class ThrowingUnitOfWork : IUnitOfWork
@@ -600,4 +920,18 @@ public sealed class DocumentEngineExecutableWorkflowTests
     ProjectId ProjectId,
     DocumentImportSessionId ImportSessionId,
     ImportedSourceId ImportedSourceId);
+
+  private sealed record TestEnvironmentPaths(
+    string WorkingRootPath,
+    string DatabasePath,
+    string StorageRootPath);
+
+  private sealed record DocumentStateCounts(
+    long StorageObjectCount,
+    long ImportedSourceCount,
+    long ProcessingAttemptCount,
+    long CandidateCount,
+    long KnowledgeDocumentCount,
+    long ReportCount,
+    long AiProposalCount);
 }

@@ -6,11 +6,14 @@ Prototype Vertical Slice
 Latest released baseline:
 DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1
 
-Next active package:
+Active review candidate:
 LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1-RC
 
+Next planned package:
+PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC
+
 Status:
-Document Engine executable slice released; next package baton prepared
+Local filesystem storage-adapter review candidate implemented and under validation
 
 Build:
 Passing
@@ -21,45 +24,45 @@ Warnings:
 Domain tests:
 53/53 passing
 
-Architecture tests:
-20/20 passing
-
 Application tests:
 74/74 passing
+
+Documents tests:
+28/28 passing
 
 Infrastructure tests:
 27/27 passing
 
-AI tests:
-6/6 passing
+Architecture tests:
+21/21 passing
 
 Desktop end-to-end tests:
-16/16 passing
+23/23 passing
 
 Current task:
-Begin `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1-RC`
+Finalize `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1-RC` review evidence, validation, and review-only commit
 
 Required outcome:
 
-- Build the first executable local Document Engine workflow through the temporary Desktop host.
-- Apply migrations at startup and exercise the released Document Engine foundation end to end.
-- Persist and reload import sessions, imported sources, processing attempts, document candidates, and audit history.
-- Present deterministic success and failure outcomes without widening the authoritative boundary.
+- Preserve exact-byte document storage across provider restart with the local filesystem adapter.
+- Keep SQLite metadata and filesystem bytes consistent through integrity validation and repeated execution.
+- Preserve prior data and expose bounded orphan visibility without widening the authoritative boundary.
+- Leave the in-memory adapter fixture-only and keep Desktop composition free of raw storage I/O.
 
 Next review:
-Local filesystem storage-adapter boundary and validation plan
+Prototype review for the local filesystem storage adapter and readiness for parsing plus fragment work
 
 Known blockers:
 None
 
 Last completed:
-Released `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1`
+Filesystem adapter restart, repeated-run, corruption, and orphan hardening validated locally
 
 Proposed next direction:
 
-- Implement the local filesystem storage adapter beneath the existing Document Engine foundation
+- Begin `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`
 - Preserve the non-authoritative document-candidate boundary
-- Keep parsing, OCR, and promotion boundaries deferred until the filesystem adapter is validated
+- Keep OCR, AI extraction, and reconciliation workflows deferred until fragment contracts are explicit
 
 Current capabilities:
 
@@ -93,6 +96,10 @@ Current capabilities:
 - Execute the first deterministic Document Engine workflow through the Desktop host
 - Persist multi-source batch import state, processing outcomes, candidate review state, and document audit history
 - Reload project-scoped document workflow snapshots without mutating Knowledge, Report, or AI records
+- Persist immutable document bytes beneath a local filesystem root with ID-addressed layout and atomic-write semantics
+- Reopen stored bytes safely after provider recreation and repeated executable runs against the same SQLite database plus storage root
+- Detect missing and corrupted stored bytes during processing and fail terminally without widening authority
+- Expose bounded adapter-specific orphan visibility for future reconciliation work
 
 Authoritative context:
 
@@ -106,7 +113,7 @@ Authoritative context:
 - `spec/documents/README.md`
 - `spec/documents/document-engine-boundary.md`
 - `spec/documents/document-engine-foundation.md`
-- `docs/decisions/status/DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-PROTOTYPE-REVIEW.md`
+- `docs/decisions/status/LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1-RC-PROTOTYPE-REVIEW.md`
 - `spec/rules/README.md`
 - `spec/rules/rule-engine-boundary.md`
 - `docs/00-governance/ROADMAP.md`
@@ -121,6 +128,8 @@ Validation before completion:
 - `dotnet format SPINbuster.sln --no-restore`
 - `dotnet restore SPINbuster.sln --configfile NuGet.Config`
 - `dotnet build SPINbuster.sln --no-restore`
+- `dotnet tool run dotnet-ef migrations has-pending-model-changes --no-build --project src/SPINbuster.Infrastructure --startup-project src/SPINbuster.Server --context SPINbuster.Infrastructure.Persistence.SpinbusterDbContext`
+- `dotnet test tests/SPINbuster.Domain.Tests/SPINbuster.Domain.Tests.csproj --no-build`
 - `dotnet test tests/SPINbuster.Architecture.Tests/SPINbuster.Architecture.Tests.csproj --no-build`
 - `dotnet test tests/SPINbuster.Application.Tests/SPINbuster.Application.Tests.csproj --no-build`
 - `dotnet test tests/SPINbuster.Documents.Tests/SPINbuster.Documents.Tests.csproj --no-build`
@@ -129,3 +138,4 @@ Validation before completion:
 - `dotnet run --project src/SPINbuster.Desktop/SPINbuster.Desktop.csproj --no-build`
 - `dotnet test SPINbuster.sln --no-build -m:1`
 - `git diff --check`
+- `git diff --name-only -- src/SPINbuster.Infrastructure/Persistence/Migrations`

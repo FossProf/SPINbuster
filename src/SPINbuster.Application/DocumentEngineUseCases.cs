@@ -545,6 +545,16 @@ namespace SPINbuster.Application.UseCases.RequestDocumentProcessing
           return CreateResult(attempt, source.Id, []);
         }
 
+        if (!string.Equals(openResult.ContentHash, source.ContentHash, StringComparison.Ordinal)
+          || !string.Equals(openResult.HashAlgorithm, source.HashAlgorithm, StringComparison.Ordinal)
+          || openResult.HashAlgorithmVersion != source.HashAlgorithmVersion
+          || openResult.ContentLength != source.ContentLength)
+        {
+          attempt.Fail(_clock.UtcNow, DocumentProcessingFailureClassification.ValidationFailed, "Stored content no longer matches the authoritative immutable identity.");
+          await PersistTerminalAttemptStateAsync(attempt, [], cancellationToken);
+          return CreateResult(attempt, source.Id, []);
+        }
+
         await using var content = openResult.Content;
         var processorResult = await _documentProcessor.ProcessAsync(new DocumentProcessorRequest(
           source.Id,
@@ -626,6 +636,32 @@ namespace SPINbuster.Application.UseCases.RequestDocumentProcessing
       catch (OperationCanceledException)
       {
         attempt.Cancel(_clock.UtcNow, "Document processing request was cancelled.");
+        await PersistTerminalAttemptStateAsync(attempt, [], CancellationToken.None, finalizeSuccessfulValidation: false);
+        return CreateResult(attempt, source.Id, []);
+      }
+      catch (ImmutableContentStoreException exception) when (exception.FailureClassification == ImmutableContentStoreFailureClassification.IntegrityMismatch)
+      {
+        if (attempt.State is not DocumentProcessingAttemptState.Completed
+          and not DocumentProcessingAttemptState.Failed
+          and not DocumentProcessingAttemptState.Cancelled
+          and not DocumentProcessingAttemptState.Abstained)
+        {
+          attempt.Fail(_clock.UtcNow, DocumentProcessingFailureClassification.ValidationFailed, "Stored content integrity verification failed.");
+        }
+
+        await PersistTerminalAttemptStateAsync(attempt, [], CancellationToken.None, finalizeSuccessfulValidation: false);
+        return CreateResult(attempt, source.Id, []);
+      }
+      catch (ImmutableContentStoreException exception)
+      {
+        if (attempt.State is not DocumentProcessingAttemptState.Completed
+          and not DocumentProcessingAttemptState.Failed
+          and not DocumentProcessingAttemptState.Cancelled
+          and not DocumentProcessingAttemptState.Abstained)
+        {
+          attempt.Fail(_clock.UtcNow, DocumentProcessingFailureClassification.StorageUnavailable, $"Stored content is unavailable: {exception.Message}");
+        }
+
         await PersistTerminalAttemptStateAsync(attempt, [], CancellationToken.None, finalizeSuccessfulValidation: false);
         return CreateResult(attempt, source.Id, []);
       }

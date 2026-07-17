@@ -204,8 +204,6 @@ public sealed class DocumentEngineExecutableWorkflowRunner
         scopedCandidateStatuses));
     }
 
-    await AddScenarioAsync("storage-read-unavailable", "storage-read-unavailable.txt", CreateScopedContent(runScope, "SIMULATE_READ_UNAVAILABLE"), cancellationToken);
-    await AddScenarioAsync("storage-read-throws", "storage-read-throws.txt", CreateScopedContent(runScope, "SIMULATE_READ_FAILURE"), cancellationToken);
     await AddScenarioAsync("structured-failure", "structured-failure.txt", CreateScopedContent(runScope, "processor structured failure"), cancellationToken);
     await AddScenarioAsync("processor-throws", "processor-throws.txt", CreateScopedContent(runScope, "processor throws"), cancellationToken);
     await AddScenarioAsync("processor-cancelled", "processor-cancel.txt", CreateScopedContent(runScope, "processor cancellation"), cancellationToken);
@@ -249,20 +247,6 @@ public sealed class DocumentEngineExecutableWorkflowRunner
           WithRunScope("too-large.txt", runScope),
           "text/plain",
           CreateLargeScopedContent(runScope),
-          cancellationToken);
-      }));
-
-    failures.Add(await CaptureExpectedFailureAsync(
-      "storage-write-failure",
-      async () =>
-      {
-        var session = await _beginDocumentImportSession.HandleAsync(new BeginDocumentImportSessionCommand(projectId), cancellationToken);
-        await ImportAsync(
-          session.ImportSessionId,
-          projectId,
-          WithRunScope("storage-write-failure.txt", runScope),
-          "text/plain",
-          CreateContentBytes(runScope, "SIMULATE_WRITE_FAILURE"),
           cancellationToken);
       }));
 

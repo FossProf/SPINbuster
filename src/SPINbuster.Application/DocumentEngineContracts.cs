@@ -32,6 +32,27 @@ namespace SPINbuster.Application.Abstractions
       CancellationToken cancellationToken = default);
   }
 
+  public enum ImmutableContentStoreFailureClassification
+  {
+    RootUnavailable = 0,
+    AccessDenied = 1,
+    IntegrityMismatch = 2,
+    IoFailure = 3,
+  }
+
+  public sealed class ImmutableContentStoreException : IOException
+  {
+    public ImmutableContentStoreException(
+      ImmutableContentStoreFailureClassification failureClassification,
+      string message)
+      : base(message)
+    {
+      FailureClassification = failureClassification;
+    }
+
+    public ImmutableContentStoreFailureClassification FailureClassification { get; }
+  }
+
   public sealed record StoreImmutableContentRequest(
     StorageObjectId StorageObjectId,
     string StorageProviderKey,

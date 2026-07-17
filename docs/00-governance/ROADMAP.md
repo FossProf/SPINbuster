@@ -29,7 +29,7 @@ Deferred
 
 ## Planned Implementation Packages
 
-- Local filesystem storage adapter - Planned
+- Parsing and fragment foundation - Planned
 - Rule Engine foundation - Planned
 - Document ingestion and revision management - Planned
 - Retrieval and citations - Planned
@@ -42,7 +42,6 @@ Deferred
 
 ## Deferred Packages
 
-- Parsing and chunking - Deferred
 - Local Ollama integration - Deferred
 
 ## Presentation And Product Phases

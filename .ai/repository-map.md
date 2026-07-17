@@ -21,6 +21,7 @@ Purpose: Explain how the repository is organized and where different kinds of wo
 - `docs/decisions/status/` contains baseline, review, and status records.
 - `docs/03-implementation/IMPLEMENTATION_LOG.md` records completed milestones and the next implementation step.
 - `docs/decisions/edr/EDR-KE-001` through `EDR-KE-012` record the current Knowledge Engine and Document Engine deferred or accepted boundaries.
+- `docs/decisions/status/LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1-RC-PROTOTYPE-REVIEW.md` captures the current storage-adapter review findings and next-package recommendation.
 
 ## Specification Layout
 
@@ -39,7 +40,7 @@ Purpose: Explain how the repository is organized and where different kinds of wo
 - `src/SPINbuster.Domain` contains authoritative business concepts and invariants.
 - `src/SPINbuster.Application` contains orchestration, command and query workflows, transaction boundaries, and project-scope enforcement.
 - `src/SPINbuster.Infrastructure` contains persistence and adapter implementations.
-- `src/SPINbuster.Documents` now contains deterministic Document Engine adapters for hashing, media inspection, immutable content storage, and fixture processing.
+- `src/SPINbuster.Documents` now contains deterministic Document Engine adapters for hashing, media inspection, immutable content storage, fixture processing, and the review-candidate local filesystem adapter.
 - `src/SPINbuster.Rules` is reserved for future deterministic rule definitions and evaluators.
 - `src/SPINbuster.AI` contains AI integration adapters and advisory proposal support.
 - `src/SPINbuster.Reporting` contains reporting composition and report output support.
@@ -50,13 +51,18 @@ Purpose: Explain how the repository is organized and where different kinds of wo
 
 - `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1` is the latest released baseline.
 
-## Next Active Package
+## Active Review Candidate
 
 - `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1-RC`
+
+## Next Planned Package
+
+- `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`
 
 ## Current Document Engine Flow
 
 - The released executable slice adds a project-scoped Application snapshot query for document workflow state.
+- The current review candidate replaces the Desktop host's fixture-only document bytes with a local filesystem immutable content store.
 - The temporary Desktop host now exercises:
   - multi-source batch import
   - same-project duplicate reuse
@@ -64,8 +70,12 @@ Purpose: Explain how the repository is organized and where different kinds of wo
   - deterministic processing outcomes
   - non-authoritative candidate review
   - repeated execution on reused SQLite databases without mutating prior runs
+  - exact-byte reopen after provider recreation
+  - missing and corrupt file detection against persisted bytes
+  - bounded orphan visibility through adapter-specific inventory
   - reload of document audit history and authority-isolation state
-- The Infrastructure layer now also contains a host-facing database migrator abstraction so startup migration stays outside the Desktop host’s direct EF Core concerns.
+- The Infrastructure layer now also contains a host-facing database migrator abstraction so startup migration stays outside the Desktop host's direct EF Core concerns.
+- The Desktop host now resolves its default durable document root under `%LOCALAPPDATA%\\SPINbuster\\document-content` rather than under build-output directories.
 
 ## Working Rule
 

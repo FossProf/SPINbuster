@@ -13,11 +13,24 @@ public static class DesktopCompositionRoot
   public static void ConfigureServices(
     IServiceCollection services,
     string connectionString,
-    DesktopWorkflowSettings settings)
+    DesktopWorkflowSettings settings,
+    DesktopDocumentStorageSettings? documentStorageSettings = null)
   {
+    var resolvedDocumentStorageSettings = documentStorageSettings ?? CreateDefaultDocumentStorageSettings();
+
     services.AddSingleton(settings);
+    services.AddSingleton(resolvedDocumentStorageSettings);
     services.AddSpinbusterApplication();
     services.AddSpinbusterDocumentFoundationAdapters();
+    services.AddSpinbusterLocalFileSystemImmutableContentStore(options =>
+    {
+      options.RootPath = resolvedDocumentStorageSettings.RootPath;
+      options.CreateRootIfMissing = resolvedDocumentStorageSettings.CreateRootIfMissing;
+      options.FlushWritesThroughToDisk = resolvedDocumentStorageSettings.FlushWritesThroughToDisk;
+      options.VerifyFinalObjectAfterWrite = resolvedDocumentStorageSettings.VerifyFinalObjectAfterWrite;
+      options.VerifyInventoryObjectIntegrity = resolvedDocumentStorageSettings.VerifyInventoryObjectIntegrity;
+      options.MaxInventoryResults = resolvedDocumentStorageSettings.MaxInventoryResults;
+    });
     services.AddSpinbusterDeterministicAi(new DeterministicAiProviderOptions
     {
       Scenario = settings.AiScenario,
@@ -145,5 +158,40 @@ public static class DesktopCompositionRoot
       citationLocatorValue,
       citationQuotedText,
       initialTimestampUtc);
+  }
+
+  public static DesktopDocumentStorageSettings LoadDocumentStorageSettings(IConfiguration configuration)
+  {
+    var rootPath = configuration["DocumentStorage:RootPath"];
+    var createRootIfMissing = configuration.GetValue("DocumentStorage:CreateRootIfMissing", true);
+    var flushWritesThroughToDisk = configuration.GetValue("DocumentStorage:FlushWritesThroughToDisk", true);
+    var verifyFinalObjectAfterWrite = configuration.GetValue("DocumentStorage:VerifyFinalObjectAfterWrite", true);
+    var verifyInventoryObjectIntegrity = configuration.GetValue("DocumentStorage:VerifyInventoryObjectIntegrity", true);
+    var maxInventoryResults = configuration.GetValue("DocumentStorage:MaxInventoryResults", 256);
+
+    return new DesktopDocumentStorageSettings(
+      string.IsNullOrWhiteSpace(rootPath)
+        ? CreateDefaultDocumentStorageSettings().RootPath
+        // Relative paths are resolved against the current working directory so the
+        // policy stays explicit and does not drift with build-output locations.
+        : Path.GetFullPath(rootPath.Trim()),
+      createRootIfMissing,
+      flushWritesThroughToDisk,
+      verifyFinalObjectAfterWrite,
+      verifyInventoryObjectIntegrity,
+      maxInventoryResults);
+  }
+
+  private static DesktopDocumentStorageSettings CreateDefaultDocumentStorageSettings()
+  {
+    var appDataRoot = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+
+    return new DesktopDocumentStorageSettings(
+      Path.Combine(appDataRoot, "SPINbuster", "document-content"),
+      true,
+      true,
+      true,
+      true,
+      256);
   }
 }

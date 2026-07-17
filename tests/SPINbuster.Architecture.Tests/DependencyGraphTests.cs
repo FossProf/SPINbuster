@@ -338,6 +338,31 @@ public sealed class DependencyGraphTests
   }
 
   [Fact]
+  public void DesktopProjectDoesNotPerformRawStorageFileIo()
+  {
+    var repoRoot = FindRepositoryRoot();
+    var desktopFiles = Directory
+      .EnumerateFiles(Path.Combine(repoRoot, "src", "SPINbuster.Desktop"), "*.cs", SearchOption.AllDirectories)
+      .ToArray();
+    var forbiddenTokens = new[]
+    {
+      "File.Open",
+      "File.Read",
+      "File.Write",
+      "File.Delete",
+      "Directory.CreateDirectory",
+      "Directory.Delete",
+      "FileStream",
+    };
+
+    foreach (var desktopFile in desktopFiles)
+    {
+      var contents = File.ReadAllText(desktopFile);
+      Assert.DoesNotContain(forbiddenTokens, token => contents.Contains(token, StringComparison.Ordinal));
+    }
+  }
+
+  [Fact]
   public void DocumentApplicationContractsDoNotLeakProviderSpecificTypes()
   {
     var repoRoot = FindRepositoryRoot();

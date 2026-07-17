@@ -27,10 +27,16 @@ Completed:
 - Desktop tests for duplicate privacy, exact-byte reopen, durable failure handling, and commit-failure orphan behavior
 - Repeated-execution hardening for reused SQLite databases
 - Released baseline `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1`
+- Local filesystem immutable content store review candidate
+- ID-addressed immutable object layout with atomic writes and integrity verification
+- Desktop composition for durable filesystem-backed document bytes
+- Restart and repeated-run proof against the same SQLite database and storage root
+- Missing-file, corrupt-file, orphan-visibility, and default-root-policy hardening
+- Application-level immutable-store failure classification for persisted-byte workflows
 
 Next:
 
-- `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1-RC`
+- `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`
 
 ## 2026-07-15
 

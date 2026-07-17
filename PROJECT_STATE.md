@@ -5,9 +5,13 @@
 - `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1`
 - Status: `Released`
 
-## Next Active Package
+## Active Review Candidate
 
 - `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1-RC`
+
+## Next Planned Package
+
+- `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`
 
 ## Current Branch
 
@@ -19,7 +23,7 @@
 
 ## Current Implementation Phase
 
-- Local filesystem storage-adapter review-candidate preparation
+- Local filesystem storage-adapter review-candidate validation
 
 ## Current Milestone
 
@@ -56,20 +60,24 @@
 - Human-accepted AI proposals do not yet create authoritative report revisions.
 - Knowledge Engine command idempotency is still deferred and must be resolved before synchronization-oriented work.
 - Document parsing, OCR, fragment promotion, assertion promotion, and broader retrieval remain conceptual only in the current package.
+- Immutable-object reconciliation and deletion remain deferred; local filesystem inventory is diagnostic only.
+- The Windows Desktop apphost may still be blocked by local machine policy even when the managed DLL executes correctly.
 
 ## Immediate Next Task
 
-- Begin `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1-RC`
+- Complete review and validation for `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1-RC`, then begin `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`
 
 ## Fast Context
 
 - The repository is the source of truth for project state and architecture.
 - Start every new AI session from `.ai/bootstrap.md`.
 - The current released behavior includes `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1`.
-- The next active package is `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1-RC`.
+- The active review candidate is `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1-RC`.
+- The next planned package is `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`.
 
 ## Current Capabilities
 
 - Current released capabilities remain unchanged from `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1`
 - The repository now includes a durable Document Engine foundation with immutable source identity, processing attempts, and non-authoritative candidates
 - The repository now also includes a deterministic executable Document Engine workflow through the temporary Desktop host
+- The repository now also includes a local filesystem immutable content store with atomic-write semantics, restart-safe reopen, corruption detection, and bounded orphan visibility

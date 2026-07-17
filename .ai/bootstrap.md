@@ -12,14 +12,19 @@ SPINbuster is a layered .NET codebase with AI-assisted capabilities, governed by
 - Architecture guardrails are in place and passing.
 - The repository includes the released `AI-DRAFT-PROPOSAL-SLICE-0.1` baseline, the released `AI-PROPOSAL-EXECUTABLE-SLICE-0.1` Desktop executable workflow, the released `KNOWLEDGE-ENGINE-PERSISTENCE-0.1` SQLite persistence baseline, and the released `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1` executable Knowledge Engine baseline.
 - The latest released baseline is `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1`.
+- The active review candidate is `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1-RC`.
 
 ## Latest Released Baseline
 
 - `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1`
 
-## Next Active Package
+## Active Review Candidate
 
 - `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1-RC`
+
+## Next Planned Package
+
+- `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`
 
 ## Current Milestone
 
@@ -27,7 +32,7 @@ SPINbuster is a layered .NET codebase with AI-assisted capabilities, governed by
 
 ## Current Active Task
 
-- `Begin the local filesystem storage-adapter review candidate`
+- `Complete the local filesystem storage-adapter review candidate validation and review commit`
 
 ## Authoritative Files
 
@@ -38,7 +43,7 @@ SPINbuster is a layered .NET codebase with AI-assisted capabilities, governed by
 - `.ai/repository-map.md`
 - `docs/00-governance/AI_BOOTSTRAP.md`
 - Relevant `spec/` documents for the subsystem being changed
-- `docs/decisions/status/DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-PROTOTYPE-REVIEW.md`
+- `docs/decisions/status/LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1-RC-PROTOTYPE-REVIEW.md`
 
 ## Bootstrap Reading Order
 

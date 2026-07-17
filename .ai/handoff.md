@@ -1,7 +1,7 @@
 # Current State
 
 Repository status:
-`DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1` is the latest released baseline. The next active package is `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1-RC`. Build passing. Domain tests `53/53`. Application tests `74/74`. Documents tests `5/5`. Infrastructure tests `27/27`. Architecture tests `20/20`. Desktop tests `16/16`. Warnings `0`.
+`DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1` is the latest released baseline. The active review candidate is `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1-RC`. The next planned package is `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`. Build passing. Domain tests `53/53`. Application tests `74/74`. Documents tests `28/28`. Infrastructure tests `27/27`. Architecture tests `21/21`. Desktop tests `23/23`. Warnings `0`.
 
 Current branch:
 `main`
@@ -12,8 +12,11 @@ Current milestone:
 Latest released baseline:
 `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1`
 
-Next active package:
+Active review candidate:
 `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1-RC`
+
+Next planned package:
+`PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`
 
 Recent accomplishments:
 
@@ -36,20 +39,26 @@ Recent accomplishments:
 - Added Desktop tests for multi-source import, exact-byte reopen, deterministic processing outcomes, review persistence, duplicate privacy, and commit-failure orphan behavior.
 - Hardened the executable workflow for repeated execution on reused SQLite databases by scoping each run to current-run IDs, unique fixture filenames, and unique fixture content.
 - Released baseline `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1`.
+- Implemented the local filesystem immutable content store with ID-addressed layout, atomic writes, bounded reparse-point defense, restart-safe reopen, and adapter-private inventory.
+- Corrected the Desktop default durable storage root to `%LOCALAPPDATA%\\SPINbuster\\document-content`.
+- Added restart, repeated-run, corruption, orphan, configuration, and no-absolute-path Desktop tests against the real local filesystem adapter.
+- Added Application-level immutable content store failure classification so orchestration can distinguish missing, unavailable, access-denied, integrity, cancellation, and I/O outcomes without filesystem-specific leakage.
 
 Current architectural decisions:
 
 - `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1` is now the active released baseline.
-- The next active package is `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1-RC`.
+- The active review candidate is `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1-RC`.
+- The next planned package is `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`.
 - `SPINbuster.Desktop` remains a temporary bootstrap host, not a MAUI application yet.
 - The Document Engine owns binary-source handling and non-authoritative processing outputs only.
 - The Desktop host composes document workflow behavior through Application commands and queries only.
 - Startup migration for temporary hosts now flows through a dedicated Infrastructure migrator abstraction rather than direct `DbContext` access.
+- Durable document bytes now flow through a local filesystem adapter while the in-memory adapter remains fixture-only.
 - The Rule Engine will remain deterministic and separate from AI recommendations.
 - Knowledge Engine mutations still do not have a uniform `OperationId` replay contract; `EDR-KE-009` keeps that deferred before synchronization or automated ingestion.
 
 Next task:
-Begin the local filesystem storage-adapter review candidate
+Complete validation and the review-only commit for `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1-RC`, then begin `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`
 
 Known issues:
 
@@ -58,12 +67,13 @@ Known issues:
 - Human-accepted AI proposals still do not create authoritative report revisions; that boundary remains deferred by `EDR-AI-001`.
 - Knowledge Engine command idempotency is still deferred and must be designed before synchronization or automated ingestion work.
 - Document parsing, OCR, fragment promotion, assertion promotion, and broader retrieval remain deferred beyond the current foundation.
-- The deterministic in-memory immutable storage adapter is still a fixture and not yet a real local filesystem implementation.
+- Reconciliation and deletion for orphaned immutable filesystem objects remain deferred intentionally.
+- The generated Windows Desktop apphost may still be blocked by local machine policy even when the managed DLL runs correctly; treat that as environmental for the temporary host.
 
 Requested review:
 
-- Confirm the storage-adapter boundary before implementation begins
-- Confirm the local filesystem adapter remains infrastructure-local and does not widen the authoritative document boundary
+- Confirm the local filesystem adapter review candidate is ready for release after review
+- Confirm `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC` is the correct next package
 
 Current capabilities:
 
@@ -71,3 +81,4 @@ Current capabilities:
 - The repository now also contains an authoritative conceptual engineering knowledge model
 - The repository now includes the released durable Document Engine foundation beneath the future executable slice
 - The repository now includes a deterministic executable Document Engine workflow that persists import sessions, duplicates, processing attempts, review state, and audit history without mutating authoritative Knowledge, Report, or AI records, including repeated execution on a reused SQLite database
+- The repository now includes a local filesystem immutable content store with restart-safe byte reopen, corruption detection, bounded orphan visibility, and no absolute-path exposure through public snapshots or Desktop output
