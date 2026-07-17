@@ -2,21 +2,21 @@
 
 ## Latest Released Baseline
 
-- `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1`
+- `DOCUMENT-ENGINE-FOUNDATION-0.1`
 - Status: `Released`
 
 ## Active Review Candidate
 
-- `DOCUMENT-ENGINE-FOUNDATION-0.1-RC`
+- `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-RC`
 - Status: `Active`
 - Build: `Passing`
 - Warnings: `0`
 - Architecture tests: `17/17 passing`
 - Domain tests: `52/52 passing`
-- Application tests: `66/66 passing`
+- Application tests: `70/70 passing`
 - Documents tests: `5/5 passing`
 - AI tests: `6/6 passing`
-- Infrastructure tests: `26/26 passing`
+- Infrastructure tests: `27/27 passing`
 - Desktop end-to-end tests: `6/6 passing`
 
 ## Next Planned Implementation Package
@@ -29,11 +29,11 @@
 
 ## Last Completed Milestone
 
-- Knowledge Engine executable local workflow released
+- Document Engine foundation released
 
 ## Current Implementation Phase
 
-- Document Engine foundation review
+- Document Engine executable slice planning
 
 ## Current Milestone
 
@@ -73,14 +73,14 @@
 
 ## Immediate Next Task
 
-- Complete architecture and governance review of `DOCUMENT-ENGINE-FOUNDATION-0.1-RC`
+- Implement `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-RC`
 
 ## Fast Context
 
 - The repository is the source of truth for project state and architecture.
 - Start every new AI session from `.ai/bootstrap.md`.
-- The current released behavior remains `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1`.
-- The current review package is the first durable Document Engine foundation slice.
+- The current released behavior includes `DOCUMENT-ENGINE-FOUNDATION-0.1`.
+- The next active package is the first executable Document Engine slice.
 - The next planned implementation package is `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-RC`.
 
 ## Current Capabilities

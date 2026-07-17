@@ -1,6 +1,7 @@
 using SPINbuster.Application.Tests.Fakes;
 using SPINbuster.Application.Abstractions;
 using SPINbuster.Application.UseCases.BeginDocumentImportSession;
+using SPINbuster.Application.UseCases.CompleteDocumentImportSession;
 using SPINbuster.Application.UseCases.ImportDocumentSource;
 using SPINbuster.Application.UseCases.LoadDocumentCandidates;
 using SPINbuster.Application.UseCases.RecordDocumentCandidateReview;
@@ -31,7 +32,7 @@ public sealed class DocumentEngineUseCaseTests
   }
 
   [Fact]
-  public async Task ImportDocumentSourceStoresNewImmutableSourceAndCompletesSession()
+  public async Task ImportDocumentSourceStoresNewImmutableSourceAndKeepsSessionActive()
   {
     var fixture = CreateFixture();
     var importSession = await StartSessionAsync(fixture);
@@ -49,7 +50,7 @@ public sealed class DocumentEngineUseCaseTests
     Assert.False(result.ReusedExistingProjectSource);
     Assert.Single(fixture.ImportedSourceRepository.AddedSources);
     Assert.Single(fixture.StorageObjectRepository.AddedStorageObjects);
-    Assert.Equal(DocumentImportSessionState.Completed, fixture.ImportSessionRepository.UpdatedSessions.Last().State);
+    Assert.Equal(DocumentImportSessionState.Importing, fixture.ImportSessionRepository.UpdatedSessions.Last().State);
   }
 
   [Fact]
@@ -81,6 +82,33 @@ public sealed class DocumentEngineUseCaseTests
     Assert.True(duplicateResult.ReusedExistingProjectSource);
     Assert.Single(fixture.ImportedSourceRepository.AddedSources);
     Assert.Single(fixture.StorageObjectRepository.AddedStorageObjects);
+    Assert.Equal(DocumentImportSessionState.Importing, fixture.ImportSessionRepository.UpdatedSessions.Last().State);
+  }
+
+  [Fact]
+  public async Task CompleteDocumentImportSessionClosesBatchExplicitly()
+  {
+    var fixture = CreateFixture();
+    var importSession = await StartSessionAsync(fixture);
+    await CreateImportUseCase(fixture).HandleAsync(new ImportDocumentSourceCommand(
+      importSession,
+      fixture.ProjectId,
+      "detail.pdf",
+      "application/pdf",
+      ImportedSourceOrigin.LocalFile,
+      null,
+      CreateContent("hello world")));
+
+    var result = await new CompleteDocumentImportSessionUseCase(
+      fixture.ImportSessionRepository,
+      fixture.UnitOfWork,
+      fixture.Clock,
+      fixture.CurrentUser,
+      fixture.AuditRecorder).HandleAsync(new CompleteDocumentImportSessionCommand(importSession));
+
+    Assert.Equal(DocumentImportSessionState.Completed, result.State);
+    Assert.NotNull(result.CompletedAtUtc);
+    Assert.Equal(DocumentImportSessionState.Completed, fixture.ImportSessionRepository.UpdatedSessions.Last().State);
   }
 
   [Fact]
@@ -97,6 +125,7 @@ public sealed class DocumentEngineUseCaseTests
       ImportedSourceOrigin.LocalFile,
       null,
       CreateContent("hello world")));
+    var commitsBeforeProcessing = fixture.UnitOfWork.CommitCount;
     fixture.DocumentProcessor.SequenceLog.Clear();
 
     var useCase = new RequestDocumentProcessingUseCase(
@@ -153,6 +182,102 @@ public sealed class DocumentEngineUseCaseTests
     var result = await useCase.HandleAsync(new RequestDocumentProcessingCommand(importResult.ImportedSourceId, fixture.ProjectId));
 
     Assert.Equal(DocumentProcessingAttemptState.Failed, result.State);
+    Assert.Empty(fixture.CandidateRepository.AddedCandidates);
+  }
+
+  [Fact]
+  public async Task RequestDocumentProcessingPersistsFailedAttemptWhenContentOpenThrows()
+  {
+    var fixture = CreateFixture();
+    fixture.ImmutableContentStore.ThrowOnOpenRead = true;
+    var importSession = await StartSessionAsync(fixture);
+    var importResult = await CreateImportUseCase(fixture).HandleAsync(new ImportDocumentSourceCommand(
+      importSession,
+      fixture.ProjectId,
+      "detail.pdf",
+      "application/pdf",
+      ImportedSourceOrigin.LocalFile,
+      null,
+      CreateContent("hello world")));
+    var commitsBeforeProcessing = fixture.UnitOfWork.CommitCount;
+
+    var result = await new RequestDocumentProcessingUseCase(
+      fixture.ImportedSourceRepository,
+      fixture.ProcessingAttemptRepository,
+      fixture.CandidateRepository,
+      fixture.ImmutableContentStore,
+      fixture.DocumentProcessor,
+      fixture.ImportPolicy,
+      fixture.UnitOfWork,
+      fixture.Clock,
+      fixture.AuditRecorder).HandleAsync(new RequestDocumentProcessingCommand(importResult.ImportedSourceId, fixture.ProjectId));
+
+    Assert.Equal(DocumentProcessingAttemptState.Failed, result.State);
+    Assert.Equal(DocumentProcessingFailureClassification.Unknown, result.FailureClassification);
+    Assert.Equal(commitsBeforeProcessing + 2, fixture.UnitOfWork.CommitCount);
+    Assert.Empty(fixture.CandidateRepository.AddedCandidates);
+  }
+
+  [Fact]
+  public async Task RequestDocumentProcessingPersistsFailedAttemptWhenProcessorThrows()
+  {
+    var fixture = CreateFixture();
+    fixture.DocumentProcessor.ProcessAsyncCore = (_, _) => throw new InvalidOperationException("Processor exploded.");
+    var importSession = await StartSessionAsync(fixture);
+    var importResult = await CreateImportUseCase(fixture).HandleAsync(new ImportDocumentSourceCommand(
+      importSession,
+      fixture.ProjectId,
+      "detail.pdf",
+      "application/pdf",
+      ImportedSourceOrigin.LocalFile,
+      null,
+      CreateContent("hello world")));
+
+    var result = await new RequestDocumentProcessingUseCase(
+      fixture.ImportedSourceRepository,
+      fixture.ProcessingAttemptRepository,
+      fixture.CandidateRepository,
+      fixture.ImmutableContentStore,
+      fixture.DocumentProcessor,
+      fixture.ImportPolicy,
+      fixture.UnitOfWork,
+      fixture.Clock,
+      fixture.AuditRecorder).HandleAsync(new RequestDocumentProcessingCommand(importResult.ImportedSourceId, fixture.ProjectId));
+
+    Assert.Equal(DocumentProcessingAttemptState.Failed, result.State);
+    Assert.Equal(DocumentProcessingFailureClassification.Unknown, result.FailureClassification);
+    Assert.Equal(DocumentProcessingAttemptState.Failed, fixture.ProcessingAttemptRepository.UpdatedAttempts.Last().State);
+    Assert.Empty(fixture.CandidateRepository.AddedCandidates);
+  }
+
+  [Fact]
+  public async Task RequestDocumentProcessingPersistsFailedAttemptWhenCandidatePersistenceThrows()
+  {
+    var fixture = CreateFixture();
+    fixture.CandidateRepository.ThrowOnAdd = true;
+    var importSession = await StartSessionAsync(fixture);
+    var importResult = await CreateImportUseCase(fixture).HandleAsync(new ImportDocumentSourceCommand(
+      importSession,
+      fixture.ProjectId,
+      "detail.pdf",
+      "application/pdf",
+      ImportedSourceOrigin.LocalFile,
+      null,
+      CreateContent("hello world")));
+
+    var result = await new RequestDocumentProcessingUseCase(
+      fixture.ImportedSourceRepository,
+      fixture.ProcessingAttemptRepository,
+      fixture.CandidateRepository,
+      fixture.ImmutableContentStore,
+      fixture.DocumentProcessor,
+      fixture.ImportPolicy,
+      fixture.UnitOfWork,
+      fixture.Clock,
+      fixture.AuditRecorder).HandleAsync(new RequestDocumentProcessingCommand(importResult.ImportedSourceId, fixture.ProjectId));
+
+    Assert.Equal(DocumentProcessingAttemptState.Failed, result.State);
+    Assert.Equal(DocumentProcessingFailureClassification.Unknown, result.FailureClassification);
     Assert.Empty(fixture.CandidateRepository.AddedCandidates);
   }
 

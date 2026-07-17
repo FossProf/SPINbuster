@@ -154,6 +154,8 @@ internal sealed class FakeDocumentCandidateRepository : IDocumentCandidateReposi
 {
   private readonly Dictionary<DocumentCandidateId, DocumentCandidate> _candidates = [];
 
+  public bool ThrowOnAdd { get; set; }
+
   public Task<DocumentCandidate?> GetByIdAsync(DocumentCandidateId documentCandidateId, CancellationToken cancellationToken = default)
   {
     _candidates.TryGetValue(documentCandidateId, out var candidate);
@@ -178,6 +180,11 @@ internal sealed class FakeDocumentCandidateRepository : IDocumentCandidateReposi
 
   public Task AddAsync(DocumentCandidate documentCandidate, CancellationToken cancellationToken = default)
   {
+    if (ThrowOnAdd)
+    {
+      throw new InvalidOperationException("Candidate persistence failed.");
+    }
+
     _candidates[documentCandidate.Id] = documentCandidate;
     AddedCandidates.Add(documentCandidate);
     return Task.CompletedTask;
@@ -233,6 +240,8 @@ internal sealed class FakeImmutableContentStore : IImmutableContentStore
 
   public bool ThrowOnStore { get; set; }
 
+  public bool ThrowOnOpenRead { get; set; }
+
   public bool ReturnUnavailableOnOpen { get; set; }
 
   public int OpenReadCalls { get; private set; }
@@ -274,6 +283,11 @@ internal sealed class FakeImmutableContentStore : IImmutableContentStore
   public Task<OpenImmutableContentResult> OpenReadAsync(StorageObjectId storageObjectId, CancellationToken cancellationToken = default)
   {
     OpenReadCalls++;
+    if (ThrowOnOpenRead)
+    {
+      throw new IOException("Open failed.");
+    }
+
     if (ReturnUnavailableOnOpen)
     {
       return Task.FromResult(new OpenImmutableContentResult(Stream.Null, StorageAvailabilityState.Unavailable, string.Empty, "SHA-256", 1, 0));

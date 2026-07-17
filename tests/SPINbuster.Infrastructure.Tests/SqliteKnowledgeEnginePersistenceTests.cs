@@ -7,6 +7,7 @@ using SPINbuster.Infrastructure.Persistence;
 using SPINbuster.Infrastructure.Persistence.Records;
 using SPINbuster.Infrastructure.Repositories;
 using SPINbuster.Infrastructure.Services;
+using System.Security.Cryptography;
 using System.Globalization;
 
 namespace SPINbuster.Infrastructure.Tests;
@@ -17,6 +18,17 @@ public sealed class SqliteKnowledgeEnginePersistenceTests : IDisposable
     Path.GetTempPath(),
     "spinbuster-tests",
     $"{Guid.NewGuid():N}.sqlite");
+
+  [Fact]
+  public void ReleasedKnowledgeEngineMigrationFilesRemainByteStable()
+  {
+    Assert.Equal(
+      "86F56D322BD6AEFEA26FD4640CD70AA5FE62D170637AE6AB72335A777FD095AE",
+      ComputeFileHash(Path.Combine("src", "SPINbuster.Infrastructure", "Persistence", "Migrations", "20260716184900_KnowledgeEnginePersistenceRc2.cs")));
+    Assert.Equal(
+      "835C1089E078CC86031CC9235EC31A65946AF2C22E7EC9D0D70F6A1E64CA83F3",
+      ComputeFileHash(Path.Combine("src", "SPINbuster.Infrastructure", "Persistence", "Migrations", "20260716185107_KnowledgeEnginePersistenceSnapshotAlignment.cs")));
+  }
 
   [Fact]
   public async Task KnowledgeDocumentRepositoryPersistsAndReloadsProjectScopedDocument()
@@ -830,6 +842,31 @@ public sealed class SqliteKnowledgeEnginePersistenceTests : IDisposable
     {
       await dbContext.Database.CloseConnectionAsync();
     }
+  }
+
+  private static string ComputeFileHash(string relativePath)
+  {
+    var repositoryRoot = FindRepositoryRoot();
+    var absolutePath = Path.Combine(repositoryRoot, relativePath);
+    var normalizedContents = File.ReadAllText(absolutePath).Replace("\r\n", "\n", StringComparison.Ordinal);
+    var bytes = System.Text.Encoding.UTF8.GetBytes(normalizedContents);
+    return Convert.ToHexString(SHA256.HashData(bytes));
+  }
+
+  private static string FindRepositoryRoot()
+  {
+    var directory = new DirectoryInfo(AppContext.BaseDirectory);
+    while (directory is not null)
+    {
+      if (File.Exists(Path.Combine(directory.FullName, "SPINbuster.sln")))
+      {
+        return directory.FullName;
+      }
+
+      directory = directory.Parent;
+    }
+
+    throw new DirectoryNotFoundException("Could not locate the SPINbuster repository root from the current test execution directory.");
   }
 
   private sealed record SeededProjectContext(

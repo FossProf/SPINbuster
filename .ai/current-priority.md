@@ -4,16 +4,16 @@ Current milestone:
 Prototype Vertical Slice
 
 Latest released baseline:
-KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1
+DOCUMENT-ENGINE-FOUNDATION-0.1
 
 Active review candidate:
-DOCUMENT-ENGINE-FOUNDATION-0.1-RC
+DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-RC
 
 Next planned implementation package:
 DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-RC
 
 Status:
-Active review candidate
+Released baseline recorded; next package active
 
 Build:
 Passing
@@ -22,16 +22,16 @@ Warnings:
 0
 
 Domain tests:
-48/48 passing
+52/52 passing
 
 Architecture tests:
-16/16 passing
+17/17 passing
 
 Application tests:
-60/60 passing
+70/70 passing
 
 Infrastructure tests:
-23/23 passing
+27/27 passing
 
 AI tests:
 6/6 passing
@@ -40,30 +40,29 @@ Desktop end-to-end tests:
 6/6 passing
 
 Current task:
-Implement the first durable Document Engine foundation
+Implement the first executable Document Engine workflow
 
 Required outcome:
 
-- Add immutable imported-source identity and storage-object identity.
-- Add import-session, processing-attempt, and document-candidate lifecycles.
-- Preserve non-authoritative candidate semantics.
-- Add deterministic hashing, immutable storage, and fixture processing adapters.
-- Add SQLite persistence, migration, and verification for the Document Engine foundation.
+- Build the first executable local Document Engine workflow through the temporary Desktop host.
+- Apply migrations at startup and exercise the released Document Engine foundation end to end.
+- Persist and reload import sessions, imported sources, processing attempts, document candidates, and audit history.
+- Present deterministic success and failure outcomes without widening the authoritative boundary.
 
 Next review:
-`DOCUMENT-ENGINE-FOUNDATION-0.1-RC` architecture and governance review
+`DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-RC` executable and workflow review
 
 Known blockers:
 None
 
 Last completed:
-Defined the engineering knowledge model and specification index
+Released the Document Engine foundation baseline
 
 Proposed next direction:
 
-- Complete review of `DOCUMENT-ENGINE-FOUNDATION-0.1-RC`
-- Then begin `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-RC`
+- Implement `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1-RC`
 - Keep parsing, OCR, and promotion boundaries deferred until after the executable slice proves the foundation
+- Preserve the non-authoritative document-candidate boundary
 
 Current capabilities:
 

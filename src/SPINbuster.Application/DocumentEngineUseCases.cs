@@ -182,7 +182,6 @@ namespace SPINbuster.Application.UseCases.ImportDocumentSource
       if (existingProjectSource is not null)
       {
         importSession.RecordDuplicateSource(existingProjectSource.Id, _currentUser.UserId.Value, _clock.UtcNow);
-        importSession.Complete(_currentUser.UserId.Value, _clock.UtcNow);
         await _importSessionRepository.UpdateAsync(importSession, cancellationToken);
         Internal.DocumentAuditStager.Stage(_auditRecorder, importSession.AuditTrail);
         await _unitOfWork.CommitAsync(cancellationToken);
@@ -220,7 +219,6 @@ namespace SPINbuster.Application.UseCases.ImportDocumentSource
         ImportedDocumentSourceStatus.Available,
         command.ExternalSourceReference);
       importSession.RecordAcceptedSource(importedSource.Id, _currentUser.UserId.Value, _clock.UtcNow);
-      importSession.Complete(_currentUser.UserId.Value, _clock.UtcNow);
 
       await _importedSourceRepository.AddAsync(importedSource, cancellationToken);
       await _importSessionRepository.UpdateAsync(importSession, cancellationToken);
@@ -289,6 +287,67 @@ namespace SPINbuster.Application.UseCases.ImportDocumentSource
       await content.CopyToAsync(bufferedContent, cancellationToken);
       bufferedContent.Position = 0;
       return bufferedContent;
+    }
+  }
+
+}
+
+namespace SPINbuster.Application.UseCases.CompleteDocumentImportSession
+{
+
+  public sealed record CompleteDocumentImportSessionCommand(DocumentImportSessionId ImportSessionId) : ICommand<CompleteDocumentImportSessionResult>;
+
+  public sealed record CompleteDocumentImportSessionResult(
+    DocumentImportSessionId ImportSessionId,
+    ProjectId ProjectId,
+    DocumentImportSessionState State,
+    DateTimeOffset? CompletedAtUtc,
+    int SourceCount,
+    int AcceptedCount,
+    int DuplicateCount,
+    int RejectedCount);
+
+  public sealed class CompleteDocumentImportSessionUseCase : ICommandHandler<CompleteDocumentImportSessionCommand, CompleteDocumentImportSessionResult>
+  {
+    private readonly IAuditRecorder _auditRecorder;
+    private readonly IClock _clock;
+    private readonly ICurrentUser _currentUser;
+    private readonly IDocumentImportSessionRepository _importSessionRepository;
+    private readonly IUnitOfWork _unitOfWork;
+
+    public CompleteDocumentImportSessionUseCase(
+      IDocumentImportSessionRepository importSessionRepository,
+      IUnitOfWork unitOfWork,
+      IClock clock,
+      ICurrentUser currentUser,
+      IAuditRecorder auditRecorder)
+    {
+      _importSessionRepository = importSessionRepository;
+      _unitOfWork = unitOfWork;
+      _clock = clock;
+      _currentUser = currentUser;
+      _auditRecorder = auditRecorder;
+    }
+
+    public async Task<CompleteDocumentImportSessionResult> HandleAsync(CompleteDocumentImportSessionCommand command, CancellationToken cancellationToken = default)
+    {
+      var importSession = await _importSessionRepository.GetByIdAsync(command.ImportSessionId, cancellationToken)
+        ?? throw new ApplicationEntityNotFoundException(nameof(DocumentImportSession), command.ImportSessionId.ToString());
+
+      importSession.Complete(_currentUser.UserId.Value, _clock.UtcNow);
+      await _importSessionRepository.UpdateAsync(importSession, cancellationToken);
+      Internal.DocumentAuditStager.Stage(_auditRecorder, importSession.AuditTrail);
+      await _unitOfWork.CommitAsync(cancellationToken);
+
+      return new CompleteDocumentImportSessionResult(
+        importSession.Id,
+        importSession.ProjectId,
+        importSession.State,
+        importSession.CompletedAtUtc,
+        importSession.SourceCount,
+        importSession.AcceptedCount,
+        importSession.DuplicateCount,
+        importSession.RejectedCount);
     }
   }
 
@@ -473,108 +532,151 @@ namespace SPINbuster.Application.UseCases.RequestDocumentProcessing
       Internal.DocumentAuditStager.Stage(_auditRecorder, attempt.AuditTrail);
       await _unitOfWork.CommitAsync(cancellationToken);
 
-      var openResult = await _immutableContentStore.OpenReadAsync(source.StorageReference.StorageObjectId, cancellationToken);
-      if (openResult.AvailabilityState != StorageAvailabilityState.Available)
+      try
       {
-        attempt.Fail(_clock.UtcNow, DocumentProcessingFailureClassification.StorageUnavailable, "Stored content is not currently available.");
-        await _documentProcessingAttemptRepository.UpdateAsync(attempt, cancellationToken);
-        Internal.DocumentAuditStager.Stage(_auditRecorder, attempt.AuditTrail.Skip(2));
-        await _unitOfWork.CommitAsync(cancellationToken);
-        return new RequestDocumentProcessingResult(attempt.Id, source.Id, attempt.State, attempt.FailureClassification, 0, []);
-      }
-
-      await using var content = openResult.Content;
-      var processorResult = await _documentProcessor.ProcessAsync(new DocumentProcessorRequest(
-        source.Id,
-        source.ProjectId,
-        source.OriginalFileName,
-        source.DeclaredMediaType,
-        source.DetectedMediaType,
-        source.ContentHash,
-        source.HashAlgorithm,
-        source.HashAlgorithmVersion,
-        source.ContentLength,
-        content), cancellationToken);
-
-      var createdCandidates = new List<DocumentCandidate>();
-      if (!processorResult.Success)
-      {
-        if (processorResult.FailureClassification == DocumentProcessingFailureClassification.Cancelled)
+        var openResult = await _immutableContentStore.OpenReadAsync(source.StorageReference.StorageObjectId, cancellationToken);
+        if (openResult.AvailabilityState != StorageAvailabilityState.Available)
         {
-          attempt.Cancel(_clock.UtcNow, processorResult.FailureDetails ?? "Document processing was cancelled.");
+          attempt.Fail(_clock.UtcNow, DocumentProcessingFailureClassification.StorageUnavailable, "Stored content is not currently available.");
+          await PersistTerminalAttemptStateAsync(attempt, [], cancellationToken);
+          return CreateResult(attempt, source.Id, []);
         }
-        else if (processorResult.FailureClassification == DocumentProcessingFailureClassification.None)
+
+        await using var content = openResult.Content;
+        var processorResult = await _documentProcessor.ProcessAsync(new DocumentProcessorRequest(
+          source.Id,
+          source.ProjectId,
+          source.OriginalFileName,
+          source.DeclaredMediaType,
+          source.DetectedMediaType,
+          source.ContentHash,
+          source.HashAlgorithm,
+          source.HashAlgorithmVersion,
+          source.ContentLength,
+          content), cancellationToken);
+
+        var createdCandidates = new List<DocumentCandidate>();
+        if (!processorResult.Success)
         {
-          attempt.Abstain(_clock.UtcNow, processorResult.FailureDetails ?? "Document processing abstained.");
+          if (processorResult.FailureClassification == DocumentProcessingFailureClassification.Cancelled)
+          {
+            attempt.Cancel(_clock.UtcNow, processorResult.FailureDetails ?? "Document processing was cancelled.");
+          }
+          else if (processorResult.FailureClassification == DocumentProcessingFailureClassification.None)
+          {
+            attempt.Abstain(_clock.UtcNow, processorResult.FailureDetails ?? "Document processing abstained.");
+          }
+          else
+          {
+            attempt.Fail(_clock.UtcNow, processorResult.FailureClassification, processorResult.FailureDetails ?? "Document processing failed.");
+          }
         }
         else
         {
-          attempt.Fail(_clock.UtcNow, processorResult.FailureClassification, processorResult.FailureDetails ?? "Document processing failed.");
-        }
-      }
-      else
-      {
-        attempt.MarkOutputReceived(_clock.UtcNow, processorResult.RawOutputHash ?? source.ContentHash);
-        attempt.BeginValidation(_clock.UtcNow);
-        foreach (var candidateResult in processorResult.Candidates.Take(_documentImportPolicy.MaxCandidateQueryResults))
-        {
-          var canonicalPayload = Application.Internal.CanonicalJson.Canonicalize(candidateResult.Payload);
-          var candidate = new DocumentCandidate(
-            DocumentCandidateId.New(),
-            source.ProjectId,
-            source.Id,
-            attempt.Id,
-            candidateResult.CandidateType,
-            candidateResult.SchemaId,
-            candidateResult.SchemaVersion,
-            canonicalPayload,
-            source.ContentHash,
-            candidateResult.SourceLocator,
-            candidateResult.ConfidenceBand,
-            candidateResult.UncertaintyCodes,
-            _clock.UtcNow);
-          switch (candidateResult.Outcome)
+          attempt.MarkOutputReceived(_clock.UtcNow, processorResult.RawOutputHash ?? source.ContentHash);
+          attempt.BeginValidation(_clock.UtcNow);
+          foreach (var candidateResult in processorResult.Candidates.Take(_documentImportPolicy.MaxCandidateQueryResults))
           {
-            case DocumentProcessorCandidateOutcome.ReadyForReview:
-              candidate.MarkValidated(_clock.UtcNow);
-              candidate.MarkReadyForReview(_clock.UtcNow);
-              break;
-            case DocumentProcessorCandidateOutcome.SchemaRejected:
-              candidate.MarkSchemaRejected(_clock.UtcNow, candidate.UncertaintyCodes);
-              break;
-            case DocumentProcessorCandidateOutcome.PolicyRejected:
-              candidate.MarkPolicyRejected(_clock.UtcNow, candidate.UncertaintyCodes);
-              break;
-            case DocumentProcessorCandidateOutcome.Abstained:
-              candidate.MarkAbstained(_clock.UtcNow, candidate.UncertaintyCodes);
-              break;
-            default:
-              candidate.MarkFailed(_clock.UtcNow, candidate.UncertaintyCodes);
-              break;
-          }
+            // Canonicalize once at the application boundary so provider quirks do not leak into durable storage.
+            var canonicalPayload = Application.Internal.CanonicalJson.Canonicalize(candidateResult.Payload);
+            var candidate = new DocumentCandidate(
+              DocumentCandidateId.New(),
+              source.ProjectId,
+              source.Id,
+              attempt.Id,
+              candidateResult.CandidateType,
+              candidateResult.SchemaId,
+              candidateResult.SchemaVersion,
+              canonicalPayload,
+              source.ContentHash,
+              candidateResult.SourceLocator,
+              candidateResult.ConfidenceBand,
+              candidateResult.UncertaintyCodes,
+              _clock.UtcNow);
+            switch (candidateResult.Outcome)
+            {
+              case DocumentProcessorCandidateOutcome.ReadyForReview:
+                candidate.MarkValidated(_clock.UtcNow);
+                candidate.MarkReadyForReview(_clock.UtcNow);
+                break;
+              case DocumentProcessorCandidateOutcome.SchemaRejected:
+                candidate.MarkSchemaRejected(_clock.UtcNow, candidate.UncertaintyCodes);
+                break;
+              case DocumentProcessorCandidateOutcome.PolicyRejected:
+                candidate.MarkPolicyRejected(_clock.UtcNow, candidate.UncertaintyCodes);
+                break;
+              case DocumentProcessorCandidateOutcome.Abstained:
+                candidate.MarkAbstained(_clock.UtcNow, candidate.UncertaintyCodes);
+                break;
+              default:
+                candidate.MarkFailed(_clock.UtcNow, candidate.UncertaintyCodes);
+                break;
+            }
 
-          createdCandidates.Add(candidate);
+            createdCandidates.Add(candidate);
+          }
         }
 
-        attempt.Complete(_clock.UtcNow);
+        await PersistTerminalAttemptStateAsync(attempt, createdCandidates, cancellationToken);
+        return CreateResult(attempt, source.Id, createdCandidates);
       }
+      catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+      {
+        attempt.Cancel(_clock.UtcNow, "Document processing request was cancelled.");
+        await PersistTerminalAttemptStateAsync(attempt, [], CancellationToken.None, finalizeSuccessfulValidation: false);
+        throw;
+      }
+      catch (Exception exception)
+      {
+        if (attempt.State is not DocumentProcessingAttemptState.Completed
+          and not DocumentProcessingAttemptState.Failed
+          and not DocumentProcessingAttemptState.Cancelled
+          and not DocumentProcessingAttemptState.Abstained)
+        {
+          attempt.Fail(_clock.UtcNow, DocumentProcessingFailureClassification.Unknown, $"Unexpected document processing failure: {exception.Message}");
+        }
 
-      await _documentProcessingAttemptRepository.UpdateAsync(attempt, cancellationToken);
+        await PersistTerminalAttemptStateAsync(attempt, [], CancellationToken.None, finalizeSuccessfulValidation: false);
+        return CreateResult(attempt, source.Id, []);
+      }
+    }
+
+    private async Task PersistTerminalAttemptStateAsync(
+      DocumentProcessingAttempt attempt,
+      List<DocumentCandidate> createdCandidates,
+      CancellationToken cancellationToken,
+      bool finalizeSuccessfulValidation = true)
+    {
       foreach (var candidate in createdCandidates)
       {
         await _documentCandidateRepository.AddAsync(candidate, cancellationToken);
       }
 
+      if (finalizeSuccessfulValidation && attempt.State == DocumentProcessingAttemptState.Validating)
+      {
+        // Successful processing is only finalized after candidate persistence has been staged.
+        attempt.Complete(_clock.UtcNow);
+      }
+
+      await _documentProcessingAttemptRepository.UpdateAsync(attempt, cancellationToken);
+
+      // The initial request/start audit events were committed before provider work began.
       Internal.DocumentAuditStager.Stage(_auditRecorder, attempt.AuditTrail.Skip(2));
       foreach (var candidate in createdCandidates)
       {
         Internal.DocumentAuditStager.Stage(_auditRecorder, candidate.AuditTrail);
       }
       await _unitOfWork.CommitAsync(cancellationToken);
+    }
 
+    private static RequestDocumentProcessingResult CreateResult(
+      DocumentProcessingAttempt attempt,
+      ImportedSourceId importedSourceId,
+      List<DocumentCandidate> createdCandidates)
+    {
       return new RequestDocumentProcessingResult(
         attempt.Id,
-        source.Id,
+        importedSourceId,
         attempt.State,
         attempt.FailureClassification,
         createdCandidates.Count,
