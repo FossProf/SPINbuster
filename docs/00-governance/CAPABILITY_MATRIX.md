@@ -25,7 +25,9 @@ Collaboration is expected, but ownership overlap is not.
 
 ## Notes
 
+- In the layered architecture, concrete implementations of these engines live in outer adapters such as Infrastructure, Documents, AI, Reporting, and future synchronization adapters.
+- Provider Adapters describe an adapter role within capability architecture, not a separate dependency layer that overlaps Infrastructure ownership.
 - Capability ownership does not imply a direct project reference.
 - Engines may collaborate across Application workflows while still maintaining single-engine ownership.
 - Semantic retrieval belongs to the Retrieval Engine as a supplement to deterministic retrieval, not as a replacement for it.
-- Human review remains the authority boundary even when Fragment, Knowledge, Reporting, or AI-related engines collaborate.
+- Human review remains the authority boundary even when Fragment, Knowledge, Reporting, or AI-related engines collaborate, but review still operates through governed validation, provenance, scope, and lifecycle rules.

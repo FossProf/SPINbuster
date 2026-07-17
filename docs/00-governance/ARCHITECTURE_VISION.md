@@ -29,17 +29,28 @@ Layers:
 
 - Domain
 - Application
-- Infrastructure
-- Presentation
-- Provider Adapters
+- Outer Adapters
+- Presentation And Composition Hosts
 
 Meaning:
 
 - Domain owns business truth, invariants, and lifecycle rules.
 - Application owns orchestration, workflows, and provider-neutral contracts.
-- Infrastructure owns persistence and external implementations.
-- Presentation consumes Application workflows and does not own business logic.
-- Provider Adapters connect replaceable external services such as AI providers, parsing providers, storage providers, or sync transports.
+- Outer Adapters implement Application ports and isolate concrete external behavior.
+- Presentation and Composition Hosts consume Application workflows and do not own business logic.
+
+Current adapter categories and projects include:
+
+- Infrastructure for database persistence, migrations, and repository implementations
+- Documents for storage and document-processing implementations
+- AI for model-provider implementations
+- Reporting for rendering and export implementations
+- future synchronization adapters for exchange and transport implementations
+
+Current presentation and composition hosts include:
+
+- Desktop
+- Server
 
 This view governs project reference direction.
 It is the dependency model.
@@ -119,9 +130,11 @@ Example:
 - AI may propose, summarize, classify, rank, or draft.
 - AI may not independently create engineering truth.
 
-### Human Approval Creates Engineering Truth
+### Human Approval Governs Promotion Into Authority
 
-- Human review and explicit workflow transitions create authoritative knowledge, reports, and engineering decisions.
+- AI, parsing, and extraction produce non-authoritative proposals and candidates.
+- Governed Application workflows may promote validated content into authoritative project state only through an authorized and auditable human decision.
+- Human review does not bypass provenance, validation, scope consistency, lifecycle rules, or project boundaries.
 - Approval is a first-class operation, not an incidental side effect.
 
 ### Provider Independence

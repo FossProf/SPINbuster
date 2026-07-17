@@ -52,9 +52,8 @@ The layered architecture remains:
 
 - Domain
 - Application
-- Infrastructure
-- Presentation
-- Provider Adapters
+- Outer Adapters
+- Presentation And Composition Hosts
 
 The layered architecture governs project references and dependency direction.
 The engine model governs capability ownership and long-term platform evolution.
@@ -104,6 +103,16 @@ Dependency boundaries answer:
 - where provider-specific types may appear
 - how persistence and presentation stay outside core logic
 
+In practice, outer adapters currently include categories such as:
+
+- Infrastructure for database persistence and repository implementations
+- Documents for storage and document-processing implementations
+- AI for model-provider implementations
+- Reporting for rendering and export implementations
+- future synchronization adapters for exchange transports
+
+These are adapter categories and projects within the outer-adapter boundary, not separate dependency layers.
+
 Ownership boundaries answer:
 
 - which engine owns a capability
@@ -131,6 +140,8 @@ This means:
 
 The platform owns authoritative state, audit rules, and lifecycle semantics.
 Providers implement replaceable capabilities behind that platform-owned behavior.
+
+Authorized human decisions remain necessary for authority promotion, but those decisions still operate through governed validation, provenance, scope, and lifecycle rules rather than bypassing them.
 
 ### Why Presentation intentionally remains a consumer
 
