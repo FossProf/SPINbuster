@@ -1,7 +1,7 @@
 # Current State
 
 Repository status:
-Latest governance baseline: `ARCHITECTURE-VISION-2.0`. Latest software baseline: `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1`. Active implementation package: `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`. Build passing. Domain tests `53/53`. Application tests `74/74`. Documents tests `28/28`. Infrastructure tests `27/27`. Architecture tests `21/21`. Desktop tests `23/23`. Warnings `0`.
+Latest governance baseline: `ARCHITECTURE-VISION-2.0`. Latest software baseline: `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1`. Active implementation package: `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`. Build passing. Domain tests `96/96`. Application tests `121/121`. Documents tests `28/28`. Infrastructure tests `32/32`. Architecture tests `23/23`. Desktop tests `23/23`. Warnings `0`.
 
 Current branch:
 `main`
@@ -60,7 +60,7 @@ Current architectural decisions:
 - Knowledge Engine mutations still do not have a uniform `OperationId` replay contract; `EDR-KE-009` keeps that deferred before synchronization or automated ingestion.
 
 Next task:
-Begin `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`
+Begin `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC` with clean file-level navigability and consolidated audit-event construction
 
 Known issues:
 
@@ -71,11 +71,13 @@ Known issues:
 - Document parsing, OCR, fragment promotion, assertion promotion, and broader retrieval remain deferred beyond the current foundation.
 - Reconciliation and deletion for orphaned immutable filesystem objects remain deferred intentionally.
 - The generated Windows Desktop apphost may still be blocked by local machine policy even when the managed DLL runs correctly; treat that as environmental for the temporary host.
+- `AddKnowledgeCitationUseCase` retains direct `new AuditEvent(...)` construction as intentional single-event duplication, not a general pattern for other use cases.
 
 Requested review:
 
 - Confirm the parsing-and-fragment foundation boundary before implementation begins
 - Confirm the non-authoritative fragment-candidate model remains the correct next increment
+- Prompt 5 (file-level navigability) and Prompt 6 (audit consolidation) are complete and verified
 
 Current capabilities:
 
@@ -85,3 +87,10 @@ Current capabilities:
 - The repository now includes a deterministic executable Document Engine workflow that persists import sessions, duplicates, processing attempts, review state, and audit history without mutating authoritative Knowledge, Report, or AI records, including repeated execution on a reused SQLite database
 - The repository now includes a local filesystem immutable content store with restart-safe byte reopen, corruption detection, bounded orphan visibility, and no absolute-path exposure through public snapshots or Desktop output
 - Released `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1`.
+- Split `DocumentEngineUseCases.cs` into 11 per-use-case directories with `DocumentAuditStager` extracted to `Internal/`.
+- Split `InMemoryFakes.cs` into 7 files by aggregate group: `CrossCuttingFakes`, `ProjectFakes`, `InspectionFakes`, `ReportFakes`, `AiFakes`, `KnowledgeFakes`, `SaveFakes`.
+- Split `Identifiers.cs` into 7 files by aggregate: `ProjectIds`, `InspectionIds`, `ReportIds`, `AiIds`, `KnowledgeIds`, `DocumentImportIds`, `CrossCuttingIds`.
+- Consolidated audit-event construction through `AuditableEntity` base class with abstract `SubjectType`/`SubjectId` and `CreateAuditEvent` helper.
+- Updated all 10 Domain aggregates with explicit `const string AuditSubjectType` constants and overrides.
+- Refactored `AiAuditEventFactory` with private `Create` helper to centralize mechanical audit-event construction.
+- Added 43 new Domain audit consolidation tests and 4 Application audit-factory tests. All 329 tests passing.

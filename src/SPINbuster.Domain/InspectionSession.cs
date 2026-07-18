@@ -10,6 +10,8 @@ public enum InspectionSessionLifecycle
 
 public sealed class InspectionSession : AuditableEntity
 {
+  private const string AuditSubjectType = "InspectionSession";
+
   private readonly List<FieldNote> _fieldNotes = [];
   private readonly List<EvidenceAttachment> _evidenceAttachments = [];
 
@@ -45,6 +47,10 @@ public sealed class InspectionSession : AuditableEntity
   public DateTimeOffset? StartedAtUtc { get; private set; }
 
   public DateTimeOffset? CompletedAtUtc { get; private set; }
+
+  protected override string SubjectType => AuditSubjectType;
+
+  protected override string SubjectId => Id.ToString();
 
   // InspectionSession owns the mutable child collections for notes and
   // evidence. Other aggregates should link back to the session by identifier.
@@ -180,21 +186,5 @@ public sealed class InspectionSession : AuditableEntity
     {
       throw new DomainInvariantException($"Evidence attachment {id} is already recorded for inspection session {Id}.");
     }
-  }
-
-  private AuditEvent CreateAuditEvent(
-    string eventType,
-    string actor,
-    DateTimeOffset occurredAtUtc,
-    string description)
-  {
-    return new AuditEvent(
-      AuditEventId.New(),
-      nameof(InspectionSession),
-      Id.ToString(),
-      eventType,
-      actor,
-      occurredAtUtc,
-      description);
   }
 }

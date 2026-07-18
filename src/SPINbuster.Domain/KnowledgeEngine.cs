@@ -128,6 +128,8 @@ public readonly record struct KnowledgeSubjectReference
 
 public sealed class KnowledgeDocument : AuditableEntity
 {
+  private const string AuditSubjectType = "KnowledgeDocument";
+
   private readonly List<KnowledgeDocumentRevision> _revisions = [];
 
   public KnowledgeDocument(
@@ -178,6 +180,10 @@ public sealed class KnowledgeDocument : AuditableEntity
   public DateTimeOffset CreatedAtUtc { get; }
 
   public IReadOnlyList<KnowledgeDocumentRevision> Revisions => _revisions.AsReadOnly();
+
+  protected override string SubjectType => AuditSubjectType;
+
+  protected override string SubjectId => Id.ToString();
 
   internal static KnowledgeDocument Rehydrate(
     KnowledgeDocumentId id,
@@ -393,22 +399,6 @@ public sealed class KnowledgeDocument : AuditableEntity
     }
   }
 
-  private AuditEvent CreateAuditEvent(
-    string eventType,
-    string actor,
-    DateTimeOffset occurredAtUtc,
-    string description)
-  {
-    return new AuditEvent(
-      AuditEventId.New(),
-      nameof(KnowledgeDocument),
-      Id.ToString(),
-      eventType,
-      actor,
-      occurredAtUtc,
-      description);
-  }
-
   private static string? NormalizeOptional(string? value)
   {
     return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
@@ -598,6 +588,8 @@ public sealed class KnowledgeDocumentRevision
 
 public sealed class KnowledgeRelationship : AuditableEntity
 {
+  private const string AuditSubjectType = "KnowledgeRelationship";
+
   public KnowledgeRelationship(
     KnowledgeRelationshipId id,
     ProjectId projectId,
@@ -663,6 +655,10 @@ public sealed class KnowledgeRelationship : AuditableEntity
 
   public KnowledgeVerificationStatus VerificationStatus { get; private set; }
 
+  protected override string SubjectType => AuditSubjectType;
+
+  protected override string SubjectId => Id.ToString();
+
   internal static KnowledgeRelationship Rehydrate(
     KnowledgeRelationshipId id,
     ProjectId projectId,
@@ -709,22 +705,6 @@ public sealed class KnowledgeRelationship : AuditableEntity
       throw new DomainInvariantException(
         $"Duplicate knowledge relationship {candidate.RelationshipType} between {candidate.Source.ToStableKey()} and {candidate.Target.ToStableKey()} is not allowed.");
     }
-  }
-
-  private AuditEvent CreateAuditEvent(
-    string eventType,
-    string actor,
-    DateTimeOffset occurredAtUtc,
-    string description)
-  {
-    return new AuditEvent(
-      AuditEventId.New(),
-      nameof(KnowledgeRelationship),
-      Id.ToString(),
-      eventType,
-      actor,
-      occurredAtUtc,
-      description);
   }
 
   private static bool AllowsSelfReference(KnowledgeRelationshipType relationshipType)

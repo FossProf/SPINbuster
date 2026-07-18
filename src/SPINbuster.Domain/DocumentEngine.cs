@@ -247,6 +247,8 @@ public sealed class StorageObject
 
 public sealed class ImportedDocumentSource : AuditableEntity
 {
+  private const string AuditSubjectType = "ImportedDocumentSource";
+
   public ImportedDocumentSource(
     ImportedSourceId id,
     DocumentImportSessionId importSessionId,
@@ -351,6 +353,10 @@ public sealed class ImportedDocumentSource : AuditableEntity
 
   public string? ExternalSourceReference { get; }
 
+  protected override string SubjectType => AuditSubjectType;
+
+  protected override string SubjectId => Id.ToString();
+
   internal static ImportedDocumentSource Rehydrate(
     ImportedSourceId id,
     DocumentImportSessionId importSessionId,
@@ -410,22 +416,6 @@ public sealed class ImportedDocumentSource : AuditableEntity
       reason));
   }
 
-  private AuditEvent CreateAuditEvent(
-    string eventType,
-    string actor,
-    DateTimeOffset occurredAtUtc,
-    string description)
-  {
-    return new AuditEvent(
-      AuditEventId.New(),
-      nameof(ImportedDocumentSource),
-      Id.ToString(),
-      eventType,
-      actor,
-      occurredAtUtc,
-      description);
-  }
-
   private static string? NormalizeOptional(string? value)
   {
     return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
@@ -434,6 +424,8 @@ public sealed class ImportedDocumentSource : AuditableEntity
 
 public sealed class DocumentImportSession : AuditableEntity
 {
+  private const string AuditSubjectType = "DocumentImportSession";
+
   public DocumentImportSession(
     DocumentImportSessionId id,
     ProjectId projectId,
@@ -474,6 +466,10 @@ public sealed class DocumentImportSession : AuditableEntity
   public int RejectedCount { get; private set; }
 
   public string? FailureSummary { get; private set; }
+
+  protected override string SubjectType => AuditSubjectType;
+
+  protected override string SubjectId => Id.ToString();
 
   internal static DocumentImportSession Rehydrate(
     DocumentImportSessionId id,
@@ -645,22 +641,6 @@ public sealed class DocumentImportSession : AuditableEntity
     }
   }
 
-  private AuditEvent CreateAuditEvent(
-    string eventType,
-    string actor,
-    DateTimeOffset occurredAtUtc,
-    string description)
-  {
-    return new AuditEvent(
-      AuditEventId.New(),
-      nameof(DocumentImportSession),
-      Id.ToString(),
-      eventType,
-      actor,
-      occurredAtUtc,
-      description);
-  }
-
   private static string? NormalizeOptional(string? value)
   {
     return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
@@ -669,6 +649,8 @@ public sealed class DocumentImportSession : AuditableEntity
 
 public sealed class DocumentProcessingAttempt : AuditableEntity
 {
+  private const string AuditSubjectType = "DocumentProcessingAttempt";
+
   public DocumentProcessingAttempt(
     DocumentProcessingAttemptId id,
     ImportedSourceId importedSourceId,
@@ -732,6 +714,10 @@ public sealed class DocumentProcessingAttempt : AuditableEntity
   public string InputContentHash { get; }
 
   public string? OutputHash { get; private set; }
+
+  protected override string SubjectType => AuditSubjectType;
+
+  protected override string SubjectId => Id.ToString();
 
   internal static DocumentProcessingAttempt Rehydrate(
     DocumentProcessingAttemptId id,
@@ -910,22 +896,6 @@ public sealed class DocumentProcessingAttempt : AuditableEntity
       FailureDetails));
   }
 
-  private AuditEvent CreateAuditEvent(
-    string eventType,
-    string actor,
-    DateTimeOffset occurredAtUtc,
-    string description)
-  {
-    return new AuditEvent(
-      AuditEventId.New(),
-      nameof(DocumentProcessingAttempt),
-      Id.ToString(),
-      eventType,
-      actor,
-      occurredAtUtc,
-      description);
-  }
-
   private static string? NormalizeOptional(string? value)
   {
     return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
@@ -934,6 +904,8 @@ public sealed class DocumentProcessingAttempt : AuditableEntity
 
 public sealed class DocumentCandidate : AuditableEntity
 {
+  private const string AuditSubjectType = "DocumentCandidate";
+
   public DocumentCandidate(
     DocumentCandidateId id,
     ProjectId projectId,
@@ -1007,6 +979,10 @@ public sealed class DocumentCandidate : AuditableEntity
   public DateTimeOffset? ReviewedAtUtc { get; private set; }
 
   public string? ReviewNotes { get; private set; }
+
+  protected override string SubjectType => AuditSubjectType;
+
+  protected override string SubjectId => Id.ToString();
 
   internal static DocumentCandidate Rehydrate(
     DocumentCandidateId id,
@@ -1160,22 +1136,6 @@ public sealed class DocumentCandidate : AuditableEntity
     }
 
     Status = nextStatus;
-  }
-
-  private AuditEvent CreateAuditEvent(
-    string eventType,
-    string actor,
-    DateTimeOffset occurredAtUtc,
-    string description)
-  {
-    return new AuditEvent(
-      AuditEventId.New(),
-      nameof(DocumentCandidate),
-      Id.ToString(),
-      eventType,
-      actor,
-      occurredAtUtc,
-      description);
   }
 
   private static string ComputeHash(string value)

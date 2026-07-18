@@ -10,6 +10,8 @@ public enum ProjectLifecycle
 
 public sealed class Project : AuditableEntity
 {
+  private const string AuditSubjectType = "Project";
+
   public Project(ProjectId id, string name, string createdBy, DateTimeOffset createdAtUtc)
   {
     Id = id;
@@ -30,6 +32,10 @@ public sealed class Project : AuditableEntity
   public DateTimeOffset CreatedAtUtc { get; }
 
   public ProjectLifecycle Lifecycle { get; private set; }
+
+  protected override string SubjectType => AuditSubjectType;
+
+  protected override string SubjectId => Id.ToString();
 
   internal static Project Rehydrate(
     ProjectId id,
@@ -81,21 +87,5 @@ public sealed class Project : AuditableEntity
     {
       throw new LifecycleTransitionException(nameof(Project), Lifecycle.ToString(), transitionName);
     }
-  }
-
-  private AuditEvent CreateAuditEvent(
-    string eventType,
-    string actor,
-    DateTimeOffset occurredAtUtc,
-    string description)
-  {
-    return new AuditEvent(
-      AuditEventId.New(),
-      nameof(Project),
-      Id.ToString(),
-      eventType,
-      actor,
-      occurredAtUtc,
-      description);
   }
 }

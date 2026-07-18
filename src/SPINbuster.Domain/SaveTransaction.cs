@@ -12,6 +12,8 @@ public enum SaveTransactionState
 
 public sealed class SaveTransaction : AuditableEntity
 {
+  private const string AuditSubjectType = "SaveTransaction";
+
   public SaveTransaction(
     SaveTransactionId id,
     ReportId reportId,
@@ -44,6 +46,10 @@ public sealed class SaveTransaction : AuditableEntity
   public DateTimeOffset? PersistedAtUtc { get; private set; }
 
   public DateTimeOffset? CompletedAtUtc { get; private set; }
+
+  protected override string SubjectType => AuditSubjectType;
+
+  protected override string SubjectId => Id.ToString();
 
   internal static SaveTransaction Rehydrate(
     SaveTransactionId id,
@@ -131,21 +137,5 @@ public sealed class SaveTransaction : AuditableEntity
     {
       throw new LifecycleTransitionException(nameof(SaveTransaction), State.ToString(), transitionName);
     }
-  }
-
-  private AuditEvent CreateAuditEvent(
-    string eventType,
-    string actor,
-    DateTimeOffset occurredAtUtc,
-    string description)
-  {
-    return new AuditEvent(
-      AuditEventId.New(),
-      nameof(SaveTransaction),
-      Id.ToString(),
-      eventType,
-      actor,
-      occurredAtUtc,
-      description);
   }
 }

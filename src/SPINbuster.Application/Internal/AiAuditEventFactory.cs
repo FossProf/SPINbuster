@@ -4,13 +4,30 @@ namespace SPINbuster.Application.Internal;
 
 internal static class AiAuditEventFactory
 {
+  private static AuditEvent Create(
+    string subjectType,
+    string subjectId,
+    string eventType,
+    string actor,
+    DateTimeOffset occurredAtUtc,
+    string description)
+  {
+    return new AuditEvent(
+      AuditEventId.New(),
+      subjectType,
+      subjectId,
+      eventType,
+      actor,
+      occurredAtUtc,
+      description);
+  }
+
   public static AuditEvent ContextManifestCreated(
     ContextManifest contextManifest,
     string actor,
     DateTimeOffset occurredAtUtc)
   {
-    return new AuditEvent(
-      AuditEventId.New(),
+    return Create(
       nameof(ContextManifest),
       contextManifest.Id.ToString(),
       "AiContextManifestCreated",
@@ -23,8 +40,7 @@ internal static class AiAuditEventFactory
     ModelRun modelRun,
     DateTimeOffset occurredAtUtc)
   {
-    return new AuditEvent(
-      AuditEventId.New(),
+    return Create(
       nameof(ModelRun),
       modelRun.Id.ToString(),
       "AiModelRunRequested",
@@ -42,8 +58,7 @@ internal static class AiAuditEventFactory
       ? "provider returned output."
       : $"provider attempt classified as {attempt.OutcomeClassification}.";
 
-    return new AuditEvent(
-      AuditEventId.New(),
+    return Create(
       nameof(ModelRun),
       modelRun.Id.ToString(),
       "AiProviderAttemptRecorded",
@@ -63,8 +78,7 @@ internal static class AiAuditEventFactory
       ? proposalStatus.ToString()
       : failureClassification.ToString();
 
-    return new AuditEvent(
-      AuditEventId.New(),
+    return Create(
       nameof(ModelRun),
       modelRun.Id.ToString(),
       "AiValidationCompleted",
@@ -78,8 +92,7 @@ internal static class AiAuditEventFactory
     string description,
     DateTimeOffset occurredAtUtc)
   {
-    return new AuditEvent(
-      AuditEventId.New(),
+    return Create(
       nameof(ModelRun),
       modelRun.Id.ToString(),
       "AiModelRunCompleted",
@@ -93,8 +106,7 @@ internal static class AiAuditEventFactory
     string actor,
     DateTimeOffset occurredAtUtc)
   {
-    return new AuditEvent(
-      AuditEventId.New(),
+    return Create(
       nameof(AiProposal),
       proposal.Id.ToString(),
       "AiProposalRecorded",
@@ -108,8 +120,7 @@ internal static class AiAuditEventFactory
     string actor,
     DateTimeOffset occurredAtUtc)
   {
-    return new AuditEvent(
-      AuditEventId.New(),
+    return Create(
       nameof(AiProposal),
       proposal.Id.ToString(),
       "AiProposalRejected",
@@ -125,8 +136,7 @@ internal static class AiAuditEventFactory
     string actor,
     DateTimeOffset occurredAtUtc)
   {
-    return new AuditEvent(
-      AuditEventId.New(),
+    return Create(
       nameof(AiProposal),
       proposal.Id.ToString(),
       "AiProposalAccepted",

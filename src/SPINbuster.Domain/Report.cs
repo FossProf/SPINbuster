@@ -9,6 +9,8 @@ public enum ReportLifecycle
 
 public sealed class Report : AuditableEntity
 {
+  private const string AuditSubjectType = "Report";
+
   private readonly List<ReportDraftSection> _sections = [];
   private readonly List<FieldNoteId> _sourceFieldNoteIds = [];
   private readonly List<EvidenceAttachmentId> _sourceEvidenceAttachmentIds = [];
@@ -74,6 +76,10 @@ public sealed class Report : AuditableEntity
   public string? ApprovedBy { get; private set; }
 
   public DateTimeOffset? ApprovedAtUtc { get; private set; }
+
+  protected override string SubjectType => AuditSubjectType;
+
+  protected override string SubjectId => Id.ToString();
 
   internal static Report Rehydrate(
     ReportId id,
@@ -209,21 +215,5 @@ public sealed class Report : AuditableEntity
     }
 
     return distinctIds;
-  }
-
-  private AuditEvent CreateAuditEvent(
-    string eventType,
-    string actor,
-    DateTimeOffset occurredAtUtc,
-    string description)
-  {
-    return new AuditEvent(
-      AuditEventId.New(),
-      nameof(Report),
-      Id.ToString(),
-      eventType,
-      actor,
-      occurredAtUtc,
-      description);
   }
 }

@@ -22,19 +22,19 @@ Warnings:
 0
 
 Domain tests:
-53/53 passing
+96/96 passing
 
 Application tests:
-74/74 passing
+121/121 passing
 
 Documents tests:
 28/28 passing
 
 Infrastructure tests:
-27/27 passing
+32/32 passing
 
 Architecture tests:
-21/21 passing
+23/23 passing
 
 Desktop end-to-end tests:
 23/23 passing
@@ -56,7 +56,7 @@ Known blockers:
 None
 
 Last completed:
-Froze governance baseline `ARCHITECTURE-VISION-2.0`
+Prompt 5 (file-level navigability refactoring) and Prompt 6 (audit-event construction consolidation). `DocumentEngineUseCases.cs` split into 11 per-use-case directories. `InMemoryFakes.cs` split into 7 files by aggregate group. `Identifiers.cs` split into 7 files by aggregate. `AuditableEntity` base class centralizes mechanical audit-event construction with abstract `SubjectType`/`SubjectId` and `CreateAuditEvent` helper. All 10 Domain aggregates updated with explicit `const string AuditSubjectType` and overrides. `AiAuditEventFactory` refactored with private `Create` helper. 329 tests all passing.
 
 Proposed next direction:
 
