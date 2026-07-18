@@ -1,11 +1,16 @@
 # PROJECT_STATE
 
-## Latest Released Baseline
+## Latest Governance Baseline
+
+- `ARCHITECTURE-VISION-2.0`
+- Status: `Released`
+
+## Latest Software Baseline
 
 - `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1`
 - Status: `Released`
 
-## Next Active Package
+## Active Implementation Package
 
 - `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`
 
@@ -15,11 +20,11 @@
 
 ## Last Completed Milestone
 
-- Local filesystem storage adapter released
+- Architecture Vision 2.0 frozen
 
 ## Current Implementation Phase
 
-- Architecture vision and capability-planning refresh
+- Parsing and fragment foundation preparation
 
 ## Current Milestone
 
@@ -61,15 +66,15 @@
 
 ## Immediate Next Task
 
-- Complete `ARCHITECTURE-VISION-2.0-RC`, then resume `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`
+- Begin `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`
 
 ## Fast Context
 
 - The repository is the source of truth for project state and architecture.
 - Start every new AI session from `.ai/bootstrap.md`.
-- The current released behavior includes `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1`.
-- The current documentation review candidate is `ARCHITECTURE-VISION-2.0-RC`.
-- The next active implementation package remains `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`.
+- The latest governance baseline is `ARCHITECTURE-VISION-2.0`.
+- The latest software baseline is `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1`.
+- The active implementation package is `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`.
 
 ## Current Capabilities
 

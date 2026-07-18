@@ -55,6 +55,10 @@ Purpose: Explain how the repository is organized and where different kinds of wo
 
 - `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1` is the latest released baseline.
 
+## Current Governance Baseline
+
+- `ARCHITECTURE-VISION-2.0` is the latest frozen governance baseline.
+
 ## Next Active Package
 
 - `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`

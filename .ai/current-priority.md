@@ -3,17 +3,17 @@
 Current milestone:
 Prototype Vertical Slice
 
-Latest released baseline:
+Latest governance baseline:
+ARCHITECTURE-VISION-2.0
+
+Latest software baseline:
 LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1
 
-Current documentation review candidate:
-ARCHITECTURE-VISION-2.0-RC
-
-Next active package:
+Active implementation package:
 PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC
 
 Status:
-Architecture vision and roadmap governance refresh in review-candidate state
+Architecture vision frozen as the governing platform baseline
 
 Build:
 Passing
@@ -40,25 +40,23 @@ Desktop end-to-end tests:
 23/23 passing
 
 Current task:
-Complete `ARCHITECTURE-VISION-2.0-RC` without changing production code, tests, or migrations
+Begin `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC` under the frozen architecture baseline
 
 Required outcome:
 
-- Rewrite the roadmap around capability evolution instead of isolated implementation slices.
-- Preserve every released milestone as historical record.
-- Define the long-term layered and capability architecture constitution for SPINbuster.
-- Establish engine ownership boundaries and platform completion criteria.
-- Keep the repository in its current released state while improving long-term planning clarity.
-- Do not modify production code, tests, migrations, or project structure.
+- Define deterministic, non-authoritative fragment handling for persisted document sources.
+- Preserve the frozen governance baseline while beginning the next implementation package.
+- Keep OCR, AI extraction, and promotion boundaries governed and deferred until explicitly designed.
+- Do not bypass provenance, validation, scope, lifecycle, or project boundaries.
 
 Next review:
-Architecture-vision and roadmap governance review before additional implementation packages begin
+Parsing and fragment foundation boundary review
 
 Known blockers:
 None
 
 Last completed:
-Released `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1`
+Froze governance baseline `ARCHITECTURE-VISION-2.0`
 
 Proposed next direction:
 
