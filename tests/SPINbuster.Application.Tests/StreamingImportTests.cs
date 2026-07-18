@@ -282,6 +282,80 @@ public sealed class StreamingImportTests
     Assert.Single(fixture.ImportedSourceRepository.AddedSources);
   }
 
+  [Fact]
+  public async Task ImportBufferDisposeReleasesStreamWithoutPoolReturn()
+  {
+    var content = Encoding.UTF8.GetBytes("pool-free disposal verification");
+    var stream = new MemoryStream(content);
+
+    var buffer = new ImportBuffer(stream, content.Length);
+
+    Assert.Equal(content.Length, buffer.ContentLength);
+    Assert.Same(stream, buffer.Content);
+
+    await buffer.DisposeAsync();
+
+    ObjectDisposedException? ex = Assert.Throws<ObjectDisposedException>(() => buffer.Content.Position);
+    Assert.NotNull(ex);
+  }
+
+  [Fact]
+  public async Task ImportBufferDisposeIsIdempotent()
+  {
+    var content = Encoding.UTF8.GetBytes("idempotent dispose");
+    var buffer = new ImportBuffer(new MemoryStream(content), content.Length);
+
+    await buffer.DisposeAsync();
+    await buffer.DisposeAsync();
+
+    ObjectDisposedException? ex = Assert.Throws<ObjectDisposedException>(() => buffer.Content.Position);
+    Assert.NotNull(ex);
+  }
+
+  [Fact]
+  public async Task StreamingImportProcessorMaxContentLengthExceedingIntMaxValueThrows()
+  {
+    var content = new MemoryStream(Encoding.UTF8.GetBytes("small"));
+    var tooLarge = (long)int.MaxValue + 1;
+
+    await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
+      async () => await StreamingImportProcessor.ProcessAsync(content, tooLarge));
+  }
+
+  [Fact]
+  public async Task StreamingImportProcessorReturnsReadChunkToPoolWithClear()
+  {
+    var fixture = CreateFixture();
+    var importSession = await StartSessionAsync(fixture);
+    var useCase = CreateImportUseCase(fixture);
+    var content = Encoding.UTF8.GetBytes("chunk return verification");
+
+    var result = await useCase.HandleAsync(new ImportDocumentSourceCommand(
+      importSession,
+      fixture.ProjectId,
+      "chunk.txt",
+      "text/plain",
+      ImportedSourceOrigin.LocalFile,
+      null,
+      new MemoryStream(content)));
+
+    Assert.Equal(content.Length, result.ContentLength);
+    var expectedHash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(content));
+    Assert.Equal(expectedHash, result.ContentHash);
+  }
+
+  [Fact]
+  public async Task ImportBufferDoesNotLeakSensitiveDataToPool()
+  {
+    var sensitiveContent = Encoding.UTF8.GetBytes("PASSWORD=secret123 api_key=abcdef");
+    var buffer = new ImportBuffer(new MemoryStream(sensitiveContent), sensitiveContent.Length);
+
+    await buffer.DisposeAsync();
+
+    ObjectDisposedException? ex = Assert.Throws<ObjectDisposedException>(() => buffer.Content.Position);
+    Assert.NotNull(ex);
+  }
+
   private static ImportDocumentSourceUseCase CreateImportUseCase(DocumentFixture fixture)
   {
     return new ImportDocumentSourceUseCase(

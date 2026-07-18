@@ -1,25 +1,20 @@
-using System.Buffers;
 using SPINbuster.Domain;
 
 namespace SPINbuster.Application;
 
 /// <summary>
 /// Bounded replay buffer produced by <see cref="StreamingImportProcessor"/>.
-/// Owns a pooled byte rental and a positioned <see cref="MemoryStream"/> over it.
+/// Owns a positioned <see cref="MemoryStream"/> containing the imported content.
 /// The stream is rewound to position 0 and ready for hash computation or storage.
-/// Disposal returns the rented buffer to the shared pool.
+/// Disposal releases the underlying stream. No external buffer pool is involved.
 /// </summary>
 public sealed class ImportBuffer : IAsyncDisposable
 {
-  private byte[]? _rentedBuffer;
-  private readonly int _rentedLength;
-
-  internal ImportBuffer(MemoryStream content, long contentLength, byte[] rentedBuffer, int rentedLength)
+  internal ImportBuffer(MemoryStream content, long contentLength)
   {
     Content = content ?? throw new ArgumentNullException(nameof(content));
     ContentLength = contentLength;
-    _rentedBuffer = rentedBuffer;
-    _rentedLength = rentedLength;
+    Content.Position = 0;
   }
 
   public MemoryStream Content { get; }
@@ -28,12 +23,6 @@ public sealed class ImportBuffer : IAsyncDisposable
 
   public ValueTask DisposeAsync()
   {
-    var buffer = Interlocked.Exchange(ref _rentedBuffer, null);
-    if (buffer is not null)
-    {
-      ArrayPool<byte>.Shared.Return(buffer);
-    }
-
     Content.Dispose();
     return ValueTask.CompletedTask;
   }

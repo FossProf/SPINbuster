@@ -8,7 +8,7 @@ namespace SPINbuster.Application;
 /// Consumes the source stream incrementally with early size enforcement,
 /// then retains the bytes entirely for replay by the import pipeline.
 /// This is bounded buffering, not true streaming: the full content is held
-/// in a pooled <see cref="MemoryStream"/> after the incremental pass completes.
+/// in a <see cref="MemoryStream"/> after the incremental pass completes.
 /// </summary>
 public sealed class StreamingImportProcessor
 {
@@ -38,6 +38,11 @@ public sealed class StreamingImportProcessor
       throw new ArgumentException("Maximum content length must be greater than zero.", nameof(maxContentLengthBytes));
     }
 
+    if (maxContentLengthBytes > int.MaxValue)
+    {
+      throw new ArgumentOutOfRangeException(nameof(maxContentLengthBytes), "Maximum content length cannot exceed int.MaxValue.");
+    }
+
     var chunk = ArrayPool<byte>.Shared.Rent(DefaultChunkSize);
     try
     {
@@ -45,7 +50,7 @@ public sealed class StreamingImportProcessor
     }
     finally
     {
-      ArrayPool<byte>.Shared.Return(chunk);
+      ArrayPool<byte>.Shared.Return(chunk, clearArray: true);
     }
   }
 
@@ -55,8 +60,6 @@ public sealed class StreamingImportProcessor
     byte[] chunk,
     CancellationToken cancellationToken)
   {
-    // Start with a small initial capacity to avoid over-allocating for tiny files.
-    // The MemoryStream will grow naturally as chunks are appended.
     var buffer = new MemoryStream();
     long totalLength = 0;
 
@@ -86,16 +89,6 @@ public sealed class StreamingImportProcessor
       throw new DomainInvariantException("Imported content cannot be empty.");
     }
 
-    // Extract the underlying buffer to avoid a full-size copy.
-    // The MemoryStream was created without a byte[] source, so GetBuffer()
-    // returns the internal array whose length equals totalLength.
-    var rentedBuffer = buffer.GetBuffer();
-    var rentedLength = (int)totalLength;
-
-    // Transfer ownership of the rented buffer to ImportBuffer.
-    // ImportBuffer assumes responsibility for returning it to the pool.
-    var importBuffer = new ImportBuffer(buffer, totalLength, rentedBuffer, rentedLength);
-
-    return importBuffer;
+    return new ImportBuffer(buffer, totalLength);
   }
 }
