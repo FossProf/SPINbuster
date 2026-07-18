@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using SPINbuster.Application;
 using SPINbuster.Domain;
 using SPINbuster.Infrastructure.Persistence;
@@ -47,7 +49,7 @@ public sealed class SqliteKnowledgeEnginePersistenceTests : IDisposable
     await using (var dbContext = CreateDbContext())
     {
       var auditRecorder = new SqliteAuditRecorder();
-      var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder);
+      var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
       var documentRepository = new SqliteKnowledgeDocumentRepository(dbContext);
 
       await documentRepository.AddAsync(knowledgeDocument);
@@ -87,7 +89,7 @@ public sealed class SqliteKnowledgeEnginePersistenceTests : IDisposable
     await using (var dbContext = CreateDbContext())
     {
       var auditRecorder = new SqliteAuditRecorder();
-      var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder);
+      var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
       var documentRepository = new SqliteKnowledgeDocumentRepository(dbContext);
       var revisionRepository = new SqliteKnowledgeRevisionRepository(dbContext);
       var citationRepository = new SqliteKnowledgeCitationRepository(dbContext);
@@ -127,7 +129,7 @@ public sealed class SqliteKnowledgeEnginePersistenceTests : IDisposable
     await using (var updateContext = CreateDbContext())
     {
       var auditRecorder = new SqliteAuditRecorder();
-      var unitOfWork = new SqliteUnitOfWork(updateContext, auditRecorder);
+      var unitOfWork = new SqliteUnitOfWork(updateContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
       var documentRepository = new SqliteKnowledgeDocumentRepository(updateContext);
       var revisionRepository = new SqliteKnowledgeRevisionRepository(updateContext);
       var citationRepository = new SqliteKnowledgeCitationRepository(updateContext);
@@ -188,7 +190,7 @@ public sealed class SqliteKnowledgeEnginePersistenceTests : IDisposable
     await using (var seedContext = CreateDbContext())
     {
       var auditRecorder = new SqliteAuditRecorder();
-      var unitOfWork = new SqliteUnitOfWork(seedContext, auditRecorder);
+      var unitOfWork = new SqliteUnitOfWork(seedContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
       await new SqliteKnowledgeDocumentRepository(seedContext).UpdateAsync(seededDocument.Document);
       await new SqliteKnowledgeRevisionRepository(seedContext).AddAsync(initialRevision);
       StageAuditEvents(auditRecorder, seededDocument.Document.AuditTrail.Skip(seededDocument.InitialAuditCount));
@@ -204,7 +206,7 @@ public sealed class SqliteKnowledgeEnginePersistenceTests : IDisposable
         seededDocument.CreatedAtUtc.AddHours(1).AddMinutes(1),
         supersedesRevisionId: initialRevision.Id);
       var auditRecorder = new SqliteAuditRecorder();
-      var unitOfWork = new SqliteUnitOfWork(duplicateContext, auditRecorder);
+      var unitOfWork = new SqliteUnitOfWork(duplicateContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
 
       await new SqliteKnowledgeRevisionRepository(duplicateContext).AddAsync(duplicateRevision);
 
@@ -232,7 +234,7 @@ public sealed class SqliteKnowledgeEnginePersistenceTests : IDisposable
     await using (var seedContext = CreateDbContext())
     {
       var auditRecorder = new SqliteAuditRecorder();
-      var unitOfWork = new SqliteUnitOfWork(seedContext, auditRecorder);
+      var unitOfWork = new SqliteUnitOfWork(seedContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
       var documentRepository = new SqliteKnowledgeDocumentRepository(seedContext);
 
       await documentRepository.AddAsync(targetDocument);
@@ -253,7 +255,7 @@ public sealed class SqliteKnowledgeEnginePersistenceTests : IDisposable
     await using (var dbContext = CreateDbContext())
     {
       var auditRecorder = new SqliteAuditRecorder();
-      var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder);
+      var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
       await new SqliteKnowledgeRelationshipRepository(dbContext).AddAsync(relationship);
       StageAuditEvents(auditRecorder, relationship.AuditTrail);
       await unitOfWork.CommitAsync();
@@ -271,7 +273,7 @@ public sealed class SqliteKnowledgeEnginePersistenceTests : IDisposable
         "reviewer@example.invalid",
         seededDocument.CreatedAtUtc.AddMinutes(26));
       var auditRecorder = new SqliteAuditRecorder();
-      var unitOfWork = new SqliteUnitOfWork(duplicateContext, auditRecorder);
+      var unitOfWork = new SqliteUnitOfWork(duplicateContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
 
       await new SqliteKnowledgeRelationshipRepository(duplicateContext).AddAsync(duplicateRelationship);
       StageAuditEvents(auditRecorder, duplicateRelationship.AuditTrail);
@@ -289,7 +291,7 @@ public sealed class SqliteKnowledgeEnginePersistenceTests : IDisposable
     await using (var updateContext = CreateDbContext())
     {
       var auditRecorder = new SqliteAuditRecorder();
-      var unitOfWork = new SqliteUnitOfWork(updateContext, auditRecorder);
+      var unitOfWork = new SqliteUnitOfWork(updateContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
       await new SqliteKnowledgeRelationshipRepository(updateContext).UpdateAsync(detachedRelationship);
       await unitOfWork.CommitAsync();
     }
@@ -328,7 +330,7 @@ public sealed class SqliteKnowledgeEnginePersistenceTests : IDisposable
     await using (var dbContext = CreateDbContext())
     {
       var auditRecorder = new SqliteAuditRecorder();
-      var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder);
+      var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
 
       await new SqliteKnowledgeDocumentRepository(dbContext).UpdateAsync(seededDocument.Document);
       await new SqliteKnowledgeRevisionRepository(dbContext).AddAsync(revision);
@@ -380,7 +382,7 @@ public sealed class SqliteKnowledgeEnginePersistenceTests : IDisposable
     await using (var dbContext = CreateDbContext())
     {
       var auditRecorder = new SqliteAuditRecorder();
-      var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder);
+      var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
 
       await new SqliteKnowledgeDocumentRepository(dbContext).UpdateAsync(seededDocument.Document);
       await new SqliteKnowledgeRevisionRepository(dbContext).AddAsync(revision);
@@ -424,7 +426,7 @@ public sealed class SqliteKnowledgeEnginePersistenceTests : IDisposable
     await using (var seedContext = CreateDbContext())
     {
       var auditRecorder = new SqliteAuditRecorder();
-      var unitOfWork = new SqliteUnitOfWork(seedContext, auditRecorder);
+      var unitOfWork = new SqliteUnitOfWork(seedContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
       await new SqliteKnowledgeDocumentRepository(seedContext).UpdateAsync(seededDocument.Document);
       await new SqliteKnowledgeRevisionRepository(seedContext).AddAsync(firstRevision);
       StageAuditEvents(auditRecorder, seededDocument.Document.AuditTrail.Skip(seededDocument.InitialAuditCount));
@@ -547,7 +549,7 @@ public sealed class SqliteKnowledgeEnginePersistenceTests : IDisposable
     var reportAuditCountBefore = storedReport.AuditTrail.Count;
 
     var auditRecorder = new SqliteAuditRecorder();
-    var unitOfWork = new SqliteUnitOfWork(migratedContext, auditRecorder);
+    var unitOfWork = new SqliteUnitOfWork(migratedContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
     await new SqliteKnowledgeDocumentRepository(migratedContext).AddAsync(knowledgeDocument);
     await new SqliteKnowledgeRevisionRepository(migratedContext).AddAsync(revision);
     StageAuditEvents(auditRecorder, knowledgeDocument.AuditTrail);
@@ -563,6 +565,297 @@ public sealed class SqliteKnowledgeEnginePersistenceTests : IDisposable
     Assert.Equal(seededState.ProposalId, proposalAfterKnowledgeInsert!.Id);
     Assert.Equal(1L, await QueryCountAsync(migratedContext, "SELECT COUNT(*) FROM knowledge_documents"));
     Assert.Equal(auditCountBeforeKnowledgeInsert + 2, await QueryCountAsync(migratedContext, "SELECT COUNT(*) FROM audit_events"));
+  }
+
+  [Fact]
+  public async Task NewDocumentWithCurrentRevisionCommitsAtomicallyViaDeferredReferenceHandler()
+  {
+    var seededProject = await SeedProjectAsync();
+    var knowledgeDocument = new KnowledgeDocument(
+      KnowledgeDocumentId.New(),
+      seededProject.ProjectId,
+      KnowledgeDocumentType.Specification,
+      "Deferred Reference Document",
+      "DR-100",
+      "Concrete",
+      "author@example.invalid",
+      seededProject.CreatedAtUtc.AddMinutes(10));
+
+    var revision = CreateRevision(
+      knowledgeDocument.Id,
+      "A",
+      seededProject.CreatedAtUtc.AddMinutes(11),
+      seededProject.CreatedAtUtc.AddMinutes(12),
+      supersedesRevisionId: null);
+
+    knowledgeDocument.AddInitialRevision(
+      revision,
+      "author@example.invalid",
+      seededProject.CreatedAtUtc.AddMinutes(12));
+
+    await using (var dbContext = CreateDbContext())
+    {
+      var auditRecorder = new SqliteAuditRecorder();
+      var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
+
+      await new SqliteKnowledgeDocumentRepository(dbContext).AddAsync(knowledgeDocument);
+      await new SqliteKnowledgeRevisionRepository(dbContext).AddAsync(revision);
+      StageAuditEvents(auditRecorder, knowledgeDocument.AuditTrail);
+      await unitOfWork.CommitAsync();
+    }
+
+    await using var verificationContext = CreateDbContext();
+    var storedDocument = await new SqliteKnowledgeDocumentRepository(verificationContext).GetByIdAsync(knowledgeDocument.Id);
+    var storedRevision = await new SqliteKnowledgeRevisionRepository(verificationContext).GetByIdAsync(revision.Id);
+
+    Assert.NotNull(storedDocument);
+    Assert.NotNull(storedRevision);
+    Assert.Equal(revision.Id, storedDocument!.CurrentAuthoritativeRevisionId);
+    Assert.Equal(knowledgeDocument.Id, storedRevision!.DocumentId);
+    Assert.Equal(1L, await QueryCountAsync(verificationContext, "SELECT COUNT(*) FROM knowledge_documents"));
+    Assert.Equal(1L, await QueryCountAsync(verificationContext, "SELECT COUNT(*) FROM knowledge_document_revisions"));
+  }
+
+  [Fact]
+  public async Task RevisionSupersessionCommitsCorrectlyViaDeferredReferenceHandler()
+  {
+    var seededProject = await SeedProjectAsync();
+    var knowledgeDocument = new KnowledgeDocument(
+      KnowledgeDocumentId.New(),
+      seededProject.ProjectId,
+      KnowledgeDocumentType.Specification,
+      "Supersession Test Document",
+      "SUP-200",
+      "Structural",
+      "author@example.invalid",
+      seededProject.CreatedAtUtc.AddMinutes(10));
+
+    var revisionA = CreateRevision(
+      knowledgeDocument.Id,
+      "A",
+      seededProject.CreatedAtUtc.AddMinutes(11),
+      seededProject.CreatedAtUtc.AddMinutes(12),
+      supersedesRevisionId: null);
+
+    knowledgeDocument.AddInitialRevision(
+      revisionA,
+      "author@example.invalid",
+      seededProject.CreatedAtUtc.AddMinutes(12));
+
+    var auditCountAfterInitialRevision = knowledgeDocument.AuditTrail.Count;
+
+    await using (var dbContext = CreateDbContext())
+    {
+      var auditRecorder = new SqliteAuditRecorder();
+      var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
+      await new SqliteKnowledgeDocumentRepository(dbContext).AddAsync(knowledgeDocument);
+      await new SqliteKnowledgeRevisionRepository(dbContext).AddAsync(revisionA);
+      StageAuditEvents(auditRecorder, knowledgeDocument.AuditTrail);
+      await unitOfWork.CommitAsync();
+    }
+
+    var revisionB = CreateRevision(
+      knowledgeDocument.Id,
+      "B",
+      seededProject.CreatedAtUtc.AddMinutes(20),
+      seededProject.CreatedAtUtc.AddMinutes(21),
+      supersedesRevisionId: revisionA.Id);
+
+    knowledgeDocument.SupersedeCurrentRevision(
+      revisionB,
+      "author@example.invalid",
+      seededProject.CreatedAtUtc.AddMinutes(22));
+
+    await using (var updateContext = CreateDbContext())
+    {
+      var auditRecorder = new SqliteAuditRecorder();
+      var unitOfWork = new SqliteUnitOfWork(updateContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
+      await new SqliteKnowledgeDocumentRepository(updateContext).UpdateAsync(knowledgeDocument);
+      await new SqliteKnowledgeRevisionRepository(updateContext).UpdateAsync(revisionA);
+      await new SqliteKnowledgeRevisionRepository(updateContext).AddAsync(revisionB);
+      StageAuditEvents(auditRecorder, knowledgeDocument.AuditTrail.Skip(auditCountAfterInitialRevision));
+      await unitOfWork.CommitAsync();
+    }
+
+    await using var verificationContext = CreateDbContext();
+    var storedDocument = await new SqliteKnowledgeDocumentRepository(verificationContext).GetByIdAsync(knowledgeDocument.Id);
+
+    Assert.NotNull(storedDocument);
+    Assert.Equal(revisionB.Id, storedDocument!.CurrentAuthoritativeRevisionId);
+    Assert.Equal(2L, await QueryCountAsync(verificationContext, "SELECT COUNT(*) FROM knowledge_document_revisions"));
+  }
+
+  [Fact]
+  public async Task DeferredReferenceHandlerRollbacksCleanlyOnSecondPassFailure()
+  {
+    var seededProject = await SeedProjectAsync();
+    var knowledgeDocument = new KnowledgeDocument(
+      KnowledgeDocumentId.New(),
+      seededProject.ProjectId,
+      KnowledgeDocumentType.Specification,
+      "Rollback Test Document",
+      "RB-300",
+      "Mechanical",
+      "author@example.invalid",
+      seededProject.CreatedAtUtc.AddMinutes(10));
+
+    var revision = CreateRevision(
+      knowledgeDocument.Id,
+      "A",
+      seededProject.CreatedAtUtc.AddMinutes(11),
+      seededProject.CreatedAtUtc.AddMinutes(12),
+      supersedesRevisionId: null);
+
+    knowledgeDocument.AddInitialRevision(
+      revision,
+      "author@example.invalid",
+      seededProject.CreatedAtUtc.AddMinutes(12));
+
+    var preSeededRevisionId = revision.Id;
+
+    await using (var seedContext = CreateDbContext())
+    {
+      await seedContext.Database.MigrateAsync();
+      seedContext.KnowledgeDocuments.Add(new KnowledgeDocumentRecord
+      {
+        Id = knowledgeDocument.Id,
+        ProjectId = seededProject.ProjectId,
+        DocumentType = KnowledgeDocumentType.Specification,
+        CanonicalTitle = "Pre-seeded Document",
+        Lifecycle = KnowledgeDocumentLifecycle.Active,
+        CreatedBy = "seed@example.invalid",
+        CreatedAtUtc = seededProject.CreatedAtUtc,
+      });
+      seedContext.KnowledgeDocumentRevisions.Add(new KnowledgeDocumentRevisionRecord
+      {
+        Id = preSeededRevisionId,
+        KnowledgeDocumentId = knowledgeDocument.Id,
+        KnowledgeSourceId = KnowledgeSourceId.New(),
+        RevisionLabel = "PRESEEDED",
+        EffectiveDate = DateOnly.FromDateTime(seededProject.CreatedAtUtc.UtcDateTime.AddDays(1)),
+        ReceivedAtUtc = seededProject.CreatedAtUtc.AddDays(1),
+        SourceAuthority = KnowledgeSourceAuthorityLevel.EngineerIssued,
+        VerificationStatus = KnowledgeVerificationStatus.Verified,
+        ContentHash = "content-hash-preseeded",
+        MetadataHash = "metadata-hash-preseeded",
+        SupersedesRevisionId = null,
+        SupersededByRevisionId = null,
+        SourceSystemReference = "source-preseeded",
+        DescriptiveNotes = "Pre-seeded to cause PK collision on commit.",
+        CreatedAtUtc = seededProject.CreatedAtUtc.AddDays(1),
+        IngestionStatus = KnowledgeIngestionStatus.Processed,
+        Lifecycle = KnowledgeRevisionLifecycle.Received,
+      });
+      await seedContext.SaveChangesAsync();
+    }
+
+    await using (var dbContext = CreateDbContext())
+    {
+      var auditRecorder = new SqliteAuditRecorder();
+      var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
+
+      await new SqliteKnowledgeDocumentRepository(dbContext).AddAsync(knowledgeDocument);
+      await new SqliteKnowledgeRevisionRepository(dbContext).AddAsync(revision);
+      StageAuditEvents(auditRecorder, knowledgeDocument.AuditTrail);
+
+      await Assert.ThrowsAnyAsync<Exception>(() => unitOfWork.CommitAsync());
+    }
+
+    await using var verificationContext = CreateDbContext();
+    var survivingDocument = await new SqliteKnowledgeDocumentRepository(verificationContext).GetByIdAsync(knowledgeDocument.Id);
+    Assert.NotNull(survivingDocument);
+    Assert.Null(survivingDocument!.CurrentAuthoritativeRevisionId);
+    Assert.Equal(1L, await QueryCountAsync(verificationContext, "SELECT COUNT(*) FROM knowledge_documents"));
+    Assert.Equal(1L, await QueryCountAsync(verificationContext, "SELECT COUNT(*) FROM knowledge_document_revisions"));
+  }
+
+  [Fact]
+  public async Task UnrelatedAggregateCommitsDoNotInterfereWithDeferredReferences()
+  {
+    var seededProject = await SeedProjectAsync();
+    var knowledgeDocument = new KnowledgeDocument(
+      KnowledgeDocumentId.New(),
+      seededProject.ProjectId,
+      KnowledgeDocumentType.Specification,
+      "Unrelated Aggregate Document",
+      "UA-400",
+      "Civil",
+      "author@example.invalid",
+      seededProject.CreatedAtUtc.AddMinutes(10));
+
+    var revision = CreateRevision(
+      knowledgeDocument.Id,
+      "A",
+      seededProject.CreatedAtUtc.AddMinutes(11),
+      seededProject.CreatedAtUtc.AddMinutes(12),
+      supersedesRevisionId: null);
+
+    knowledgeDocument.AddInitialRevision(
+      revision,
+      "author@example.invalid",
+      seededProject.CreatedAtUtc.AddMinutes(12));
+
+    var inspectionSession = new InspectionSession(
+      InspectionSessionId.New(),
+      seededProject.ProjectId,
+      "Parallel Walkdown",
+      "inspector@example.invalid",
+      seededProject.CreatedAtUtc.AddMinutes(15));
+    inspectionSession.Start("inspector@example.invalid", seededProject.CreatedAtUtc.AddMinutes(16));
+
+    await using (var dbContext = CreateDbContext())
+    {
+      var auditRecorder = new SqliteAuditRecorder();
+      var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
+
+      await new SqliteKnowledgeDocumentRepository(dbContext).AddAsync(knowledgeDocument);
+      await new SqliteKnowledgeRevisionRepository(dbContext).AddAsync(revision);
+      await new SqliteInspectionSessionRepository(dbContext).AddAsync(inspectionSession);
+      StageAuditEvents(auditRecorder, knowledgeDocument.AuditTrail);
+      StageAuditEvents(auditRecorder, inspectionSession.AuditTrail);
+      await unitOfWork.CommitAsync();
+    }
+
+    await using var verificationContext = CreateDbContext();
+    var storedDocument = await new SqliteKnowledgeDocumentRepository(verificationContext).GetByIdAsync(knowledgeDocument.Id);
+    var storedSession = await new SqliteInspectionSessionRepository(verificationContext).GetByIdAsync(inspectionSession.Id);
+
+    Assert.NotNull(storedDocument);
+    Assert.NotNull(storedSession);
+    Assert.Equal(revision.Id, storedDocument!.CurrentAuthoritativeRevisionId);
+    Assert.Equal(1L, await QueryCountAsync(verificationContext, "SELECT COUNT(*) FROM knowledge_documents"));
+    Assert.Equal(1L, await QueryCountAsync(verificationContext, "SELECT COUNT(*) FROM inspection_sessions"));
+  }
+
+  [Fact]
+  public async Task EmptyDeferredReferenceHandlerCollectionCommitsNormally()
+  {
+    var seededProject = await SeedProjectAsync();
+    var knowledgeDocument = new KnowledgeDocument(
+      KnowledgeDocumentId.New(),
+      seededProject.ProjectId,
+      KnowledgeDocumentType.Specification,
+      "Empty Handler Document",
+      "EH-500",
+      "Electrical",
+      "author@example.invalid",
+      seededProject.CreatedAtUtc.AddMinutes(10));
+
+    await using (var dbContext = CreateDbContext())
+    {
+      var auditRecorder = new SqliteAuditRecorder();
+      var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, []);
+      await new SqliteKnowledgeDocumentRepository(dbContext).AddAsync(knowledgeDocument);
+      StageAuditEvents(auditRecorder, knowledgeDocument.AuditTrail);
+      await unitOfWork.CommitAsync();
+    }
+
+    await using var verificationContext = CreateDbContext();
+    var storedDocument = await new SqliteKnowledgeDocumentRepository(verificationContext).GetByIdAsync(knowledgeDocument.Id);
+
+    Assert.NotNull(storedDocument);
+    Assert.Equal(knowledgeDocument.Id, storedDocument!.Id);
+    Assert.Null(storedDocument.CurrentAuthoritativeRevisionId);
   }
 
   public void Dispose()
@@ -599,7 +892,7 @@ public sealed class SqliteKnowledgeEnginePersistenceTests : IDisposable
     await using var dbContext = CreateDbContext();
     await dbContext.Database.MigrateAsync();
     var auditRecorder = new SqliteAuditRecorder();
-    var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder);
+    var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
     var projectRepository = new SqliteProjectRepository(dbContext);
     var project = new Project(ProjectId.New(), "Project Falcon", "owner@example.invalid", createdAtUtc);
     project.Activate("inspector@example.invalid", createdAtUtc.AddMinutes(1));
@@ -626,7 +919,7 @@ public sealed class SqliteKnowledgeEnginePersistenceTests : IDisposable
 
     await using var dbContext = CreateDbContext();
     var auditRecorder = new SqliteAuditRecorder();
-    var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder);
+    var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
     await new SqliteKnowledgeDocumentRepository(dbContext).AddAsync(knowledgeDocument);
     StageAuditEvents(auditRecorder, knowledgeDocument.AuditTrail);
     await unitOfWork.CommitAsync();
@@ -638,7 +931,7 @@ public sealed class SqliteKnowledgeEnginePersistenceTests : IDisposable
   {
     var createdAtUtc = new DateTimeOffset(2026, 7, 16, 10, 0, 0, TimeSpan.Zero);
     var auditRecorder = new SqliteAuditRecorder();
-    var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder);
+    var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
     var projectRepository = new SqliteProjectRepository(dbContext);
     var inspectionSessionRepository = new SqliteInspectionSessionRepository(dbContext);
     var reportRepository = new SqliteReportRepository(dbContext);

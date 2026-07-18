@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using SPINbuster.Application.Logging;
 using SPINbuster.Application.UseCases.LoadProjectDocumentWorkflowSnapshot;
 using SPINbuster.Desktop;
 
@@ -23,8 +25,21 @@ using var host = builder.Build();
 
 try
 {
-  var result = await DocumentEngineExecutableWorkflowBootstrapper.RunAsync(host.Services);
-  Console.Write(DocumentEngineExecutableWorkflowConsoleFormatter.Format(result));
+  using var loggerFactory = host.Services.GetRequiredService<ILoggerFactory>();
+  var logger = loggerFactory.CreateLogger("SPINbuster.Desktop");
+  var operationId = Guid.NewGuid().ToString();
+
+  using (logger.BeginScope(new Dictionary<string, object>
+  {
+    [LogProperties.OperationId] = operationId,
+    [LogProperties.ApplicationUserId] = settings.CurrentUserId,
+  }))
+  {
+    logger.LogInformation("Desktop workflow starting, operation {OperationId}", operationId);
+    var result = await DocumentEngineExecutableWorkflowBootstrapper.RunAsync(host.Services);
+    Console.Write(DocumentEngineExecutableWorkflowConsoleFormatter.Format(result));
+    logger.LogInformation("Desktop workflow completed, operation {OperationId}", operationId);
+  }
 }
 catch (Exception exception)
 {

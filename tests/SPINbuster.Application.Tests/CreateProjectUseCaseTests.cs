@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using SPINbuster.Application.Tests.Fakes;
 using SPINbuster.Application.UseCases.CreateProject;
 using SPINbuster.Domain;
@@ -20,7 +22,8 @@ public sealed class CreateProjectUseCaseTests
       unitOfWork,
       clock,
       currentUser,
-      auditRecorder);
+      auditRecorder,
+      NullLogger<CreateProjectUseCase>.Instance);
 
     var result = await useCase.HandleAsync(new CreateProjectCommand("Project Falcon"));
     var storedProject = await projectRepository.GetByIdAsync(result.ProjectId);
@@ -45,7 +48,8 @@ public sealed class CreateProjectUseCaseTests
       unitOfWork,
       clock,
       currentUser,
-      auditRecorder);
+      auditRecorder,
+      NullLogger<CreateProjectUseCase>.Instance);
 
     var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
       useCase.HandleAsync(new CreateProjectCommand("Project Falcon")));
@@ -68,7 +72,8 @@ public sealed class CreateProjectUseCaseTests
       unitOfWork,
       clock,
       currentUser,
-      auditRecorder);
+      auditRecorder,
+      NullLogger<CreateProjectUseCase>.Instance);
 
     var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
       useCase.HandleAsync(new CreateProjectCommand("Project Falcon")));

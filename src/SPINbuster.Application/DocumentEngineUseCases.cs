@@ -1,5 +1,8 @@
+using System.Diagnostics;
+using Microsoft.Extensions.Logging;
 using SPINbuster.Application.Abstractions;
 using SPINbuster.Application.Contracts;
+using SPINbuster.Application.Logging;
 using SPINbuster.Application.Repositories;
 using SPINbuster.Domain;
 using System.Text.Json;
@@ -101,6 +104,7 @@ namespace SPINbuster.Application.UseCases.ImportDocumentSource
     private readonly IImportedContentInspector _importedContentInspector;
     private readonly IImportedDocumentSourceRepository _importedSourceRepository;
     private readonly IImmutableContentStore _immutableContentStore;
+    private readonly ILogger<ImportDocumentSourceUseCase> _logger;
     private readonly IStorageObjectRepository _storageObjectRepository;
     private readonly IUnitOfWork _unitOfWork;
 
@@ -115,7 +119,8 @@ namespace SPINbuster.Application.UseCases.ImportDocumentSource
       IUnitOfWork unitOfWork,
       IClock clock,
       ICurrentUser currentUser,
-      IAuditRecorder auditRecorder)
+      IAuditRecorder auditRecorder,
+      ILogger<ImportDocumentSourceUseCase> logger)
     {
       _importSessionRepository = importSessionRepository;
       _importedSourceRepository = importedSourceRepository;
@@ -128,118 +133,149 @@ namespace SPINbuster.Application.UseCases.ImportDocumentSource
       _clock = clock;
       _currentUser = currentUser;
       _auditRecorder = auditRecorder;
+      _logger = logger;
     }
 
     public async Task<ImportDocumentSourceResult> HandleAsync(ImportDocumentSourceCommand command, CancellationToken cancellationToken = default)
     {
-      var importSession = await _importSessionRepository.GetByIdAsync(command.ImportSessionId, cancellationToken)
-        ?? throw new ApplicationEntityNotFoundException(nameof(DocumentImportSession), command.ImportSessionId.ToString());
-      if (importSession.ProjectId != command.ProjectId)
-      {
-        throw new DomainInvariantException("Document import session project does not match the requested project.");
-      }
+      var stopwatch = Stopwatch.StartNew();
+      var useCaseName = nameof(ImportDocumentSourceUseCase);
+      var importSessionId = command.ImportSessionId.ToString();
+      var projectId = command.ProjectId.ToString();
 
-      var priorImportSessionAuditCount = importSession.AuditTrail.Count;
-
-      await using var content = await EnsureReplayableContentAsync(command.Content, cancellationToken);
-      if (content.Length <= 0)
+      using (_logger.BeginScope(new Dictionary<string, object>
       {
-        throw new DomainInvariantException("Imported content cannot be empty.");
-      }
-
-      if (content.Length > _documentImportPolicy.MaxContentLengthBytes)
+        [LogProperties.UseCase] = useCaseName,
+        [LogProperties.ImportSessionId] = importSessionId,
+        [LogProperties.ProjectId] = projectId,
+        [LogProperties.FileName] = command.OriginalFileName,
+        [LogProperties.DeclaredMediaType] = command.DeclaredMediaType ?? "(none)",
+        [LogProperties.ApplicationUserId] = _currentUser.UserId.Value,
+      }))
       {
-        throw new DomainInvariantException("Imported content exceeds the configured maximum content size.");
-      }
+        _logger.LogInformation(LogEvents.DocumentImportStarting,
+          "{UseCase} starting for import session {ImportSessionId}, project {ProjectId}, file {FileName}, media type {DeclaredMediaType}",
+          useCaseName, importSessionId, projectId, command.OriginalFileName, command.DeclaredMediaType ?? "(none)");
 
-      importSession.BeginValidation(_currentUser.UserId.Value, _clock.UtcNow);
-      var inspection = await _importedContentInspector.InspectAsync(command.OriginalFileName, command.DeclaredMediaType, content.Length, cancellationToken);
-      if (!inspection.IsSupported)
-      {
-        importSession.RecordRejectedSource(_currentUser.UserId.Value, _clock.UtcNow, "Imported content type is not supported by the current Document Engine foundation.");
+        var importSession = await _importSessionRepository.GetByIdAsync(command.ImportSessionId, cancellationToken)
+          ?? throw new ApplicationEntityNotFoundException(nameof(DocumentImportSession), command.ImportSessionId.ToString());
+        if (importSession.ProjectId != command.ProjectId)
+        {
+          throw new DomainInvariantException("Document import session project does not match the requested project.");
+        }
+
+        var priorImportSessionAuditCount = importSession.AuditTrail.Count;
+
+        await using var content = await EnsureReplayableContentAsync(command.Content, cancellationToken);
+        if (content.Length <= 0)
+        {
+          throw new DomainInvariantException("Imported content cannot be empty.");
+        }
+
+        if (content.Length > _documentImportPolicy.MaxContentLengthBytes)
+        {
+          throw new DomainInvariantException("Imported content exceeds the configured maximum content size.");
+        }
+
+        importSession.BeginValidation(_currentUser.UserId.Value, _clock.UtcNow);
+        var inspection = await _importedContentInspector.InspectAsync(command.OriginalFileName, command.DeclaredMediaType, content.Length, cancellationToken);
+        if (!inspection.IsSupported)
+        {
+          importSession.RecordRejectedSource(_currentUser.UserId.Value, _clock.UtcNow, "Imported content type is not supported by the current Document Engine foundation.");
+          await _importSessionRepository.UpdateAsync(importSession, cancellationToken);
+          Internal.DocumentAuditStager.Stage(_auditRecorder, importSession.AuditTrail.Skip(priorImportSessionAuditCount));
+          await _unitOfWork.CommitAsync(cancellationToken);
+          throw new DomainInvariantException("Imported content type is not supported by the current Document Engine foundation.");
+        }
+
+        content.Position = 0;
+        var hashResult = await _contentHashService.ComputeAsync(content, cancellationToken);
+        content.Position = 0;
+
+        importSession.BeginImporting(_currentUser.UserId.Value, _clock.UtcNow);
+        var existingProjectSource = await _importedSourceRepository.GetByProjectAndContentHashAsync(
+          command.ProjectId,
+          hashResult.ContentHash,
+          hashResult.HashAlgorithm,
+          hashResult.HashAlgorithmVersion,
+          cancellationToken);
+        var crossProjectDuplicateExists = await _importedSourceRepository.ExistsInOtherProjectsAsync(
+          command.ProjectId,
+          hashResult.ContentHash,
+          hashResult.HashAlgorithm,
+          hashResult.HashAlgorithmVersion,
+          cancellationToken);
+
+        if (existingProjectSource is not null)
+        {
+          importSession.RecordDuplicateSource(existingProjectSource.Id, _currentUser.UserId.Value, _clock.UtcNow);
+          await _importSessionRepository.UpdateAsync(importSession, cancellationToken);
+          Internal.DocumentAuditStager.Stage(_auditRecorder, importSession.AuditTrail.Skip(priorImportSessionAuditCount));
+          await _unitOfWork.CommitAsync(cancellationToken);
+
+          stopwatch.Stop();
+          _logger.LogInformation(LogEvents.DocumentImportDuplicateDetected,
+            "{UseCase} duplicate detected in {DurationMs}ms for import session {ImportSessionId}, reused source {ImportedSourceId}, content hash {ContentHash}",
+            useCaseName, stopwatch.ElapsedMilliseconds, importSessionId, existingProjectSource.Id, SensitiveDataRules.TruncateHash(hashResult.ContentHash));
+
+          return new ImportDocumentSourceResult(
+            importSession.Id,
+            existingProjectSource.Id,
+            true,
+            crossProjectDuplicateExists,
+            existingProjectSource.StorageReference.StorageObjectId,
+            existingProjectSource.ContentHash,
+            existingProjectSource.HashAlgorithm,
+            existingProjectSource.HashAlgorithmVersion,
+            existingProjectSource.ContentLength,
+            existingProjectSource.DetectedMediaType,
+            inspection.Warnings);
+        }
+
+        var storageObject = await GetOrStoreStorageObjectAsync(hashResult, content, cancellationToken);
+        var importedSource = new ImportedDocumentSource(
+          ImportedSourceId.New(),
+          importSession.Id,
+          command.ProjectId,
+          inspection.NormalizedFileName,
+          inspection.NormalizedDeclaredMediaType,
+          inspection.DetectedMediaType,
+          hashResult.ContentLength,
+          hashResult.ContentHash,
+          hashResult.HashAlgorithm,
+          hashResult.HashAlgorithmVersion,
+          storageObject.ToReference(),
+          command.SourceOrigin,
+          _currentUser.UserId.Value,
+          _clock.UtcNow,
+          ImportedDocumentSourceStatus.Available,
+          command.ExternalSourceReference);
+        importSession.RecordAcceptedSource(importedSource.Id, _currentUser.UserId.Value, _clock.UtcNow);
+
+        await _importedSourceRepository.AddAsync(importedSource, cancellationToken);
         await _importSessionRepository.UpdateAsync(importSession, cancellationToken);
+        Internal.DocumentAuditStager.Stage(_auditRecorder, importedSource.AuditTrail);
         Internal.DocumentAuditStager.Stage(_auditRecorder, importSession.AuditTrail.Skip(priorImportSessionAuditCount));
         await _unitOfWork.CommitAsync(cancellationToken);
-        throw new DomainInvariantException("Imported content type is not supported by the current Document Engine foundation.");
-      }
 
-      content.Position = 0;
-      var hashResult = await _contentHashService.ComputeAsync(content, cancellationToken);
-      content.Position = 0;
-
-      importSession.BeginImporting(_currentUser.UserId.Value, _clock.UtcNow);
-      var existingProjectSource = await _importedSourceRepository.GetByProjectAndContentHashAsync(
-        command.ProjectId,
-        hashResult.ContentHash,
-        hashResult.HashAlgorithm,
-        hashResult.HashAlgorithmVersion,
-        cancellationToken);
-      var crossProjectDuplicateExists = await _importedSourceRepository.ExistsInOtherProjectsAsync(
-        command.ProjectId,
-        hashResult.ContentHash,
-        hashResult.HashAlgorithm,
-        hashResult.HashAlgorithmVersion,
-        cancellationToken);
-
-      if (existingProjectSource is not null)
-      {
-        importSession.RecordDuplicateSource(existingProjectSource.Id, _currentUser.UserId.Value, _clock.UtcNow);
-        await _importSessionRepository.UpdateAsync(importSession, cancellationToken);
-        Internal.DocumentAuditStager.Stage(_auditRecorder, importSession.AuditTrail.Skip(priorImportSessionAuditCount));
-        await _unitOfWork.CommitAsync(cancellationToken);
+        stopwatch.Stop();
+        _logger.LogInformation(LogEvents.DocumentImportCompleted,
+          "{UseCase} completed in {DurationMs}ms for import session {ImportSessionId}, imported source {ImportedSourceId}, content hash {ContentHash}, cross-project duplicate {CrossProjectDuplicateExists}",
+          useCaseName, stopwatch.ElapsedMilliseconds, importSessionId, importedSource.Id, SensitiveDataRules.TruncateHash(hashResult.ContentHash), crossProjectDuplicateExists);
 
         return new ImportDocumentSourceResult(
           importSession.Id,
-          existingProjectSource.Id,
-          true,
+          importedSource.Id,
+          false,
           crossProjectDuplicateExists,
-          existingProjectSource.StorageReference.StorageObjectId,
-          existingProjectSource.ContentHash,
-          existingProjectSource.HashAlgorithm,
-          existingProjectSource.HashAlgorithmVersion,
-          existingProjectSource.ContentLength,
-          existingProjectSource.DetectedMediaType,
+          storageObject.Id,
+          importedSource.ContentHash,
+          importedSource.HashAlgorithm,
+          importedSource.HashAlgorithmVersion,
+          importedSource.ContentLength,
+          importedSource.DetectedMediaType,
           inspection.Warnings);
       }
-
-      var storageObject = await GetOrStoreStorageObjectAsync(hashResult, content, cancellationToken);
-      var importedSource = new ImportedDocumentSource(
-        ImportedSourceId.New(),
-        importSession.Id,
-        command.ProjectId,
-        inspection.NormalizedFileName,
-        inspection.NormalizedDeclaredMediaType,
-        inspection.DetectedMediaType,
-        hashResult.ContentLength,
-        hashResult.ContentHash,
-        hashResult.HashAlgorithm,
-        hashResult.HashAlgorithmVersion,
-        storageObject.ToReference(),
-        command.SourceOrigin,
-        _currentUser.UserId.Value,
-        _clock.UtcNow,
-        ImportedDocumentSourceStatus.Available,
-        command.ExternalSourceReference);
-      importSession.RecordAcceptedSource(importedSource.Id, _currentUser.UserId.Value, _clock.UtcNow);
-
-      await _importedSourceRepository.AddAsync(importedSource, cancellationToken);
-      await _importSessionRepository.UpdateAsync(importSession, cancellationToken);
-      Internal.DocumentAuditStager.Stage(_auditRecorder, importedSource.AuditTrail);
-      Internal.DocumentAuditStager.Stage(_auditRecorder, importSession.AuditTrail.Skip(priorImportSessionAuditCount));
-      await _unitOfWork.CommitAsync(cancellationToken);
-
-      return new ImportDocumentSourceResult(
-        importSession.Id,
-        importedSource.Id,
-        false,
-        crossProjectDuplicateExists,
-        storageObject.Id,
-        importedSource.ContentHash,
-        importedSource.HashAlgorithm,
-        importedSource.HashAlgorithmVersion,
-        importedSource.ContentLength,
-        importedSource.DetectedMediaType,
-        inspection.Warnings);
     }
 
     private async Task<StorageObject> GetOrStoreStorageObjectAsync(ContentHashResult hashResult, MemoryStream content, CancellationToken cancellationToken)
@@ -485,6 +521,7 @@ namespace SPINbuster.Application.UseCases.RequestDocumentProcessing
     private readonly IDocumentProcessor _documentProcessor;
     private readonly IImmutableContentStore _immutableContentStore;
     private readonly IImportedDocumentSourceRepository _importedSourceRepository;
+    private readonly ILogger<RequestDocumentProcessingUseCase> _logger;
     private readonly IUnitOfWork _unitOfWork;
 
     public RequestDocumentProcessingUseCase(
@@ -496,7 +533,8 @@ namespace SPINbuster.Application.UseCases.RequestDocumentProcessing
       IDocumentImportPolicy documentImportPolicy,
       IUnitOfWork unitOfWork,
       IClock clock,
-      IAuditRecorder auditRecorder)
+      IAuditRecorder auditRecorder,
+      ILogger<RequestDocumentProcessingUseCase> logger)
     {
       _importedSourceRepository = importedSourceRepository;
       _documentProcessingAttemptRepository = documentProcessingAttemptRepository;
@@ -507,176 +545,227 @@ namespace SPINbuster.Application.UseCases.RequestDocumentProcessing
       _unitOfWork = unitOfWork;
       _clock = clock;
       _auditRecorder = auditRecorder;
+      _logger = logger;
     }
 
     public async Task<RequestDocumentProcessingResult> HandleAsync(RequestDocumentProcessingCommand command, CancellationToken cancellationToken = default)
     {
-      var source = await _importedSourceRepository.GetByIdAsync(command.ImportedSourceId, cancellationToken)
-        ?? throw new ApplicationEntityNotFoundException(nameof(ImportedDocumentSource), command.ImportedSourceId.ToString());
-      if (source.ProjectId != command.ProjectId)
-      {
-        throw new DomainInvariantException("Imported source project does not match the requested project.");
-      }
-
+      var stopwatch = Stopwatch.StartNew();
+      var useCaseName = nameof(RequestDocumentProcessingUseCase);
+      var importedSourceId = command.ImportedSourceId.ToString();
+      var projectId = command.ProjectId.ToString();
       var descriptor = _documentProcessor.Describe();
-      var attempt = new DocumentProcessingAttempt(
-        DocumentProcessingAttemptId.New(),
-        source.Id,
-        source.ProjectId,
-        descriptor.ProcessorRole,
-        descriptor.ProcessorIdentity,
-        descriptor.ProcessorVersion,
-        _clock.UtcNow,
-        await _documentProcessingAttemptRepository.GetNextAttemptNumberAsync(source.Id, cancellationToken),
-        source.ContentHash);
-      attempt.Start(_clock.UtcNow);
+      var processorKey = descriptor.ProcessorIdentity;
 
-      await _documentProcessingAttemptRepository.AddAsync(attempt, cancellationToken);
-      Internal.DocumentAuditStager.Stage(_auditRecorder, attempt.AuditTrail);
-      await _unitOfWork.CommitAsync(cancellationToken);
-
-      try
+      using (_logger.BeginScope(new Dictionary<string, object>
       {
-        var openResult = await _immutableContentStore.OpenReadAsync(source.StorageReference.StorageObjectId, cancellationToken);
-        if (openResult.AvailabilityState != StorageAvailabilityState.Available)
+        [LogProperties.UseCase] = useCaseName,
+        [LogProperties.ImportedSourceId] = importedSourceId,
+        [LogProperties.ProjectId] = projectId,
+        [LogProperties.ProcessorKey] = processorKey,
+      }))
+      {
+        _logger.LogInformation(LogEvents.DocumentProcessingStarting,
+          "{UseCase} starting for imported source {ImportedSourceId}, project {ProjectId}, processor {ProcessorKey}",
+          useCaseName, importedSourceId, projectId, processorKey);
+
+        var source = await _importedSourceRepository.GetByIdAsync(command.ImportedSourceId, cancellationToken)
+          ?? throw new ApplicationEntityNotFoundException(nameof(ImportedDocumentSource), command.ImportedSourceId.ToString());
+        if (source.ProjectId != command.ProjectId)
         {
-          attempt.Fail(_clock.UtcNow, DocumentProcessingFailureClassification.StorageUnavailable, "Stored content is not currently available.");
-          await PersistTerminalAttemptStateAsync(attempt, [], cancellationToken);
-          return CreateResult(attempt, source.Id, []);
+          throw new DomainInvariantException("Imported source project does not match the requested project.");
         }
 
-        if (!string.Equals(openResult.ContentHash, source.ContentHash, StringComparison.Ordinal)
-          || !string.Equals(openResult.HashAlgorithm, source.HashAlgorithm, StringComparison.Ordinal)
-          || openResult.HashAlgorithmVersion != source.HashAlgorithmVersion
-          || openResult.ContentLength != source.ContentLength)
-        {
-          attempt.Fail(_clock.UtcNow, DocumentProcessingFailureClassification.ValidationFailed, "Stored content no longer matches the authoritative immutable identity.");
-          await PersistTerminalAttemptStateAsync(attempt, [], cancellationToken);
-          return CreateResult(attempt, source.Id, []);
-        }
-
-        await using var content = openResult.Content;
-        var processorResult = await _documentProcessor.ProcessAsync(new DocumentProcessorRequest(
+        var attempt = new DocumentProcessingAttempt(
+          DocumentProcessingAttemptId.New(),
           source.Id,
           source.ProjectId,
-          source.OriginalFileName,
-          source.DeclaredMediaType,
-          source.DetectedMediaType,
-          source.ContentHash,
-          source.HashAlgorithm,
-          source.HashAlgorithmVersion,
-          source.ContentLength,
-          content), cancellationToken);
+          descriptor.ProcessorRole,
+          descriptor.ProcessorIdentity,
+          descriptor.ProcessorVersion,
+          _clock.UtcNow,
+          await _documentProcessingAttemptRepository.GetNextAttemptNumberAsync(source.Id, cancellationToken),
+          source.ContentHash);
+        attempt.Start(_clock.UtcNow);
 
-        var createdCandidates = new List<DocumentCandidate>();
-        if (!processorResult.Success)
+        await _documentProcessingAttemptRepository.AddAsync(attempt, cancellationToken);
+        Internal.DocumentAuditStager.Stage(_auditRecorder, attempt.AuditTrail);
+        await _unitOfWork.CommitAsync(cancellationToken);
+
+        try
         {
-          if (processorResult.FailureClassification == DocumentProcessingFailureClassification.Cancelled)
+          var openResult = await _immutableContentStore.OpenReadAsync(source.StorageReference.StorageObjectId, cancellationToken);
+          if (openResult.AvailabilityState != StorageAvailabilityState.Available)
           {
-            attempt.Cancel(_clock.UtcNow, processorResult.FailureDetails ?? "Document processing was cancelled.");
+            attempt.Fail(_clock.UtcNow, DocumentProcessingFailureClassification.StorageUnavailable, "Stored content is not currently available.");
+            await PersistTerminalAttemptStateAsync(attempt, [], cancellationToken);
+            stopwatch.Stop();
+            _logger.LogWarning(LogEvents.DocumentProcessingFailed,
+              "{UseCase} storage unavailable in {DurationMs}ms for imported source {ImportedSourceId}, attempt {AttemptId}",
+              useCaseName, stopwatch.ElapsedMilliseconds, importedSourceId, attempt.Id);
+            return CreateResult(attempt, source.Id, []);
           }
-          else if (processorResult.FailureClassification == DocumentProcessingFailureClassification.None)
+
+          if (!string.Equals(openResult.ContentHash, source.ContentHash, StringComparison.Ordinal)
+            || !string.Equals(openResult.HashAlgorithm, source.HashAlgorithm, StringComparison.Ordinal)
+            || openResult.HashAlgorithmVersion != source.HashAlgorithmVersion
+            || openResult.ContentLength != source.ContentLength)
           {
-            attempt.Abstain(_clock.UtcNow, processorResult.FailureDetails ?? "Document processing abstained.");
+            attempt.Fail(_clock.UtcNow, DocumentProcessingFailureClassification.ValidationFailed, "Stored content no longer matches the authoritative immutable identity.");
+            await PersistTerminalAttemptStateAsync(attempt, [], cancellationToken);
+            stopwatch.Stop();
+            _logger.LogWarning(LogEvents.DocumentProcessingFailed,
+              "{UseCase} validation failed in {DurationMs}ms for imported source {ImportedSourceId}, attempt {AttemptId}",
+              useCaseName, stopwatch.ElapsedMilliseconds, importedSourceId, attempt.Id);
+            return CreateResult(attempt, source.Id, []);
+          }
+
+          await using var content = openResult.Content;
+          var processorResult = await _documentProcessor.ProcessAsync(new DocumentProcessorRequest(
+            source.Id,
+            source.ProjectId,
+            source.OriginalFileName,
+            source.DeclaredMediaType,
+            source.DetectedMediaType,
+            source.ContentHash,
+            source.HashAlgorithm,
+            source.HashAlgorithmVersion,
+            source.ContentLength,
+            content), cancellationToken);
+
+          var createdCandidates = new List<DocumentCandidate>();
+          if (!processorResult.Success)
+          {
+            if (processorResult.FailureClassification == DocumentProcessingFailureClassification.Cancelled)
+            {
+              attempt.Cancel(_clock.UtcNow, processorResult.FailureDetails ?? "Document processing was cancelled.");
+            }
+            else if (processorResult.FailureClassification == DocumentProcessingFailureClassification.None)
+            {
+              attempt.Abstain(_clock.UtcNow, processorResult.FailureDetails ?? "Document processing abstained.");
+            }
+            else
+            {
+              attempt.Fail(_clock.UtcNow, processorResult.FailureClassification, processorResult.FailureDetails ?? "Document processing failed.");
+            }
           }
           else
           {
-            attempt.Fail(_clock.UtcNow, processorResult.FailureClassification, processorResult.FailureDetails ?? "Document processing failed.");
-          }
-        }
-        else
-        {
-          attempt.MarkOutputReceived(_clock.UtcNow, processorResult.RawOutputHash ?? source.ContentHash);
-          attempt.BeginValidation(_clock.UtcNow);
-          foreach (var candidateResult in processorResult.Candidates.Take(_documentImportPolicy.MaxCandidateQueryResults))
-          {
-            // Canonicalize once at the application boundary so provider quirks do not leak into durable storage.
-            var canonicalPayload = Application.Internal.CanonicalJson.Canonicalize(candidateResult.Payload);
-            var candidate = new DocumentCandidate(
-              DocumentCandidateId.New(),
-              source.ProjectId,
-              source.Id,
-              attempt.Id,
-              candidateResult.CandidateType,
-              candidateResult.SchemaId,
-              candidateResult.SchemaVersion,
-              canonicalPayload,
-              source.ContentHash,
-              candidateResult.SourceLocator,
-              candidateResult.ConfidenceBand,
-              candidateResult.UncertaintyCodes,
-              _clock.UtcNow);
-            switch (candidateResult.Outcome)
+            attempt.MarkOutputReceived(_clock.UtcNow, processorResult.RawOutputHash ?? source.ContentHash);
+            attempt.BeginValidation(_clock.UtcNow);
+            foreach (var candidateResult in processorResult.Candidates.Take(_documentImportPolicy.MaxCandidateQueryResults))
             {
-              case DocumentProcessorCandidateOutcome.ReadyForReview:
-                candidate.MarkValidated(_clock.UtcNow);
-                candidate.MarkReadyForReview(_clock.UtcNow);
-                break;
-              case DocumentProcessorCandidateOutcome.SchemaRejected:
-                candidate.MarkSchemaRejected(_clock.UtcNow, candidate.UncertaintyCodes);
-                break;
-              case DocumentProcessorCandidateOutcome.PolicyRejected:
-                candidate.MarkPolicyRejected(_clock.UtcNow, candidate.UncertaintyCodes);
-                break;
-              case DocumentProcessorCandidateOutcome.Abstained:
-                candidate.MarkAbstained(_clock.UtcNow, candidate.UncertaintyCodes);
-                break;
-              default:
-                candidate.MarkFailed(_clock.UtcNow, candidate.UncertaintyCodes);
-                break;
+              // Canonicalize once at the application boundary so provider quirks do not leak into durable storage.
+              var canonicalPayload = Application.Internal.CanonicalJson.Canonicalize(candidateResult.Payload);
+              var candidate = new DocumentCandidate(
+                DocumentCandidateId.New(),
+                source.ProjectId,
+                source.Id,
+                attempt.Id,
+                candidateResult.CandidateType,
+                candidateResult.SchemaId,
+                candidateResult.SchemaVersion,
+                canonicalPayload,
+                source.ContentHash,
+                candidateResult.SourceLocator,
+                candidateResult.ConfidenceBand,
+                candidateResult.UncertaintyCodes,
+                _clock.UtcNow);
+              switch (candidateResult.Outcome)
+              {
+                case DocumentProcessorCandidateOutcome.ReadyForReview:
+                  candidate.MarkValidated(_clock.UtcNow);
+                  candidate.MarkReadyForReview(_clock.UtcNow);
+                  break;
+                case DocumentProcessorCandidateOutcome.SchemaRejected:
+                  candidate.MarkSchemaRejected(_clock.UtcNow, candidate.UncertaintyCodes);
+                  break;
+                case DocumentProcessorCandidateOutcome.PolicyRejected:
+                  candidate.MarkPolicyRejected(_clock.UtcNow, candidate.UncertaintyCodes);
+                  break;
+                case DocumentProcessorCandidateOutcome.Abstained:
+                  candidate.MarkAbstained(_clock.UtcNow, candidate.UncertaintyCodes);
+                  break;
+                default:
+                  candidate.MarkFailed(_clock.UtcNow, candidate.UncertaintyCodes);
+                  break;
+              }
+
+              createdCandidates.Add(candidate);
             }
-
-            createdCandidates.Add(candidate);
           }
-        }
 
-        await PersistTerminalAttemptStateAsync(attempt, createdCandidates, cancellationToken);
-        return CreateResult(attempt, source.Id, createdCandidates);
-      }
-      catch (OperationCanceledException)
-      {
-        attempt.Cancel(_clock.UtcNow, "Document processing request was cancelled.");
-        await PersistTerminalAttemptStateAsync(attempt, [], CancellationToken.None, finalizeSuccessfulValidation: false);
-        return CreateResult(attempt, source.Id, []);
-      }
-      catch (ImmutableContentStoreException exception) when (exception.FailureClassification == ImmutableContentStoreFailureClassification.IntegrityMismatch)
-      {
-        if (attempt.State is not DocumentProcessingAttemptState.Completed
-          and not DocumentProcessingAttemptState.Failed
-          and not DocumentProcessingAttemptState.Cancelled
-          and not DocumentProcessingAttemptState.Abstained)
+          await PersistTerminalAttemptStateAsync(attempt, createdCandidates, cancellationToken);
+          stopwatch.Stop();
+          _logger.LogInformation(LogEvents.DocumentProcessingCompleted,
+            "{UseCase} completed in {DurationMs}ms for imported source {ImportedSourceId}, attempt {AttemptId}, state {AttemptState}, candidates {CandidateCount}",
+            useCaseName, stopwatch.ElapsedMilliseconds, importedSourceId, attempt.Id, attempt.State, createdCandidates.Count);
+          return CreateResult(attempt, source.Id, createdCandidates);
+        }
+        catch (OperationCanceledException)
         {
-          attempt.Fail(_clock.UtcNow, DocumentProcessingFailureClassification.ValidationFailed, "Stored content integrity verification failed.");
+          attempt.Cancel(_clock.UtcNow, "Document processing request was cancelled.");
+          await PersistTerminalAttemptStateAsync(attempt, [], CancellationToken.None, finalizeSuccessfulValidation: false);
+          stopwatch.Stop();
+          _logger.LogWarning(LogEvents.DocumentProcessingCancelled,
+            "{UseCase} cancelled in {DurationMs}ms for imported source {ImportedSourceId}, attempt {AttemptId}",
+            useCaseName, stopwatch.ElapsedMilliseconds, importedSourceId, attempt.Id);
+          return CreateResult(attempt, source.Id, []);
         }
-
-        await PersistTerminalAttemptStateAsync(attempt, [], CancellationToken.None, finalizeSuccessfulValidation: false);
-        return CreateResult(attempt, source.Id, []);
-      }
-      catch (ImmutableContentStoreException exception)
-      {
-        if (attempt.State is not DocumentProcessingAttemptState.Completed
-          and not DocumentProcessingAttemptState.Failed
-          and not DocumentProcessingAttemptState.Cancelled
-          and not DocumentProcessingAttemptState.Abstained)
+        catch (ImmutableContentStoreException exception) when (exception.FailureClassification == ImmutableContentStoreFailureClassification.IntegrityMismatch)
         {
-          attempt.Fail(_clock.UtcNow, DocumentProcessingFailureClassification.StorageUnavailable, $"Stored content is unavailable: {exception.Message}");
-        }
+          if (attempt.State is not DocumentProcessingAttemptState.Completed
+            and not DocumentProcessingAttemptState.Failed
+            and not DocumentProcessingAttemptState.Cancelled
+            and not DocumentProcessingAttemptState.Abstained)
+          {
+            attempt.Fail(_clock.UtcNow, DocumentProcessingFailureClassification.ValidationFailed, "Stored content integrity verification failed.");
+          }
 
-        await PersistTerminalAttemptStateAsync(attempt, [], CancellationToken.None, finalizeSuccessfulValidation: false);
-        return CreateResult(attempt, source.Id, []);
-      }
-      catch (Exception exception)
-      {
-        if (attempt.State is not DocumentProcessingAttemptState.Completed
-          and not DocumentProcessingAttemptState.Failed
-          and not DocumentProcessingAttemptState.Cancelled
-          and not DocumentProcessingAttemptState.Abstained)
+          await PersistTerminalAttemptStateAsync(attempt, [], CancellationToken.None, finalizeSuccessfulValidation: false);
+          stopwatch.Stop();
+          _logger.LogError(LogEvents.DocumentProcessingFailed,
+            exception,
+            "{UseCase} integrity mismatch in {DurationMs}ms for imported source {ImportedSourceId}, attempt {AttemptId}",
+            useCaseName, stopwatch.ElapsedMilliseconds, importedSourceId, attempt.Id);
+          return CreateResult(attempt, source.Id, []);
+        }
+        catch (ImmutableContentStoreException exception)
         {
-          attempt.Fail(_clock.UtcNow, DocumentProcessingFailureClassification.Unknown, $"Unexpected document processing failure: {exception.Message}");
-        }
+          if (attempt.State is not DocumentProcessingAttemptState.Completed
+            and not DocumentProcessingAttemptState.Failed
+            and not DocumentProcessingAttemptState.Cancelled
+            and not DocumentProcessingAttemptState.Abstained)
+          {
+            attempt.Fail(_clock.UtcNow, DocumentProcessingFailureClassification.StorageUnavailable, $"Stored content is unavailable: {exception.Message}");
+          }
 
-        await PersistTerminalAttemptStateAsync(attempt, [], CancellationToken.None, finalizeSuccessfulValidation: false);
-        return CreateResult(attempt, source.Id, []);
+          await PersistTerminalAttemptStateAsync(attempt, [], CancellationToken.None, finalizeSuccessfulValidation: false);
+          stopwatch.Stop();
+          _logger.LogError(LogEvents.DocumentProcessingFailed,
+            exception,
+            "{UseCase} storage unavailable in {DurationMs}ms for imported source {ImportedSourceId}, attempt {AttemptId}",
+            useCaseName, stopwatch.ElapsedMilliseconds, importedSourceId, attempt.Id);
+          return CreateResult(attempt, source.Id, []);
+        }
+        catch (Exception exception)
+        {
+          if (attempt.State is not DocumentProcessingAttemptState.Completed
+            and not DocumentProcessingAttemptState.Failed
+            and not DocumentProcessingAttemptState.Cancelled
+            and not DocumentProcessingAttemptState.Abstained)
+          {
+            attempt.Fail(_clock.UtcNow, DocumentProcessingFailureClassification.Unknown, $"Unexpected document processing failure: {exception.Message}");
+          }
+
+          await PersistTerminalAttemptStateAsync(attempt, [], CancellationToken.None, finalizeSuccessfulValidation: false);
+          stopwatch.Stop();
+          _logger.LogError(LogEvents.DocumentProcessingFailed,
+            exception,
+            "{UseCase} unexpected failure in {DurationMs}ms for imported source {ImportedSourceId}, attempt {AttemptId}",
+            useCaseName, stopwatch.ElapsedMilliseconds, importedSourceId, attempt.Id);
+          return CreateResult(attempt, source.Id, []);
+        }
       }
     }
 

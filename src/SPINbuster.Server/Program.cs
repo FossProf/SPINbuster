@@ -15,4 +15,6 @@ builder.Services.AddSpinbusterSqliteInfrastructure(connectionString);
 
 var app = builder.Build();
 
+app.Map("/", () => "SPINbuster Server is running.");
+
 app.Run();

@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using System.Globalization;
+using Microsoft.Extensions.Logging;
 using SPINbuster.Application.Abstractions;
 using SPINbuster.Domain;
 
@@ -6,11 +8,13 @@ namespace SPINbuster.AI;
 
 public sealed class DeterministicAiProvider : IAiGenerationProvider
 {
+  private readonly ILogger<DeterministicAiProvider> _logger;
   private readonly DeterministicAiProviderOptions _options;
 
-  public DeterministicAiProvider(DeterministicAiProviderOptions options)
+  public DeterministicAiProvider(DeterministicAiProviderOptions options, ILogger<DeterministicAiProvider> logger)
   {
     _options = options;
+    _logger = logger;
   }
 
   public AiProviderDescriptor Describe()
@@ -33,9 +37,13 @@ public sealed class DeterministicAiProvider : IAiGenerationProvider
     AiGenerationRequest request,
     CancellationToken cancellationToken = default)
   {
+    var stopwatch = Stopwatch.StartNew();
     cancellationToken.ThrowIfCancellationRequested();
     var startedAtUtc = DateTimeOffset.Parse("2026-07-15T16:00:00Z", CultureInfo.InvariantCulture);
     var completedAtUtc = startedAtUtc.AddMilliseconds(42);
+
+    _logger.LogDebug("DeterministicAiProvider generating with scenario {Scenario}, correlation {CorrelationId}",
+      _options.Scenario, request.CorrelationId);
 
     AiGenerationResult result = _options.Scenario switch
     {
@@ -173,6 +181,10 @@ public sealed class DeterministicAiProvider : IAiGenerationProvider
           .Replace("EVIDENCE_ATTACHMENT_ID", ExtractFirstDelimitedId(request.PromptContext, "Evidence "), StringComparison.Ordinal),
       };
     }
+
+    stopwatch.Stop();
+    _logger.LogDebug("DeterministicAiProvider completed in {DurationMs}ms, succeeded {Succeeded}, scenario {Scenario}",
+      stopwatch.ElapsedMilliseconds, result.Succeeded, _options.Scenario);
 
     return Task.FromResult(result);
   }

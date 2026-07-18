@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using SPINbuster.Application;
 using SPINbuster.Application.Abstractions;
 using SPINbuster.Application.Internal;
@@ -808,7 +810,8 @@ public sealed class AiProposalUseCaseTests
         UnitOfWork,
         Clock,
         CurrentUser,
-        AuditRecorder);
+        AuditRecorder,
+        NullLogger<RequestReportDraftProposalUseCase>.Instance);
     }
 
     public static async Task<AiProposalFixture> CreateAsync(List<string>? operationLog = null)

@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using SPINbuster.Application;
 using SPINbuster.Domain;
 using SPINbuster.Infrastructure.Persistence;
@@ -28,7 +30,7 @@ public sealed class SqliteReportPersistenceTests : IDisposable
       await seedContext.Database.MigrateAsync();
       var seededInspection = await SeedInspectionContextAsync(seedContext);
       var auditRecorder = new SqliteAuditRecorder();
-      var unitOfWork = new SqliteUnitOfWork(seedContext, auditRecorder);
+      var unitOfWork = new SqliteUnitOfWork(seedContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
       var reportRepository = new SqliteReportRepository(seedContext);
       var report = new Report(
         ReportId.New(),
@@ -93,7 +95,7 @@ public sealed class SqliteReportPersistenceTests : IDisposable
     {
       var seededInspection = await SeedInspectionContextAsync(dbContext);
       var auditRecorder = new SqliteAuditRecorder();
-      var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder);
+      var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
       var reportRepository = new SqliteReportRepository(dbContext);
       var report = new Report(
         ReportId.New(),
@@ -140,7 +142,7 @@ public sealed class SqliteReportPersistenceTests : IDisposable
       await firstContext.Database.MigrateAsync();
       var seededInspection = await SeedInspectionContextAsync(firstContext);
       var auditRecorder = new SqliteAuditRecorder();
-      var unitOfWork = new SqliteUnitOfWork(firstContext, auditRecorder);
+      var unitOfWork = new SqliteUnitOfWork(firstContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
       var reportRepository = new SqliteReportRepository(firstContext);
       var firstReport = new Report(
         firstReportId,
@@ -162,7 +164,7 @@ public sealed class SqliteReportPersistenceTests : IDisposable
     {
       var seededInspection = await LoadSeededInspectionContextAsync(secondContext);
       var auditRecorder = new SqliteAuditRecorder();
-      var unitOfWork = new SqliteUnitOfWork(secondContext, auditRecorder);
+      var unitOfWork = new SqliteUnitOfWork(secondContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
       var reportRepository = new SqliteReportRepository(secondContext);
       var secondReport = new Report(
         ReportId.New(),
@@ -222,7 +224,7 @@ public sealed class SqliteReportPersistenceTests : IDisposable
       Assert.Equal(3, storedInspectionSession.AuditTrail.Count);
 
       var auditRecorder = new SqliteAuditRecorder();
-      var unitOfWork = new SqliteUnitOfWork(migratedContext, auditRecorder);
+      var unitOfWork = new SqliteUnitOfWork(migratedContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
       var reportRepository = new SqliteReportRepository(migratedContext);
       var report = new Report(
         ReportId.New(),
@@ -283,7 +285,7 @@ public sealed class SqliteReportPersistenceTests : IDisposable
     bool includeEvidence = true)
   {
     var auditRecorder = new SqliteAuditRecorder();
-    var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder);
+    var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
     var projectRepository = new SqliteProjectRepository(dbContext);
     var inspectionSessionRepository = new SqliteInspectionSessionRepository(dbContext);
     var createdAtUtc = new DateTimeOffset(2026, 7, 15, 9, 0, 0, TimeSpan.Zero);

@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using SPINbuster.AI;
 using SPINbuster.Application.Abstractions;
 using SPINbuster.Domain;
@@ -12,7 +14,7 @@ public sealed class DeterministicAiProviderTests
     var provider = new DeterministicAiProvider(new DeterministicAiProviderOptions
     {
       Scenario = DeterministicAiScenario.Success,
-    });
+    }, NullLogger<DeterministicAiProvider>.Instance);
 
     var result = await provider.GenerateAsync(CreateRequest());
 
@@ -31,7 +33,7 @@ public sealed class DeterministicAiProviderTests
     var provider = new DeterministicAiProvider(new DeterministicAiProviderOptions
     {
       Scenario = DeterministicAiScenario.Timeout,
-    });
+    }, NullLogger<DeterministicAiProvider>.Instance);
 
     var result = await provider.GenerateAsync(CreateRequest());
 
@@ -46,7 +48,7 @@ public sealed class DeterministicAiProviderTests
     var provider = new DeterministicAiProvider(new DeterministicAiProviderOptions
     {
       Scenario = DeterministicAiScenario.ProviderUnavailable,
-    });
+    }, NullLogger<DeterministicAiProvider>.Instance);
 
     var result = await provider.GenerateAsync(CreateRequest());
 
@@ -60,7 +62,7 @@ public sealed class DeterministicAiProviderTests
     var provider = new DeterministicAiProvider(new DeterministicAiProviderOptions
     {
       Scenario = DeterministicAiScenario.MalformedJson,
-    });
+    }, NullLogger<DeterministicAiProvider>.Instance);
 
     var result = await provider.GenerateAsync(CreateRequest());
 
@@ -71,7 +73,7 @@ public sealed class DeterministicAiProviderTests
   [Fact]
   public void DescriptorExposesExpectedCapabilities()
   {
-    var provider = new DeterministicAiProvider(new DeterministicAiProviderOptions());
+    var provider = new DeterministicAiProvider(new DeterministicAiProviderOptions(), NullLogger<DeterministicAiProvider>.Instance);
 
     var descriptor = provider.Describe();
 

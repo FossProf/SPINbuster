@@ -18,6 +18,7 @@ public static class DesktopCompositionRoot
   {
     var resolvedDocumentStorageSettings = documentStorageSettings ?? CreateDefaultDocumentStorageSettings();
 
+    services.AddLogging();
     services.AddSingleton(settings);
     services.AddSingleton(resolvedDocumentStorageSettings);
     services.AddSpinbusterApplication();

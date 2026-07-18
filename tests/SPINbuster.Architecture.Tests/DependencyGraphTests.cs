@@ -426,6 +426,34 @@ public sealed class DependencyGraphTests
     }
   }
 
+  [Fact]
+  public void SqliteUnitOfWorkDoesNotReferenceAggregateSpecificRecordTypes()
+  {
+    var repoRoot = FindRepositoryRoot();
+    var unitOfWorkFile = Path.Combine(repoRoot, "src", "SPINbuster.Infrastructure", "Services", "SqliteUnitOfWork.cs");
+    var contents = File.ReadAllText(unitOfWorkFile);
+
+    Assert.DoesNotContain("KnowledgeDocumentRecord", contents, StringComparison.Ordinal);
+    Assert.DoesNotContain("KnowledgeDocumentRevisionRecord", contents, StringComparison.Ordinal);
+    Assert.DoesNotContain("KnowledgeRelationshipRecord", contents, StringComparison.Ordinal);
+    Assert.DoesNotContain("KnowledgeCitationRecord", contents, StringComparison.Ordinal);
+    Assert.DoesNotContain("AiProposalRecord", contents, StringComparison.Ordinal);
+    Assert.DoesNotContain("ModelRunRecord", contents, StringComparison.Ordinal);
+    Assert.DoesNotContain("ReportRecord", contents, StringComparison.Ordinal);
+    Assert.DoesNotContain("ProjectRecord", contents, StringComparison.Ordinal);
+  }
+
+  [Fact]
+  public void SqliteUnitOfWorkUsesIDeferredReferenceHandlerForGenericSaveOrdering()
+  {
+    var repoRoot = FindRepositoryRoot();
+    var unitOfWorkFile = Path.Combine(repoRoot, "src", "SPINbuster.Infrastructure", "Services", "SqliteUnitOfWork.cs");
+    var contents = File.ReadAllText(unitOfWorkFile);
+
+    Assert.Contains("IDeferredReferenceHandler", contents, StringComparison.Ordinal);
+    Assert.DoesNotContain("DeferredCurrentRevisionLink", contents, StringComparison.Ordinal);
+  }
+
   private static string[] LoadPackageReferences(string projectPath)
   {
     return XDocument

@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using SPINbuster.Domain;
 using SPINbuster.Infrastructure.Persistence;
 using SPINbuster.Infrastructure.Repositories;
@@ -143,7 +145,7 @@ public sealed class SqliteAiSubstratePersistenceTests : IDisposable
     {
       await dbContext.Database.MigrateAsync();
       var auditRecorder = new SqliteAuditRecorder();
-      var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder);
+      var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
 
       await new SqliteProjectRepository(dbContext).AddAsync(project);
       await new SqliteInspectionSessionRepository(dbContext).AddAsync(inspectionSession);
@@ -212,7 +214,7 @@ public sealed class SqliteAiSubstratePersistenceTests : IDisposable
     await using (var dbContext = CreateDbContext())
     {
       var auditRecorder = new SqliteAuditRecorder();
-      var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder);
+      var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
       var projectId = ProjectId.New();
       var contextManifest = new ContextManifest(
         ContextManifestId.New(),
@@ -338,7 +340,7 @@ public sealed class SqliteAiSubstratePersistenceTests : IDisposable
       var migrator = initialContext.GetService<Microsoft.EntityFrameworkCore.Migrations.IMigrator>();
       await migrator.MigrateAsync("20260715231420_ReportDraftSlice");
       var auditRecorder = new SqliteAuditRecorder();
-      var unitOfWork = new SqliteUnitOfWork(initialContext, auditRecorder);
+      var unitOfWork = new SqliteUnitOfWork(initialContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
       var projectRepository = new SqliteProjectRepository(initialContext);
       var inspectionSessionRepository = new SqliteInspectionSessionRepository(initialContext);
       var reportRepository = new SqliteReportRepository(initialContext);
@@ -437,7 +439,7 @@ public sealed class SqliteAiSubstratePersistenceTests : IDisposable
         "request-fingerprint-after-migration",
         new DateTimeOffset(2026, 7, 15, 12, 1, 0, TimeSpan.Zero));
       var auditRecorder = new SqliteAuditRecorder();
-      var unitOfWork = new SqliteUnitOfWork(migratedContext, auditRecorder);
+      var unitOfWork = new SqliteUnitOfWork(migratedContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
 
       await new SqliteContextManifestRepository(migratedContext).AddAsync(contextManifest);
       await new SqliteModelRunRepository(migratedContext).AddAsync(modelRun);

@@ -1,10 +1,10 @@
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.Extensions.Logging;
 using SPINbuster.Application.Abstractions;
 using SPINbuster.Domain;
 using SPINbuster.Infrastructure.Persistence;
-using SPINbuster.Infrastructure.Persistence.Records;
 
 namespace SPINbuster.Infrastructure.Services;
 
@@ -12,11 +12,19 @@ public sealed class SqliteUnitOfWork : IUnitOfWork
 {
   private readonly SqliteAuditRecorder _auditRecorder;
   private readonly SpinbusterDbContext _dbContext;
+  private readonly ILogger<SqliteUnitOfWork> _logger;
+  private readonly IReadOnlyList<IDeferredReferenceHandler> _deferredReferenceHandlers;
 
-  public SqliteUnitOfWork(SpinbusterDbContext dbContext, SqliteAuditRecorder auditRecorder)
+  public SqliteUnitOfWork(
+    SpinbusterDbContext dbContext,
+    SqliteAuditRecorder auditRecorder,
+    ILogger<SqliteUnitOfWork> logger,
+    IEnumerable<IDeferredReferenceHandler> deferredReferenceHandlers)
   {
     _dbContext = dbContext;
     _auditRecorder = auditRecorder;
+    _logger = logger;
+    _deferredReferenceHandlers = deferredReferenceHandlers.ToArray();
   }
 
   public async Task CommitAsync(CancellationToken cancellationToken = default)
@@ -28,45 +36,68 @@ public sealed class SqliteUnitOfWork : IUnitOfWork
       var stagedAuditEvents = _auditRecorder.ReleaseStagedAuditEvents();
       _dbContext.AuditEvents.AddRange(stagedAuditEvents);
 
-      // A brand-new knowledge document and its initial current revision form a
-      // temporary insert cycle. We break that cycle inside the transaction,
-      // then restore the authoritative pointer before commit.
-      var deferredCurrentRevisionLinks = _dbContext.ChangeTracker
-        .Entries<KnowledgeDocumentRecord>()
-        .Where(entry => entry.State == EntityState.Added && entry.Entity.CurrentAuthoritativeRevisionId is not null)
-        .Select(entry => new DeferredCurrentRevisionLink(
-          entry,
-          entry.Entity.CurrentAuthoritativeRevisionId!.Value))
-        .ToArray();
+      var deferredReferences = CollectDeferredReferences();
 
-      foreach (var deferredLink in deferredCurrentRevisionLinks)
+      if (deferredReferences.Count > 0)
       {
-        deferredLink.DocumentEntry.Property(document => document.CurrentAuthoritativeRevisionId).CurrentValue = null;
+        ClearDeferredReferences(deferredReferences);
       }
 
       await _dbContext.SaveChangesAsync(cancellationToken);
 
-      if (deferredCurrentRevisionLinks.Length > 0)
+      if (deferredReferences.Count > 0)
       {
-        foreach (var deferredLink in deferredCurrentRevisionLinks)
-        {
-          deferredLink.DocumentEntry.Property(document => document.CurrentAuthoritativeRevisionId).CurrentValue = deferredLink.CurrentAuthoritativeRevisionId;
-          deferredLink.DocumentEntry.Property(document => document.CurrentAuthoritativeRevisionId).IsModified = true;
-        }
-
+        RestoreDeferredReferences(deferredReferences);
         await _dbContext.SaveChangesAsync(cancellationToken);
       }
 
       await transaction.CommitAsync(cancellationToken);
+      _logger.LogDebug("Transaction committed with {AuditEventCount} audit events", stagedAuditEvents.Count);
     }
     catch
     {
       await transaction.RollbackAsync(cancellationToken);
+      _logger.LogWarning("Transaction rolled back");
       throw;
     }
   }
 
-  private sealed record DeferredCurrentRevisionLink(
-    EntityEntry<KnowledgeDocumentRecord> DocumentEntry,
-    KnowledgeDocumentRevisionId CurrentAuthoritativeRevisionId);
+  private List<(EntityEntry Entry, IDeferredReferenceHandler Handler, DeferredReferenceInfo Reference)> CollectDeferredReferences()
+  {
+    var results = new List<(EntityEntry, IDeferredReferenceHandler, DeferredReferenceInfo)>();
+
+    foreach (var entry in _dbContext.ChangeTracker.Entries())
+    {
+      foreach (var handler in _deferredReferenceHandlers)
+      {
+        if (handler.CanHandle(entry))
+        {
+          foreach (var reference in handler.Extract(entry))
+          {
+            results.Add((entry, handler, reference));
+          }
+        }
+      }
+    }
+
+    return results;
+  }
+
+  private static void ClearDeferredReferences(
+    List<(EntityEntry Entry, IDeferredReferenceHandler Handler, DeferredReferenceInfo Reference)> deferredReferences)
+  {
+    foreach (var (entry, handler, reference) in deferredReferences)
+    {
+      handler.Clear(entry, reference);
+    }
+  }
+
+  private static void RestoreDeferredReferences(
+    List<(EntityEntry Entry, IDeferredReferenceHandler Handler, DeferredReferenceInfo Reference)> deferredReferences)
+  {
+    foreach (var (entry, handler, reference) in deferredReferences)
+    {
+      handler.Restore(entry, reference);
+    }
+  }
 }

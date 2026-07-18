@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using SPINbuster.Domain;
 using SPINbuster.Infrastructure.Persistence;
 using SPINbuster.Infrastructure.Repositories;
@@ -61,7 +63,7 @@ public sealed class SqliteDocumentEnginePersistenceTests : IDisposable
     await using (var dbContext = CreateDbContext())
     {
       var auditRecorder = new SqliteAuditRecorder();
-      var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder);
+      var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
       await new SqliteStorageObjectRepository(dbContext).AddAsync(storageObject);
       await new SqliteDocumentImportSessionRepository(dbContext).AddAsync(importSession);
       await new SqliteImportedDocumentSourceRepository(dbContext).AddAsync(source);
@@ -120,7 +122,7 @@ public sealed class SqliteDocumentEnginePersistenceTests : IDisposable
     await using (var dbContext = CreateDbContext())
     {
       var auditRecorder = new SqliteAuditRecorder();
-      var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder);
+      var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
       await new SqliteDocumentProcessingAttemptRepository(dbContext).AddAsync(attempt);
       await new SqliteDocumentCandidateRepository(dbContext).AddAsync(candidate);
       StageAuditEvents(auditRecorder, attempt.AuditTrail);
@@ -189,7 +191,7 @@ public sealed class SqliteDocumentEnginePersistenceTests : IDisposable
     await using var dbContext = CreateDbContext();
     await dbContext.Database.MigrateAsync();
     var auditRecorder = new SqliteAuditRecorder();
-    var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder);
+    var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
     var project = new Project(ProjectId.New(), "Project Falcon", "owner@example.invalid", createdAtUtc);
     project.Activate("owner@example.invalid", createdAtUtc.AddMinutes(1));
     await new SqliteProjectRepository(dbContext).AddAsync(project);
@@ -241,7 +243,7 @@ public sealed class SqliteDocumentEnginePersistenceTests : IDisposable
 
     await using var dbContext = CreateDbContext();
     var auditRecorder = new SqliteAuditRecorder();
-    var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder);
+    var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
     await new SqliteStorageObjectRepository(dbContext).AddAsync(storageObject);
     await new SqliteDocumentImportSessionRepository(dbContext).AddAsync(importSession);
     await new SqliteImportedDocumentSourceRepository(dbContext).AddAsync(source);

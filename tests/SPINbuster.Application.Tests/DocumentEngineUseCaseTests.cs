@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using SPINbuster.Application.Tests.Fakes;
 using SPINbuster.Application.Abstractions;
 using SPINbuster.Application.UseCases.BeginDocumentImportSession;
@@ -167,7 +169,8 @@ public sealed class DocumentEngineUseCaseTests
       fixture.ImportPolicy,
       fixture.UnitOfWork,
       fixture.Clock,
-      fixture.AuditRecorder);
+      fixture.AuditRecorder,
+      NullLogger<RequestDocumentProcessingUseCase>.Instance);
 
     var result = await useCase.HandleAsync(new RequestDocumentProcessingCommand(importResult.ImportedSourceId, fixture.ProjectId));
 
@@ -207,7 +210,8 @@ public sealed class DocumentEngineUseCaseTests
       fixture.ImportPolicy,
       fixture.UnitOfWork,
       fixture.Clock,
-      fixture.AuditRecorder);
+      fixture.AuditRecorder,
+      NullLogger<RequestDocumentProcessingUseCase>.Instance);
 
     var result = await useCase.HandleAsync(new RequestDocumentProcessingCommand(importResult.ImportedSourceId, fixture.ProjectId));
 
@@ -240,7 +244,8 @@ public sealed class DocumentEngineUseCaseTests
       fixture.ImportPolicy,
       fixture.UnitOfWork,
       fixture.Clock,
-      fixture.AuditRecorder).HandleAsync(new RequestDocumentProcessingCommand(importResult.ImportedSourceId, fixture.ProjectId));
+      fixture.AuditRecorder,
+      NullLogger<RequestDocumentProcessingUseCase>.Instance).HandleAsync(new RequestDocumentProcessingCommand(importResult.ImportedSourceId, fixture.ProjectId));
 
     Assert.Equal(DocumentProcessingAttemptState.Failed, result.State);
     Assert.Equal(DocumentProcessingFailureClassification.Unknown, result.FailureClassification);
@@ -272,7 +277,8 @@ public sealed class DocumentEngineUseCaseTests
       fixture.ImportPolicy,
       fixture.UnitOfWork,
       fixture.Clock,
-      fixture.AuditRecorder).HandleAsync(new RequestDocumentProcessingCommand(importResult.ImportedSourceId, fixture.ProjectId));
+      fixture.AuditRecorder,
+      NullLogger<RequestDocumentProcessingUseCase>.Instance).HandleAsync(new RequestDocumentProcessingCommand(importResult.ImportedSourceId, fixture.ProjectId));
 
     Assert.Equal(DocumentProcessingAttemptState.Failed, result.State);
     Assert.Equal(DocumentProcessingFailureClassification.Unknown, result.FailureClassification);
@@ -304,7 +310,8 @@ public sealed class DocumentEngineUseCaseTests
       fixture.ImportPolicy,
       fixture.UnitOfWork,
       fixture.Clock,
-      fixture.AuditRecorder).HandleAsync(new RequestDocumentProcessingCommand(importResult.ImportedSourceId, fixture.ProjectId));
+      fixture.AuditRecorder,
+      NullLogger<RequestDocumentProcessingUseCase>.Instance).HandleAsync(new RequestDocumentProcessingCommand(importResult.ImportedSourceId, fixture.ProjectId));
 
     Assert.Equal(DocumentProcessingAttemptState.Failed, result.State);
     Assert.Equal(DocumentProcessingFailureClassification.Unknown, result.FailureClassification);
@@ -333,7 +340,8 @@ public sealed class DocumentEngineUseCaseTests
       fixture.ImportPolicy,
       fixture.UnitOfWork,
       fixture.Clock,
-      fixture.AuditRecorder).HandleAsync(new RequestDocumentProcessingCommand(importResult.ImportedSourceId, fixture.ProjectId));
+      fixture.AuditRecorder,
+      NullLogger<RequestDocumentProcessingUseCase>.Instance).HandleAsync(new RequestDocumentProcessingCommand(importResult.ImportedSourceId, fixture.ProjectId));
 
     var candidate = fixture.CandidateRepository.AddedCandidates.Single();
     var useCase = new RecordDocumentCandidateReviewUseCase(
@@ -369,7 +377,8 @@ public sealed class DocumentEngineUseCaseTests
       fixture.UnitOfWork,
       fixture.Clock,
       fixture.CurrentUser,
-      fixture.AuditRecorder);
+      fixture.AuditRecorder,
+      NullLogger<ImportDocumentSourceUseCase>.Instance);
   }
 
   private static async Task<DocumentImportSessionId> StartSessionAsync(DocumentFixture fixture)

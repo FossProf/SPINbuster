@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using SPINbuster.Domain;
 using SPINbuster.Infrastructure.Persistence;
 using SPINbuster.Infrastructure.Persistence.Records;
@@ -24,7 +26,7 @@ public sealed class SqlitePersistenceTests : IDisposable
     await dbContext.Database.MigrateAsync();
 
     var auditRecorder = new SqliteAuditRecorder();
-    var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder);
+    var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
     var projectRepository = new SqliteProjectRepository(dbContext);
     var project = new Project(
       ProjectId.New(),
@@ -67,7 +69,7 @@ public sealed class SqlitePersistenceTests : IDisposable
 
     await using var dbContext = CreateDbContext();
     var auditRecorder = new SqliteAuditRecorder();
-    var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder);
+    var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
     var projectRepository = new SqliteProjectRepository(dbContext);
     var project = new Project(
       ProjectId.New(),
@@ -102,7 +104,7 @@ public sealed class SqlitePersistenceTests : IDisposable
     {
       await seedContext.Database.MigrateAsync();
       var auditRecorder = new SqliteAuditRecorder();
-      var unitOfWork = new SqliteUnitOfWork(seedContext, auditRecorder);
+      var unitOfWork = new SqliteUnitOfWork(seedContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
       var projectRepository = new SqliteProjectRepository(seedContext);
       var project = new Project(projectId, "Project Falcon", "owner@example.invalid", createdAtUtc);
 
@@ -122,7 +124,7 @@ public sealed class SqlitePersistenceTests : IDisposable
     await using (var updateContext = CreateDbContext())
     {
       var auditRecorder = new SqliteAuditRecorder();
-      var unitOfWork = new SqliteUnitOfWork(updateContext, auditRecorder);
+      var unitOfWork = new SqliteUnitOfWork(updateContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
       var projectRepository = new SqliteProjectRepository(updateContext);
 
       await projectRepository.UpdateAsync(detachedProject);
@@ -149,7 +151,7 @@ public sealed class SqlitePersistenceTests : IDisposable
     {
       await seedContext.Database.MigrateAsync();
       var auditRecorder = new SqliteAuditRecorder();
-      var unitOfWork = new SqliteUnitOfWork(seedContext, auditRecorder);
+      var unitOfWork = new SqliteUnitOfWork(seedContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
       var projectRepository = new SqliteProjectRepository(seedContext);
       var inspectionSessionRepository = new SqliteInspectionSessionRepository(seedContext);
       var project = new Project(projectId, "Project Falcon", "owner@example.invalid", createdAtUtc);
@@ -197,7 +199,7 @@ public sealed class SqlitePersistenceTests : IDisposable
     await using (var updateContext = CreateDbContext())
     {
       var auditRecorder = new SqliteAuditRecorder();
-      var unitOfWork = new SqliteUnitOfWork(updateContext, auditRecorder);
+      var unitOfWork = new SqliteUnitOfWork(updateContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
       var inspectionSessionRepository = new SqliteInspectionSessionRepository(updateContext);
 
       await inspectionSessionRepository.UpdateAsync(detachedSession);
