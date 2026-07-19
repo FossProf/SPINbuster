@@ -34,7 +34,7 @@ Purpose: Explain how the repository is organized and where different kinds of wo
 - `spec/knowledge/engineering-object-model.md` defines the shared durable noun model used across Knowledge, Documents, Rules, Reports, and AI.
 - `spec/knowledge/engineering-knowledge-model.md` defines the authoritative conceptual model for engineering knowledge.
 - `spec/documents/README.md`, `spec/documents/document-engine-boundary.md`, and `spec/documents/document-engine-foundation.md` define the current Document Engine boundary and durable foundation.
-- `spec/documents/parsing-and-fragment-foundation.md` defines the parsing and fragment foundation boundary with executable proof status.
+- `spec/documents/parsing-and-fragment-foundation.md` defines the parsing and fragment foundation boundary with released status.
 - `spec/rules/README.md` and `spec/rules/rule-engine-boundary.md` define the future Rule Engine boundary.
 - `spec/database/` contains persistence specifications.
 - `spec/ai/` contains durable AI behavior specifications.
@@ -54,25 +54,21 @@ Purpose: Explain how the repository is organized and where different kinds of wo
 
 ## Current Released Baseline
 
-- `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1` is the latest released baseline.
+- `PARSING-AND-FRAGMENT-FOUNDATION-0.1` is the latest released baseline.
 
 ## Current Governance Baseline
 
 - `ARCHITECTURE-VISION-2.0` is the latest frozen governance baseline.
 
-## Active Review Candidate
+## Next Active Package
 
-- `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC` is validated with executable proof and awaiting release instruction.
-
-## Next Planned Package
-
-- `PARSING-EXECUTABLE-SLICE-0.1-RC` (recommended next package)
+- `PARSING-EXECUTABLE-SLICE-0.1-RC`
 
 ## Current Document Engine Flow
 
 - The released executable slice adds a project-scoped Application snapshot query for document workflow state.
 - The released local filesystem storage adapter replaces the Desktop host's fixture-only document bytes with a local filesystem immutable content store.
-- The parsing and fragment foundation adds deterministic text parsing, fragment candidate persistence, and snapshot reload through the Desktop host.
+- The released parsing and fragment foundation adds deterministic text parsing, fragment candidate persistence, and snapshot reload through the Desktop host.
 - The temporary Desktop host now exercises:
   - multi-source batch import
   - same-project duplicate reuse

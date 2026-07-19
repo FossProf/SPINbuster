@@ -7,13 +7,12 @@
 
 ## Latest Software Baseline
 
-- `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1`
+- `PARSING-AND-FRAGMENT-FOUNDATION-0.1`
 - Status: `Released`
 
 ## Active Implementation Package
 
-- `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`
-- Status: `Review Candidate — Executable Proof Validated`
+- `PARSING-EXECUTABLE-SLICE-0.1-RC`
 
 ## Current Branch
 
@@ -21,11 +20,11 @@
 
 ## Last Completed Milestone
 
-- Architecture Vision 2.0 frozen
+- Parsing and fragment foundation released
 
 ## Current Implementation Phase
 
-- Parsing and fragment foundation review candidate validated
+- Document Understanding — parsing foundation complete
 
 ## Current Milestone
 
@@ -61,7 +60,7 @@
 - `EDR-KE-007` Cross-project knowledge sharing (`Deferred`)
 - `EDR-KE-008` Multi-current-revision conflict resolution (`Deferred`)
 - `EDR-KE-009` Knowledge command idempotency (`Deferred`)
-- `EDR-KE-010` Knowledge fragment identity (`Resolved in PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`)
+- `EDR-KE-010` Knowledge fragment identity (`Resolved in PARSING-AND-FRAGMENT-FOUNDATION-0.1`)
 - `EDR-KE-011` Engineering assertion promotion (`Deferred`)
 - `EDR-KE-012` Document Engine ownership boundary (`Accepted`)
 
@@ -78,21 +77,19 @@
 
 ## Immediate Next Task
 
-- Await release instruction for `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`
-- Then begin `PARSING-EXECUTABLE-SLICE-0.1-RC`
+- Begin `PARSING-EXECUTABLE-SLICE-0.1-RC`
 
 ## Fast Context
 
 - The repository is the source of truth for project state and architecture.
 - Start every new AI session from `.ai/bootstrap.md`.
 - The latest governance baseline is `ARCHITECTURE-VISION-2.0`.
-- The latest software baseline is `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1`.
-- The active implementation package is `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC` (review candidate, executable proof validated).
+- The latest software baseline is `PARSING-AND-FRAGMENT-FOUNDATION-0.1`.
+- The active implementation package is `PARSING-EXECUTABLE-SLICE-0.1-RC`.
 
 ## Current Capabilities
 
-- Current released capabilities include `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1`
-- The repository includes a validated parsing and fragment foundation review candidate with executable proof
+- Current released capabilities include `PARSING-AND-FRAGMENT-FOUNDATION-0.1`
 - Deterministic text parsing produces fragment candidates with reproducible identity
 - Parser runs, fragment candidates, and audit history persist through SQLite and survive provider recreation
 - Parser version coexistence preserves historical candidates

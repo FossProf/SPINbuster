@@ -29,16 +29,16 @@ Chronological released history:
 8. `DOCUMENT-ENGINE-FOUNDATION-0.1`
 9. `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1`
 10. `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1`
+11. `PARSING-AND-FRAGMENT-FOUNDATION-0.1`
 
 ## Current State
 
-- Latest released baseline: `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1`
-- Active review candidate: `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC` (executable proof validated)
+- Latest released baseline: `PARSING-AND-FRAGMENT-FOUNDATION-0.1`
 - Next active package recommendation: `PARSING-EXECUTABLE-SLICE-0.1-RC`
 
 Why this next package:
 
-- The parsing and fragment foundation is validated with executable proof through the Desktop host.
+- The parsing and fragment foundation is released with executable proof validated through the Desktop host.
 - The next increment should extend the Desktop proof to exercise multi-source parsing, version coexistence, and review workflow.
 - This stays focused on the executable proof without prematurely broadening into Knowledge promotion, OCR, or AI extraction.
 

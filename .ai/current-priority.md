@@ -7,13 +7,13 @@ Latest governance baseline:
 ARCHITECTURE-VISION-2.0
 
 Latest software baseline:
-LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1
+PARSING-AND-FRAGMENT-FOUNDATION-0.1
 
 Active implementation package:
-PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC
+PARSING-EXECUTABLE-SLICE-0.1-RC
 
 Status:
-Parsing and fragment foundation review candidate validated with executable proof
+Parsing and fragment foundation released as PARSING-AND-FRAGMENT-FOUNDATION-0.1
 
 Build:
 Passing
@@ -43,31 +43,27 @@ Total tests:
 442/442 passing
 
 Current task:
-Validate and complete `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC` — awaiting release instruction
+Begin `PARSING-EXECUTABLE-SLICE-0.1-RC`
 
 Required outcome:
 
-- Complete the parsing and fragment foundation review candidate.
-- Preserve the frozen governance baseline while completing the review candidate.
+- Extend the Desktop proof to exercise multi-source parsing, version coexistence, and review workflow.
+- Preserve the frozen governance baseline while extending the parsing proof.
 - Keep OCR, AI extraction, and promotion boundaries governed and deferred until explicitly designed.
 - Do not bypass provenance, validation, scope, lifecycle, or project boundaries.
 
 Next review:
-Parsing and fragment foundation boundary review
+Parsing executable slice boundary review
 
 Known blockers:
 None
 
 Last completed:
 
-- Prompt 1: Domain types (ParserEngine, FragmentIds) — parser-run lifecycle, fragment-candidate identity, locator model, audit events
-- Prompt 2: Application layer (IDocumentParser port, RequestDocumentParsing, LoadParsingSnapshot, DI, logging, 30 new tests)
-- Prompt 3: Deterministic parser adapter (PlainTextDocumentParser), SQLite persistence (EF Core records, repositories, migration), replay key hardening (5-column unique index), static init fix, DI registration fix
-- Prompt 4: Integration, governance, and RC validation — ParsingExecutableWorkflowRunner, Bootstrapper, ConsoleFormatter, 11 Desktop tests, prototype review document, spec updates
+- Released `PARSING-AND-FRAGMENT-FOUNDATION-0.1` with executable proof validated across 4 prompts
 
 Proposed next direction:
 
-- Release `PARSING-AND-FRAGMENT-FOUNDATION-0.1` once explicitly instructed
 - Begin `PARSING-EXECUTABLE-SLICE-0.1-RC` to extend Desktop proof with multi-source parsing and review workflow
 - Preserve the non-authoritative document-candidate boundary
 - Keep OCR, AI extraction, and reconciliation workflows deferred until fragment contracts are explicit

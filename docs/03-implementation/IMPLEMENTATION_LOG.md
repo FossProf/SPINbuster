@@ -57,8 +57,7 @@ Completed:
 
 Next:
 
-- Await release instruction for `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`
-- Then begin `PARSING-EXECUTABLE-SLICE-0.1-RC`
+- Begin `PARSING-EXECUTABLE-SLICE-0.1-RC`
 
 ## 2026-07-15
 
