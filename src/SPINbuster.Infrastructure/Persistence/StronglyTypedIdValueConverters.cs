@@ -93,4 +93,12 @@ internal static class StronglyTypedIdValueConverters
   public static readonly ValueConverter<OperationId, Guid> OperationId = new(
     value => value.Value,
     value => new OperationId(value));
+
+  public static readonly ValueConverter<ParserRunId, Guid> ParserRunId = new(
+    value => value.Value,
+    value => new ParserRunId(value));
+
+  public static readonly ValueConverter<FragmentCandidateId, Guid> FragmentCandidateId = new(
+    value => value.Value,
+    value => new FragmentCandidateId(value));
 }

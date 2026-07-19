@@ -43,6 +43,23 @@ Next:
 
 - `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`
 
+## 2026-07-18
+
+Completed:
+
+- Parsing and fragment foundation review candidate (`PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`)
+- Prompt 1: Domain types — ParserEngine, FragmentIds, ParserRun lifecycle, FragmentCandidate identity, locator model, audit events
+- Prompt 2: Application layer — IDocumentParser port, RequestDocumentParsingUseCase, LoadParsingSnapshotUseCase, DI, logging, 30 new Application tests
+- Prompt 3: Deterministic parser adapter (PlainTextDocumentParser), SQLite persistence (EF Core records, value converters, model config, mapper, repositories), 5-column unique replay index, migration, static init fix, DI registration
+- Prompt 4: Integration, governance, and RC validation — ParsingExecutableWorkflowRunner, Bootstrapper, ConsoleFormatter, 11 Desktop tests, prototype review document, spec and .ai file updates
+- Fixed LoadParsingSnapshotResult to include ParserVersion
+- Resolved EDR-KE-010: candidate-stage fragment identity derived from `{ImportedSourceId}:{ParserKey}@{ParserContractVersion}:{LocatorType}:{NormalizedLocatorValue}`
+
+Next:
+
+- Await release instruction for `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`
+- Then begin `PARSING-EXECUTABLE-SLICE-0.1-RC`
+
 ## 2026-07-15
 
 Completed:

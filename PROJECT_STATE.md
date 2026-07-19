@@ -13,6 +13,7 @@
 ## Active Implementation Package
 
 - `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`
+- Status: `Review Candidate — Executable Proof Validated`
 
 ## Current Branch
 
@@ -24,11 +25,21 @@
 
 ## Current Implementation Phase
 
-- Parsing and fragment foundation preparation
+- Parsing and fragment foundation review candidate validated
 
 ## Current Milestone
 
 - Prototype Vertical Slice
+
+## Test Status
+
+- Domain: `152/152`
+- Application: `156/156`
+- Documents: `28/28`
+- Infrastructure: `42/42`
+- Architecture: `24/24`
+- Desktop: `34/34`
+- Total: `442/442`
 
 ## Open ADRs
 
@@ -50,7 +61,7 @@
 - `EDR-KE-007` Cross-project knowledge sharing (`Deferred`)
 - `EDR-KE-008` Multi-current-revision conflict resolution (`Deferred`)
 - `EDR-KE-009` Knowledge command idempotency (`Deferred`)
-- `EDR-KE-010` Knowledge fragment identity (`Deferred`)
+- `EDR-KE-010` Knowledge fragment identity (`Resolved in PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`)
 - `EDR-KE-011` Engineering assertion promotion (`Deferred`)
 - `EDR-KE-012` Document Engine ownership boundary (`Accepted`)
 
@@ -60,13 +71,15 @@
 - Most test projects are still empty scaffolds outside of `SPINbuster.Architecture.Tests`.
 - Human-accepted AI proposals do not yet create authoritative report revisions.
 - Knowledge Engine command idempotency is still deferred and must be resolved before synchronization-oriented work.
-- Document parsing, OCR, fragment promotion, assertion promotion, and broader retrieval remain conceptual only in the current package.
+- The `MapFailureClassification` in `RequestDocumentParsingUseCase` loses original parser-specific classification; should be refined before production.
+- Document OCR, fragment promotion, assertion promotion, and broader retrieval remain deferred beyond the current foundation.
 - Immutable-object reconciliation and deletion remain deferred; local filesystem inventory is diagnostic only.
 - The Windows Desktop apphost may still be blocked by local machine policy even when the managed DLL executes correctly.
 
 ## Immediate Next Task
 
-- Begin `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`
+- Await release instruction for `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`
+- Then begin `PARSING-EXECUTABLE-SLICE-0.1-RC`
 
 ## Fast Context
 
@@ -74,11 +87,13 @@
 - Start every new AI session from `.ai/bootstrap.md`.
 - The latest governance baseline is `ARCHITECTURE-VISION-2.0`.
 - The latest software baseline is `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1`.
-- The active implementation package is `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`.
+- The active implementation package is `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC` (review candidate, executable proof validated).
 
 ## Current Capabilities
 
-- Current released capabilities remain unchanged from `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1`
-- The repository now includes a durable Document Engine foundation with immutable source identity, processing attempts, and non-authoritative candidates
-- The repository now also includes a deterministic executable Document Engine workflow through the temporary Desktop host
-- The repository now also includes a local filesystem immutable content store with atomic-write semantics, restart-safe reopen, corruption detection, and bounded orphan visibility
+- Current released capabilities include `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1`
+- The repository includes a validated parsing and fragment foundation review candidate with executable proof
+- Deterministic text parsing produces fragment candidates with reproducible identity
+- Parser runs, fragment candidates, and audit history persist through SQLite and survive provider recreation
+- Parser version coexistence preserves historical candidates
+- Parsing does not widen Knowledge, Report, or AI authority boundaries

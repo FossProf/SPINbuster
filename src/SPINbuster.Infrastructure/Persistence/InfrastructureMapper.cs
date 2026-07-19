@@ -850,4 +850,93 @@ internal static class InfrastructureMapper
       _ => throw new InvalidOperationException($"Unsupported knowledge subject kind {subjectKind}."),
     };
   }
+
+  public static ParserRun ToDomain(ParserRunRecord record, IReadOnlyCollection<AuditEvent> auditTrail)
+  {
+    return ParserRun.Rehydrate(
+      record.Id,
+      record.ProjectId,
+      record.ImportedSourceId,
+      record.ParserKey,
+      record.ParserVersion,
+      record.ParserContractVersion,
+      record.ParserContractHash,
+      record.SourceContentHash,
+      record.SourceHashAlgorithm,
+      record.SourceHashAlgorithmVersion,
+      record.CreatedBy,
+      record.CreatedAtUtc,
+      record.State,
+      record.StartedAtUtc,
+      record.CompletedAtUtc,
+      record.FailureReason,
+      auditTrail);
+  }
+
+  public static ParserRunRecord ToRecord(ParserRun parserRun)
+  {
+    return new ParserRunRecord
+    {
+      Id = parserRun.Id,
+      ProjectId = parserRun.ProjectId,
+      ImportedSourceId = parserRun.ImportedSourceId,
+      ParserKey = parserRun.ParserKey,
+      ParserVersion = parserRun.ParserVersion,
+      ParserContractVersion = parserRun.ParserContractVersion,
+      ParserContractHash = parserRun.ParserContractHash,
+      SourceContentHash = parserRun.SourceContentHash,
+      SourceHashAlgorithm = parserRun.SourceHashAlgorithm,
+      SourceHashAlgorithmVersion = parserRun.SourceHashAlgorithmVersion,
+      CreatedBy = parserRun.CreatedBy,
+      CreatedAtUtc = parserRun.CreatedAtUtc,
+      State = parserRun.State,
+      StartedAtUtc = parserRun.StartedAtUtc,
+      CompletedAtUtc = parserRun.CompletedAtUtc,
+      FailureReason = parserRun.FailureReason,
+    };
+  }
+
+  public static FragmentCandidate ToDomain(FragmentCandidateRecord record, IReadOnlyCollection<AuditEvent> auditTrail)
+  {
+    var locator = new FragmentLocator(record.LocatorType, record.LocatorRawValue);
+    return FragmentCandidate.Rehydrate(
+      record.Id,
+      record.ParserRunId,
+      record.ProjectId,
+      record.ImportedSourceId,
+      record.SourceContentHash,
+      locator,
+      record.Ordinal,
+      record.ContentKind,
+      record.ExtractedText,
+      record.TextLength,
+      record.ConfidenceBand,
+      record.IdentityKey,
+      record.IdentityKeyHash,
+      record.CreatedAtUtc,
+      auditTrail);
+  }
+
+  public static FragmentCandidateRecord ToRecord(FragmentCandidate candidate)
+  {
+    return new FragmentCandidateRecord
+    {
+      Id = candidate.Id,
+      ParserRunId = candidate.ParserRunId,
+      ProjectId = candidate.ProjectId,
+      ImportedSourceId = candidate.ImportedSourceId,
+      SourceContentHash = candidate.SourceContentHash,
+      LocatorType = candidate.Locator.LocatorType,
+      LocatorRawValue = candidate.Locator.RawValue,
+      LocatorNormalizedValue = candidate.Locator.NormalizedValue,
+      Ordinal = candidate.Ordinal,
+      ContentKind = candidate.ContentKind,
+      ExtractedText = candidate.ExtractedText,
+      TextLength = candidate.TextLength,
+      ConfidenceBand = candidate.ConfidenceBand,
+      IdentityKey = candidate.IdentityKey,
+      IdentityKeyHash = candidate.IdentityKeyHash,
+      CreatedAtUtc = candidate.CreatedAtUtc,
+    };
+  }
 }

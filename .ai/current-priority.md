@@ -13,7 +13,7 @@ Active implementation package:
 PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC
 
 Status:
-Architecture vision frozen as the governing platform baseline
+Parsing and fragment foundation review candidate validated with executable proof
 
 Build:
 Passing
@@ -22,30 +22,33 @@ Warnings:
 0
 
 Domain tests:
-96/96 passing
+152/152 passing
 
 Application tests:
-121/121 passing
+156/156 passing
 
 Documents tests:
 28/28 passing
 
 Infrastructure tests:
-32/32 passing
+42/42 passing
 
 Architecture tests:
-23/23 passing
+24/24 passing
 
-Desktop end-to-end tests:
-23/23 passing
+Desktop tests:
+34/34 passing
+
+Total tests:
+442/442 passing
 
 Current task:
-Begin `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC` under the frozen architecture baseline
+Validate and complete `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC` — awaiting release instruction
 
 Required outcome:
 
-- Define deterministic, non-authoritative fragment handling for persisted document sources.
-- Preserve the frozen governance baseline while beginning the next implementation package.
+- Complete the parsing and fragment foundation review candidate.
+- Preserve the frozen governance baseline while completing the review candidate.
 - Keep OCR, AI extraction, and promotion boundaries governed and deferred until explicitly designed.
 - Do not bypass provenance, validation, scope, lifecycle, or project boundaries.
 
@@ -56,14 +59,18 @@ Known blockers:
 None
 
 Last completed:
-Prompt 5 (file-level navigability refactoring) and Prompt 6 (audit-event construction consolidation). `DocumentEngineUseCases.cs` split into 11 per-use-case directories. `InMemoryFakes.cs` split into 7 files by aggregate group. `Identifiers.cs` split into 7 files by aggregate. `AuditableEntity` base class centralizes mechanical audit-event construction with abstract `SubjectType`/`SubjectId` and `CreateAuditEvent` helper. All 10 Domain aggregates updated with explicit `const string AuditSubjectType` and overrides. `AiAuditEventFactory` refactored with private `Create` helper. 329 tests all passing.
+
+- Prompt 1: Domain types (ParserEngine, FragmentIds) — parser-run lifecycle, fragment-candidate identity, locator model, audit events
+- Prompt 2: Application layer (IDocumentParser port, RequestDocumentParsing, LoadParsingSnapshot, DI, logging, 30 new tests)
+- Prompt 3: Deterministic parser adapter (PlainTextDocumentParser), SQLite persistence (EF Core records, repositories, migration), replay key hardening (5-column unique index), static init fix, DI registration fix
+- Prompt 4: Integration, governance, and RC validation — ParsingExecutableWorkflowRunner, Bootstrapper, ConsoleFormatter, 11 Desktop tests, prototype review document, spec updates
 
 Proposed next direction:
 
-- Begin `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`
+- Release `PARSING-AND-FRAGMENT-FOUNDATION-0.1` once explicitly instructed
+- Begin `PARSING-EXECUTABLE-SLICE-0.1-RC` to extend Desktop proof with multi-source parsing and review workflow
 - Preserve the non-authoritative document-candidate boundary
 - Keep OCR, AI extraction, and reconciliation workflows deferred until fragment contracts are explicit
-- Use capability-phase planning rather than slice-only planning for future governance updates
 
 Current capabilities:
 
@@ -101,6 +108,12 @@ Current capabilities:
 - Reopen stored bytes safely after provider recreation and repeated executable runs against the same SQLite database plus storage root
 - Detect missing and corrupted stored bytes during processing and fail terminally without widening authority
 - Expose bounded adapter-specific orphan visibility for future reconciliation work
+- Import controlled text sources and produce deterministic fragment candidates through PlainTextDocumentParser
+- Persist parser runs and fragment candidates through SQLite with 5-column unique replay index
+- Reload parser runs, fragment candidates, and audit history through LoadParsingSnapshotQuery
+- Demonstrate unsupported media, cancelled parse, and malformed output as expected failures without crashing
+- Verify parser version coexistence with historical candidate preservation
+- Verify authority isolation: parsing does not create Knowledge, Report, or AI records
 
 Authoritative context:
 
@@ -114,7 +127,8 @@ Authoritative context:
 - `spec/documents/README.md`
 - `spec/documents/document-engine-boundary.md`
 - `spec/documents/document-engine-foundation.md`
-- `docs/decisions/status/LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1-RC-PROTOTYPE-REVIEW.md`
+- `spec/documents/parsing-and-fragment-foundation.md`
+- `docs/decisions/status/PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC-PROTOTYPE-REVIEW.md`
 - `spec/rules/README.md`
 - `spec/rules/rule-engine-boundary.md`
 - `docs/00-governance/ROADMAP.md`
@@ -123,7 +137,6 @@ Authoritative context:
 - `docs/decisions/edr/EDR-KE-010-knowledge-fragment-identity.md`
 - `docs/decisions/edr/EDR-KE-011-engineering-assertion-promotion.md`
 - `docs/decisions/edr/EDR-KE-012-document-engine-ownership-boundary.md`
-- `docs/00-governance/ROADMAP.md`
 
 Validation before completion:
 

@@ -19,6 +19,7 @@ internal static class SpinbusterModelConfiguration
     ConfigureAiSubstrate(modelBuilder);
     ConfigureKnowledgeEngine(modelBuilder);
     ConfigureDocumentEngine(modelBuilder);
+    ConfigureParserRuns(modelBuilder);
   }
 
   private static void ConfigureProjects(ModelBuilder modelBuilder)
@@ -525,5 +526,56 @@ internal static class SpinbusterModelConfiguration
     candidateBuilder.HasIndex(record => record.Status);
     candidateBuilder.HasOne<ImportedDocumentSourceRecord>().WithMany().HasForeignKey(record => record.ImportedSourceId).OnDelete(DeleteBehavior.Restrict);
     candidateBuilder.HasOne<DocumentProcessingAttemptRecord>().WithMany().HasForeignKey(record => record.ProcessingAttemptId).OnDelete(DeleteBehavior.Restrict);
+  }
+
+  private static void ConfigureParserRuns(ModelBuilder modelBuilder)
+  {
+    var parserRunBuilder = modelBuilder.Entity<ParserRunRecord>();
+    parserRunBuilder.ToTable("parser_runs");
+    parserRunBuilder.HasKey(record => record.Id);
+    parserRunBuilder.Property(record => record.Id).HasConversion(StronglyTypedIdValueConverters.ParserRunId).ValueGeneratedNever();
+    parserRunBuilder.Property(record => record.ProjectId).HasConversion(StronglyTypedIdValueConverters.ProjectId).IsRequired();
+    parserRunBuilder.Property(record => record.ImportedSourceId).HasConversion(StronglyTypedIdValueConverters.ImportedSourceId).IsRequired();
+    parserRunBuilder.Property(record => record.ParserKey).HasMaxLength(128).IsRequired();
+    parserRunBuilder.Property(record => record.ParserVersion).HasMaxLength(64).IsRequired();
+    parserRunBuilder.Property(record => record.ParserContractVersion).HasMaxLength(64).IsRequired();
+    parserRunBuilder.Property(record => record.ParserContractHash).HasMaxLength(128).IsRequired();
+    parserRunBuilder.Property(record => record.SourceContentHash).HasMaxLength(128).IsRequired();
+    parserRunBuilder.Property(record => record.SourceHashAlgorithm).HasMaxLength(64).IsRequired();
+    parserRunBuilder.Property(record => record.SourceHashAlgorithmVersion).IsRequired();
+    parserRunBuilder.Property(record => record.CreatedBy).HasMaxLength(256).IsRequired();
+    parserRunBuilder.Property(record => record.CreatedAtUtc).IsRequired();
+    parserRunBuilder.Property(record => record.State).IsRequired();
+    parserRunBuilder.Property(record => record.FailureReason).HasColumnType("TEXT");
+    parserRunBuilder.HasIndex(record => record.ProjectId);
+    parserRunBuilder.HasIndex(record => record.ImportedSourceId);
+    parserRunBuilder.HasIndex(record => new { record.ImportedSourceId, record.ParserKey, record.ParserVersion, record.ParserContractVersion, record.ParserContractHash }).IsUnique();
+    parserRunBuilder.HasOne<ProjectRecord>().WithMany().HasForeignKey(record => record.ProjectId).OnDelete(DeleteBehavior.Restrict);
+    parserRunBuilder.HasOne<ImportedDocumentSourceRecord>().WithMany().HasForeignKey(record => record.ImportedSourceId).OnDelete(DeleteBehavior.Restrict);
+
+    var fragmentCandidateBuilder = modelBuilder.Entity<FragmentCandidateRecord>();
+    fragmentCandidateBuilder.ToTable("parser_fragment_candidates");
+    fragmentCandidateBuilder.HasKey(record => record.Id);
+    fragmentCandidateBuilder.Property(record => record.Id).HasConversion(StronglyTypedIdValueConverters.FragmentCandidateId).ValueGeneratedNever();
+    fragmentCandidateBuilder.Property(record => record.ParserRunId).HasConversion(StronglyTypedIdValueConverters.ParserRunId).IsRequired();
+    fragmentCandidateBuilder.Property(record => record.ProjectId).HasConversion(StronglyTypedIdValueConverters.ProjectId).IsRequired();
+    fragmentCandidateBuilder.Property(record => record.ImportedSourceId).HasConversion(StronglyTypedIdValueConverters.ImportedSourceId).IsRequired();
+    fragmentCandidateBuilder.Property(record => record.SourceContentHash).HasMaxLength(128).IsRequired();
+    fragmentCandidateBuilder.Property(record => record.LocatorType).IsRequired();
+    fragmentCandidateBuilder.Property(record => record.LocatorRawValue).HasMaxLength(512).IsRequired();
+    fragmentCandidateBuilder.Property(record => record.LocatorNormalizedValue).HasMaxLength(512).IsRequired();
+    fragmentCandidateBuilder.Property(record => record.Ordinal).IsRequired();
+    fragmentCandidateBuilder.Property(record => record.ContentKind).IsRequired();
+    fragmentCandidateBuilder.Property(record => record.ExtractedText).HasColumnType("TEXT").IsRequired();
+    fragmentCandidateBuilder.Property(record => record.TextLength).IsRequired();
+    fragmentCandidateBuilder.Property(record => record.ConfidenceBand).IsRequired();
+    fragmentCandidateBuilder.Property(record => record.IdentityKey).HasMaxLength(1024).IsRequired();
+    fragmentCandidateBuilder.Property(record => record.IdentityKeyHash).HasMaxLength(128).IsRequired();
+    fragmentCandidateBuilder.Property(record => record.CreatedAtUtc).IsRequired();
+    fragmentCandidateBuilder.HasIndex(record => record.ParserRunId);
+    fragmentCandidateBuilder.HasIndex(record => record.ImportedSourceId);
+    fragmentCandidateBuilder.HasIndex(record => record.IdentityKeyHash);
+    fragmentCandidateBuilder.HasOne<ParserRunRecord>().WithMany().HasForeignKey(record => record.ParserRunId).OnDelete(DeleteBehavior.Restrict);
+    fragmentCandidateBuilder.HasOne<ImportedDocumentSourceRecord>().WithMany().HasForeignKey(record => record.ImportedSourceId).OnDelete(DeleteBehavior.Restrict);
   }
 }

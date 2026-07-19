@@ -454,6 +454,48 @@ public sealed class DependencyGraphTests
     Assert.DoesNotContain("DeferredCurrentRevisionLink", contents, StringComparison.Ordinal);
   }
 
+  [Fact]
+  public void DomainProjectHasNoParserSdkFilePatEfAiOrPresentationDependency()
+  {
+    var repoRoot = FindRepositoryRoot();
+    var domainFiles = Directory
+      .EnumerateFiles(Path.Combine(repoRoot, "src", "SPINbuster.Domain"), "*.cs", SearchOption.AllDirectories)
+      .ToArray();
+
+    var forbiddenTokens = new[]
+    {
+      "using System.IO",
+      "using Microsoft.EntityFrameworkCore",
+      "using Microsoft.Data.Sqlite",
+      "using SPINbuster.AI",
+      "using SPINbuster.Documents",
+      "using SPINbuster.Infrastructure",
+      "using SPINbuster.Reporting",
+      "using SPINbuster.Desktop",
+      "using SPINbuster.Server",
+      "PdfPig",
+      "iTextSharp",
+      "PdfSharpCore",
+      "Tesseract",
+      "SixLabors",
+      "OpenAI",
+      "Ollama",
+      "Azure.AI",
+      "Microsoft.Maui",
+      "Blazor",
+      "Razor",
+    };
+
+    foreach (var domainFile in domainFiles)
+    {
+      var contents = File.ReadAllText(domainFile);
+      foreach (var token in forbiddenTokens)
+      {
+        Assert.DoesNotContain(token, contents, StringComparison.Ordinal);
+      }
+    }
+  }
+
   private static string[] LoadPackageReferences(string projectPath)
   {
     return XDocument

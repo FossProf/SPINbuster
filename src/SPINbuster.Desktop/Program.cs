@@ -35,10 +35,10 @@ try
     [LogProperties.ApplicationUserId] = settings.CurrentUserId,
   }))
   {
-    logger.LogInformation("Desktop workflow starting, operation {OperationId}", operationId);
-    var result = await DocumentEngineExecutableWorkflowBootstrapper.RunAsync(host.Services);
-    Console.Write(DocumentEngineExecutableWorkflowConsoleFormatter.Format(result));
-    logger.LogInformation("Desktop workflow completed, operation {OperationId}", operationId);
+    WorkflowLogger.WorkflowStarting(logger, operationId);
+    var result = await ParsingExecutableWorkflowBootstrapper.RunAsync(host.Services);
+    Console.Write(ParsingExecutableWorkflowConsoleFormatter.Format(result));
+    WorkflowLogger.WorkflowCompleted(logger, operationId);
   }
 }
 catch (Exception exception)

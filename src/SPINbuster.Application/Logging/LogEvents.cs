@@ -20,6 +20,11 @@ public static class LogEvents
   public static readonly EventId DocumentProcessingCancelled = new(3003, nameof(DocumentProcessingCancelled));
   public static readonly EventId DocumentProcessingCandidateCreated = new(3004, nameof(DocumentProcessingCandidateCreated));
 
+  public static readonly EventId ParserRunStarting = new(3100, nameof(ParserRunStarting));
+  public static readonly EventId ParserRunCompleted = new(3101, nameof(ParserRunCompleted));
+  public static readonly EventId ParserRunFailed = new(3102, nameof(ParserRunFailed));
+  public static readonly EventId ParserRunCancelled = new(3103, nameof(ParserRunCancelled));
+
   public static readonly EventId AiProviderInvoked = new(4000, nameof(AiProviderInvoked));
   public static readonly EventId AiProviderCompleted = new(4001, nameof(AiProviderCompleted));
   public static readonly EventId AiProviderFailed = new(4002, nameof(AiProviderFailed));

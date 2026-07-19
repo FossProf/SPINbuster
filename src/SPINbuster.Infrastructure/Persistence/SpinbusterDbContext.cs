@@ -60,6 +60,10 @@ public sealed class SpinbusterDbContext : DbContext
 
   internal DbSet<DocumentCandidateRecord> DocumentCandidates => Set<DocumentCandidateRecord>();
 
+  internal DbSet<ParserRunRecord> ParserRuns => Set<ParserRunRecord>();
+
+  internal DbSet<FragmentCandidateRecord> FragmentCandidates => Set<FragmentCandidateRecord>();
+
   protected override void OnModelCreating(ModelBuilder modelBuilder)
   {
     SpinbusterModelConfiguration.Configure(modelBuilder);

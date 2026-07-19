@@ -26,5 +26,6 @@ public static class LogProperties
   public const string FileName = "FileName";
   public const string DeclaredMediaType = "DeclaredMediaType";
   public const string ProcessorKey = "ProcessorKey";
+  public const string ParserKey = "ParserKey";
   public const string CandidateCount = "CandidateCount";
 }

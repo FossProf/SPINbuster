@@ -1,7 +1,7 @@
 # Current State
 
 Repository status:
-Latest governance baseline: `ARCHITECTURE-VISION-2.0`. Latest software baseline: `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1`. Active implementation package: `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`. Build passing. Domain tests `96/96`. Application tests `121/121`. Documents tests `28/28`. Infrastructure tests `32/32`. Architecture tests `23/23`. Desktop tests `23/23`. Warnings `0`.
+Latest governance baseline: `ARCHITECTURE-VISION-2.0`. Latest software baseline: `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1`. Active implementation package: `PARSING-AND-FRAGMENT-FOUND0.1-RC`. Build passing. Domain tests `152/152`. Application tests `156/156`. Documents tests `28/28`. Infrastructure tests `42/42`. Architecture tests `24/24`. Desktop tests `34/34`. Total `442/442`. Warnings `0`.
 
 Current branch:
 `main`
@@ -20,47 +20,31 @@ Active implementation package:
 
 Recent accomplishments:
 
-- Released `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1` and pushed tag `knowledge-engine-executable-slice-0.1`.
-- Added the first executable local Knowledge Engine workflow through the temporary Desktop host.
-- Added `AddKnowledgeCitation` plus `LoadProjectKnowledgeSnapshot` so the host remains thin and Application-driven.
-- Added SQLite-backed Desktop tests for successful Knowledge execution, reload, current revision selection, relationship traversal, citation reload, audit ordering, failure presentation, commit failure handling, and proof that report plus AI records remain unchanged.
-- Added the engineering object model and specification index.
-- Implemented the first durable Document Engine foundation across Domain, Application, Documents, and Infrastructure.
-- Added immutable storage-object identity, imported-source identity, import sessions, processing attempts, and non-authoritative document candidates.
-- Added deterministic SHA-256 hashing, media inspection, in-memory immutable storage, and deterministic fixture processing adapters.
-- Added SQLite persistence and the `DocumentEngineFoundationRc` migration.
-- Released `DOCUMENT-ENGINE-FOUNDATION-0.1` after hardening durable terminal processing state, explicit import-session completion, and migration drift guards.
-- Implemented the first executable local Document Engine workflow through the temporary Desktop host.
-- Added `LoadProjectDocumentWorkflowSnapshot` so the host reloads project-scoped import sessions, imported sources, processing attempts, candidates, and audit history through Application contracts only.
-- Added an Infrastructure migrator abstraction so Desktop startup migration no longer reaches directly into EF Core.
-- Hardened document audit staging to persist only audit deltas during repeated aggregate updates.
-- Hardened batch import lifecycle semantics so one import session can validate and import multiple sources before explicit completion.
-- Hardened SQLite document query shaping to avoid provider translation failures for `DateTimeOffset` ordering.
-- Added Desktop tests for multi-source import, exact-byte reopen, deterministic processing outcomes, review persistence, duplicate privacy, and commit-failure orphan behavior.
-- Hardened the executable workflow for repeated execution on reused SQLite databases by scoping each run to current-run IDs, unique fixture filenames, and unique fixture content.
-- Released baseline `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1`.
-- Implemented the local filesystem immutable content store with ID-addressed layout, atomic writes, bounded reparse-point defense, restart-safe reopen, and adapter-private inventory.
-- Corrected the Desktop default durable storage root to `%LOCALAPPDATA%\\SPINbuster\\document-content`.
-- Added restart, repeated-run, corruption, orphan, configuration, and no-absolute-path Desktop tests against the real local filesystem adapter.
-- Added Application-level immutable content store failure classification so orchestration can distinguish missing, unavailable, access-denied, integrity, cancellation, and I/O outcomes without filesystem-specific leakage.
-- Completed `ROADMAP-V2.0-RC` as the baseline governance refresh organized around capability evolution while preserving released slice history.
-- Froze `ARCHITECTURE-VISION-2.0` as the governing architecture baseline.
+- Completed all four prompts of `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`.
+- Prompt 1: Added Domain types `ParserEngine` and `FragmentIds` with 152 Domain tests.
+- Prompt 2: Added `IDocumentParser` port, DTOs, `RequestDocumentParsingUseCase`, `LoadParsingSnapshotUseCase`, DI, logging, and 30 new Application tests (156 total).
+- Prompt 3: Implemented `PlainTextDocumentParser` adapter, EF Core persistence (records, value converters, model config, mapper, repositories), 5-column unique index for replay key hardening, migration, static init fix, DI registration fix, and 42 Infrastructure integration tests.
+- Prompt 4: Created `ParsingExecutableWorkflowRunner`, `ParsingExecutableWorkflowResult`, `ParsingExecutableWorkflowBootstrapper`, `ParsingExecutableWorkflowConsoleFormatter`. Wired parsing workflow into `Program.cs`. Added 11 Desktop tests covering parsing, idempotent replay, snapshot validation, provider recreation, data preservation, unsupported media, cancelled parse, malformed output, parser version coexistence, console formatter output, and authority isolation.
+- Fixed `LoadParsingSnapshotResult` to include `ParserVersion`.
+- Created prototype review document at `docs/decisions/status/PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC-PROTOTYPE-REVIEW.md`.
+- Updated spec and .ai governance files to reflect executable proof status.
 
 Current architectural decisions:
 
-- `ARCHITECTURE-VISION-2.0` is now the active governance baseline.
+- `ARCHITECTURE-VISION-2.0` is the active governance baseline.
 - `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1` remains the active released software baseline.
-- The next active implementation package is `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`.
+- `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC` is the active review candidate, validated with executable proof.
+- Fragment identity is parser-run-scoped, not revision-stable (EDR-KE-010 resolved).
+- Replay key is 5-column: `(ImportedSourceId, ParserKey, ParserVersion, ParserContractVersion, ParserContractHash)`.
 - `SPINbuster.Desktop` remains a temporary bootstrap host, not a MAUI application yet.
 - The Document Engine owns binary-source handling and non-authoritative processing outputs only.
 - The Desktop host composes document workflow behavior through Application commands and queries only.
-- Startup migration for temporary hosts now flows through a dedicated Infrastructure migrator abstraction rather than direct `DbContext` access.
-- Durable document bytes now flow through a local filesystem adapter while the in-memory adapter remains fixture-only.
+- Parser adapters are registered as `IDocumentParser` singletons in the Documents adapter layer.
 - The Rule Engine will remain deterministic and separate from AI recommendations.
-- Knowledge Engine mutations still do not have a uniform `OperationId` replay contract; `EDR-KE-009` keeps that deferred before synchronization or automated ingestion.
+- Knowledge Engine command idempotency is still deferred by `EDR-KE-009`.
 
 Next task:
-Begin `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC` with clean file-level navigability and consolidated audit-event construction
+Await release instruction for `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`, then begin `PARSING-EXECUTABLE-SLICE-0.1-RC`.
 
 Known issues:
 
@@ -71,26 +55,37 @@ Known issues:
 - Document parsing, OCR, fragment promotion, assertion promotion, and broader retrieval remain deferred beyond the current foundation.
 - Reconciliation and deletion for orphaned immutable filesystem objects remain deferred intentionally.
 - The generated Windows Desktop apphost may still be blocked by local machine policy even when the managed DLL runs correctly; treat that as environmental for the temporary host.
+- The `MapFailureClassification` in `RequestDocumentParsingUseCase` maps parser failure reasons through string matching, which loses the original parser-specific classification. Acceptable for the foundation but should be refined before production.
 - `AddKnowledgeCitationUseCase` retains direct `new AuditEvent(...)` construction as intentional single-event duplication, not a general pattern for other use cases.
 
 Requested review:
 
-- Confirm the parsing-and-fragment foundation boundary before implementation begins
-- Confirm the non-authoritative fragment-candidate model remains the correct next increment
-- Prompt 5 (file-level navigability) and Prompt 6 (audit consolidation) are complete and verified
+- Confirm the parsing-and-fragment foundation boundary is complete before release
+- Confirm the prototype review document captures all findings
 
 Current capabilities:
 
-- Current released code behavior now includes `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1`
-- The repository now also contains an authoritative conceptual engineering knowledge model
-- The repository now includes the released durable Document Engine foundation beneath the future executable slice
-- The repository now includes a deterministic executable Document Engine workflow that persists import sessions, duplicates, processing attempts, review state, and audit history without mutating authoritative Knowledge, Report, or AI records, including repeated execution on a reused SQLite database
-- The repository now includes a local filesystem immutable content store with restart-safe byte reopen, corruption detection, bounded orphan visibility, and no absolute-path exposure through public snapshots or Desktop output
-- Released `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1`.
-- Split `DocumentEngineUseCases.cs` into 11 per-use-case directories with `DocumentAuditStager` extracted to `Internal/`.
-- Split `InMemoryFakes.cs` into 7 files by aggregate group: `CrossCuttingFakes`, `ProjectFakes`, `InspectionFakes`, `ReportFakes`, `AiFakes`, `KnowledgeFakes`, `SaveFakes`.
-- Split `Identifiers.cs` into 7 files by aggregate: `ProjectIds`, `InspectionIds`, `ReportIds`, `AiIds`, `KnowledgeIds`, `DocumentImportIds`, `CrossCuttingIds`.
-- Consolidated audit-event construction through `AuditableEntity` base class with abstract `SubjectType`/`SubjectId` and `CreateAuditEvent` helper.
-- Updated all 10 Domain aggregates with explicit `const string AuditSubjectType` constants and overrides.
-- Refactored `AiAuditEventFactory` with private `Create` helper to centralize mechanical audit-event construction.
-- Added 43 new Domain audit consolidation tests and 4 Application audit-factory tests. All 329 tests passing.
+- Current released code behavior includes `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1`
+- The repository now contains an authoritative conceptual engineering knowledge model
+- The repository includes the released durable Document Engine foundation
+- The repository includes a deterministic executable Document Engine workflow
+- The repository includes a local filesystem immutable content store
+- The repository now includes a validated parsing and fragment foundation review candidate with executable proof
+- Deterministic text parsing produces fragment candidates with reproducible identity
+- Parser runs, fragment candidates, and audit history persist through SQLite and survive provider recreation
+- Parser version coexistence preserves historical candidates
+- Unsupported media, cancelled, and malformed content produce terminal failure states without crashing
+- Parsing does not widen Knowledge, Report, or AI authority boundaries
+
+Released baselines (chronological):
+
+1. `VERTICAL-SLICE-0.1`
+2. `APPLICATION-0.1`
+3. `INFRASTRUCTURE-0.1`
+4. `AI-DRAFT-PROPOSAL-SLICE-0.1`
+5. `AI-PROPOSAL-EXECUTABLE-SLICE-0.1`
+6. `KNOWLEDGE-ENGINE-PERSISTENCE-0.1`
+7. `KNOWLEDGE-ENGINE-EXECUTABLE-SLICE-0.1`
+8. `DOCUMENT-ENGINE-FOUNDATION-0.1`
+9. `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1`
+10. `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1`

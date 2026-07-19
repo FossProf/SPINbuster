@@ -41,6 +41,7 @@ public static class DesktopCompositionRoot
     services.AddScoped<ICurrentUser>(_ => new FixedCurrentUser(settings.CurrentUserId));
     services.AddScoped<LocalVerticalSliceWorkflowRunner>();
     services.AddScoped<DocumentEngineExecutableWorkflowRunner>();
+    services.AddScoped<ParsingExecutableWorkflowRunner>();
   }
 
   public static DesktopWorkflowSettings LoadSettings(IConfiguration configuration)

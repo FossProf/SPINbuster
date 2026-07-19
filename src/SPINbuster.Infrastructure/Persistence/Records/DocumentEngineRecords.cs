@@ -156,3 +156,73 @@ internal sealed class DocumentCandidateRecord
 
   public string? ReviewNotes { get; set; }
 }
+
+internal sealed class ParserRunRecord
+{
+  public ParserRunId Id { get; set; }
+
+  public ProjectId ProjectId { get; set; }
+
+  public ImportedSourceId ImportedSourceId { get; set; }
+
+  public string ParserKey { get; set; } = string.Empty;
+
+  public string ParserVersion { get; set; } = string.Empty;
+
+  public string ParserContractVersion { get; set; } = string.Empty;
+
+  public string ParserContractHash { get; set; } = string.Empty;
+
+  public string SourceContentHash { get; set; } = string.Empty;
+
+  public string SourceHashAlgorithm { get; set; } = string.Empty;
+
+  public int SourceHashAlgorithmVersion { get; set; }
+
+  public string CreatedBy { get; set; } = string.Empty;
+
+  public DateTimeOffset CreatedAtUtc { get; set; }
+
+  public ParserRunState State { get; set; }
+
+  public DateTimeOffset? StartedAtUtc { get; set; }
+
+  public DateTimeOffset? CompletedAtUtc { get; set; }
+
+  public string? FailureReason { get; set; }
+}
+
+internal sealed class FragmentCandidateRecord
+{
+  public FragmentCandidateId Id { get; set; }
+
+  public ParserRunId ParserRunId { get; set; }
+
+  public ProjectId ProjectId { get; set; }
+
+  public ImportedSourceId ImportedSourceId { get; set; }
+
+  public string SourceContentHash { get; set; } = string.Empty;
+
+  public FragmentLocatorType LocatorType { get; set; }
+
+  public string LocatorRawValue { get; set; } = string.Empty;
+
+  public string LocatorNormalizedValue { get; set; } = string.Empty;
+
+  public int Ordinal { get; set; }
+
+  public ContentKind ContentKind { get; set; }
+
+  public string ExtractedText { get; set; } = string.Empty;
+
+  public int TextLength { get; set; }
+
+  public ConfidenceBand ConfidenceBand { get; set; }
+
+  public string IdentityKey { get; set; } = string.Empty;
+
+  public string IdentityKeyHash { get; set; } = string.Empty;
+
+  public DateTimeOffset CreatedAtUtc { get; set; }
+}

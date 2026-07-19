@@ -36,6 +36,8 @@ using SPINbuster.Application.UseCases.StartInspectionSession;
 using SPINbuster.Application.UseCases.AddKnowledgeDocumentRevision;
 using SPINbuster.Application.UseCases.CreateKnowledgeRelationship;
 using SPINbuster.Application.UseCases.SupersedeKnowledgeRevision;
+using SPINbuster.Application.UseCases.LoadParsingSnapshot;
+using SPINbuster.Application.UseCases.RequestDocumentParsing;
 using SPINbuster.Application.UseCases.VerifyKnowledgeRevision;
 
 namespace SPINbuster.Application;
@@ -82,6 +84,8 @@ public static class ServiceCollectionExtensions
     services.AddScoped<IQueryHandler<LoadKnowledgeRevisionHistoryQuery, LoadKnowledgeRevisionHistoryResult>, LoadKnowledgeRevisionHistoryUseCase>();
     services.AddScoped<IQueryHandler<LoadProjectKnowledgeSnapshotQuery, LoadProjectKnowledgeSnapshotResult>, LoadProjectKnowledgeSnapshotUseCase>();
     services.AddScoped<IQueryHandler<LoadReportDraftSnapshotQuery, LoadReportDraftSnapshotResult>, LoadReportDraftSnapshotUseCase>();
+    services.AddScoped<ICommandHandler<RequestDocumentParsingCommand, RequestDocumentParsingResult>, RequestDocumentParsingUseCase>();
+    services.AddScoped<IQueryHandler<LoadParsingSnapshotQuery, LoadParsingSnapshotResult>, LoadParsingSnapshotUseCase>();
     return services;
   }
 }

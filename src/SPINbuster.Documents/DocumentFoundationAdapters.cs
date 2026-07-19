@@ -24,6 +24,7 @@ public static class ServiceCollectionExtensions
     services.AddSingleton<IImmutableContentStore>(provider => provider.GetRequiredService<InMemoryImmutableContentStore>());
     services.AddSingleton<DeterministicDocumentProcessor>();
     services.AddSingleton<IDocumentProcessor>(provider => provider.GetRequiredService<DeterministicDocumentProcessor>());
+    services.AddSingleton<IDocumentParser, PlainTextDocumentParser>();
     return services;
   }
 }

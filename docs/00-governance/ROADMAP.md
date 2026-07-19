@@ -33,13 +33,14 @@ Chronological released history:
 ## Current State
 
 - Latest released baseline: `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1`
-- Next active package recommendation: `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`
+- Active review candidate: `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC` (executable proof validated)
+- Next active package recommendation: `PARSING-EXECUTABLE-SLICE-0.1-RC`
 
 Why this next package:
 
-- Durable local byte storage is now in place, restart-safe, and validated against reused SQLite metadata.
-- The next platform gap is not storage, but understanding: turning persisted source bytes into governed, non-authoritative fragment candidates.
-- That work creates the bridge from Document Engine import toward Knowledge promotion, Retrieval, Rules, Context assembly, and later AI execution.
+- The parsing and fragment foundation is validated with executable proof through the Desktop host.
+- The next increment should extend the Desktop proof to exercise multi-source parsing, version coexistence, and review workflow.
+- This stays focused on the executable proof without prematurely broadening into Knowledge promotion, OCR, or AI extraction.
 
 ## Released Foundations
 

@@ -270,6 +270,8 @@ internal sealed class FakeImmutableContentStore : IImmutableContentStore
 
   public bool ReturnUnavailableOnOpen { get; set; }
 
+  public string? OpenReadHashOverride { get; set; }
+
   public int OpenReadCalls { get; private set; }
 
   public int StoreCalls { get; private set; }
@@ -320,7 +322,7 @@ internal sealed class FakeImmutableContentStore : IImmutableContentStore
     }
 
     var bytes = _content[storageObjectId];
-    var hash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes));
+    var hash = OpenReadHashOverride ?? Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes));
     return Task.FromResult(new OpenImmutableContentResult(new MemoryStream(bytes, writable: false), StorageAvailabilityState.Available, hash, "SHA-256", 1, bytes.Length));
   }
 }
