@@ -225,4 +225,12 @@ internal sealed class FragmentCandidateRecord
   public string IdentityKeyHash { get; set; } = string.Empty;
 
   public DateTimeOffset CreatedAtUtc { get; set; }
+
+  public FragmentCandidateReviewState ReviewState { get; set; }
+
+  public string? ReviewedBy { get; set; }
+
+  public DateTimeOffset? ReviewedAtUtc { get; set; }
+
+  public string? ReviewNotes { get; set; }
 }

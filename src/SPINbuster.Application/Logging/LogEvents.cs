@@ -25,6 +25,12 @@ public static class LogEvents
   public static readonly EventId ParserRunFailed = new(3102, nameof(ParserRunFailed));
   public static readonly EventId ParserRunCancelled = new(3103, nameof(ParserRunCancelled));
 
+  public static readonly EventId FragmentReviewStarting = new(3200, nameof(FragmentReviewStarting));
+  public static readonly EventId FragmentReviewCompleted = new(3201, nameof(FragmentReviewCompleted));
+  public static readonly EventId FragmentReviewFailed = new(3202, nameof(FragmentReviewFailed));
+  public static readonly EventId FragmentReviewCancelled = new(3203, nameof(FragmentReviewCancelled));
+  public static readonly EventId FragmentReviewDuplicateRejected = new(3204, nameof(FragmentReviewDuplicateRejected));
+
   public static readonly EventId AiProviderInvoked = new(4000, nameof(AiProviderInvoked));
   public static readonly EventId AiProviderCompleted = new(4001, nameof(AiProviderCompleted));
   public static readonly EventId AiProviderFailed = new(4002, nameof(AiProviderFailed));

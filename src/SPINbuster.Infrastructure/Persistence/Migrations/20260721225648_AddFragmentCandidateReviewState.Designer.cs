@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SPINbuster.Infrastructure.Persistence;
 
@@ -10,9 +11,11 @@ using SPINbuster.Infrastructure.Persistence;
 namespace SPINbuster.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(SpinbusterDbContext))]
-    partial class SpinbusterDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260721225648_AddFragmentCandidateReviewState")]
+    partial class AddFragmentCandidateReviewState
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -625,16 +628,7 @@ namespace SPINbuster.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("ParserRunId");
 
-                    b.HasIndex("ParserRunId", "ReviewState")
-                        .HasDatabaseName("IX_parser_fragment_candidates_ParserRunId_ReviewState");
-
-                    b.HasIndex("ProjectId", "ReviewState")
-                        .HasDatabaseName("IX_parser_fragment_candidates_ProjectId_ReviewState");
-
-                    b.ToTable("parser_fragment_candidates", null, t =>
-                        {
-                            t.HasCheckConstraint("CK_parser_fragment_candidates_review_metadata", "(ReviewState = 0 AND ReviewedBy IS NULL AND ReviewedAtUtc IS NULL) OR (ReviewState IN (1, 2) AND ReviewedBy IS NOT NULL AND ReviewedAtUtc IS NOT NULL)");
-                        });
+                    b.ToTable("parser_fragment_candidates", (string)null);
                 });
 
             modelBuilder.Entity("SPINbuster.Infrastructure.Persistence.Records.ImportedDocumentSourceRecord", b =>

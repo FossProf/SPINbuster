@@ -5,11 +5,14 @@ using System.Globalization;
 using SPINbuster.Application;
 using SPINbuster.Application.Abstractions;
 using SPINbuster.Application.Contracts;
+using SPINbuster.Application.UseCases.AcceptFragmentCandidate;
 using SPINbuster.Application.UseCases.BeginDocumentImportSession;
 using SPINbuster.Application.UseCases.CompleteDocumentImportSession;
 using SPINbuster.Application.UseCases.CreateProject;
 using SPINbuster.Application.UseCases.ImportDocumentSource;
+using SPINbuster.Application.UseCases.LoadFragmentReviewSnapshot;
 using SPINbuster.Application.UseCases.LoadParsingSnapshot;
+using SPINbuster.Application.UseCases.RejectFragmentCandidate;
 using SPINbuster.Application.UseCases.RequestDocumentParsing;
 using SPINbuster.Desktop;
 using SPINbuster.Domain;
@@ -121,7 +124,7 @@ public sealed class ParsingExecutableWorkflowTests
       var reloadedSnapshot = await loadSnapshot.HandleAsync(
         new LoadParsingSnapshotQuery(
           firstResult.CreatedProject.ProjectId,
-          firstResult.ImportedSource.ImportedSourceId));
+          firstResult.ImportedSourceA.ImportedSourceId));
 
       Assert.Single(reloadedSnapshot.ParserRuns);
       Assert.Equal(firstResult.FirstParseResult.ParserRunId, reloadedSnapshot.ParserRuns[0].ParserRunId);
@@ -154,7 +157,7 @@ public sealed class ParsingExecutableWorkflowTests
       var preservedFirstRunSnapshot = await loadSnapshot.HandleAsync(
         new LoadParsingSnapshotQuery(
           firstRun.CreatedProject.ProjectId,
-          firstRun.ImportedSource.ImportedSourceId));
+          firstRun.ImportedSourceA.ImportedSourceId));
 
       var preservedFirstRun = preservedFirstRunSnapshot.ParserRuns
         .SingleOrDefault(r => r.ParserRunId == firstRun.FirstParseResult.ParserRunId);
@@ -164,7 +167,7 @@ public sealed class ParsingExecutableWorkflowTests
       Assert.Equal(firstRun.FirstParseResult.FragmentCandidateIds.Count, preservedFirstRun.FragmentCandidates.Count);
 
       Assert.NotEqual(firstRun.CreatedProject.ProjectId, secondResult.CreatedProject.ProjectId);
-      Assert.NotEqual(firstRun.ImportedSource.ImportedSourceId, secondResult.ImportedSource.ImportedSourceId);
+      Assert.NotEqual(firstRun.ImportedSourceA.ImportedSourceId, secondResult.ImportedSourceA.ImportedSourceId);
     }
     finally
     {
@@ -268,12 +271,15 @@ public sealed class ParsingExecutableWorkflowTests
       var result = await ParsingExecutableWorkflowBootstrapper.RunAsync(serviceProvider);
       var output = ParsingExecutableWorkflowConsoleFormatter.Format(result);
 
-      Assert.Contains("Parsing and Fragment Foundation", output, StringComparison.Ordinal);
+      Assert.Contains("Fragment Candidate Review", output, StringComparison.Ordinal);
       Assert.Contains(ParserKey, output, StringComparison.Ordinal);
       Assert.Contains("1.0.0", output, StringComparison.Ordinal);
       Assert.Contains("WholeDocument", output, StringComparison.Ordinal);
       Assert.Contains("Completed", output, StringComparison.Ordinal);
       Assert.Contains("Authority Isolation", output, StringComparison.Ordinal);
+      Assert.Contains("Fragment Review", output, StringComparison.Ordinal);
+      Assert.Contains("HumanAccepted", output, StringComparison.Ordinal);
+      Assert.Contains("Rejected", output, StringComparison.Ordinal);
       Assert.DoesNotContain(environment.StorageRootPath, output, StringComparison.OrdinalIgnoreCase);
       Assert.DoesNotContain(environment.DatabasePath, output, StringComparison.OrdinalIgnoreCase);
       Assert.DoesNotContain("C:\\", output, StringComparison.OrdinalIgnoreCase);
@@ -309,6 +315,142 @@ public sealed class ParsingExecutableWorkflowTests
       Assert.Equal(0, await CountAsync("knowledge_document_revisions"));
       Assert.Equal(0, await CountAsync("reports"));
       Assert.Equal(0, await CountAsync("ai_proposals"));
+    }
+    finally
+    {
+      DeleteEnvironmentIfPresent(environment);
+    }
+  }
+
+  [Fact]
+  public async Task FragmentReviewAcceptsAndRejectsCandidate()
+  {
+    var environment = CreateEnvironmentPaths();
+
+    try
+    {
+      using var serviceProvider = CreateServiceProvider(environment);
+      var result = await ParsingExecutableWorkflowBootstrapper.RunAsync(serviceProvider);
+
+      Assert.Equal(FragmentCandidateReviewState.HumanAccepted, result.AcceptedCandidate.ReviewState);
+      Assert.Equal(FragmentCandidateReviewState.Rejected, result.RejectedCandidate.ReviewState);
+      Assert.NotEqual(result.AcceptedCandidate.FragmentCandidateId, result.RejectedCandidate.FragmentCandidateId);
+    }
+    finally
+    {
+      DeleteEnvironmentIfPresent(environment);
+    }
+  }
+
+  [Fact]
+  public async Task ReviewSnapshotReflectsAcceptedAndRejectedCandidates()
+  {
+    var environment = CreateEnvironmentPaths();
+
+    try
+    {
+      using var serviceProvider = CreateServiceProvider(environment);
+      var result = await ParsingExecutableWorkflowBootstrapper.RunAsync(serviceProvider);
+
+      Assert.Contains(result.ReviewSnapshotAfterAccept.Entries,
+        e => e.FragmentCandidateId == result.AcceptedCandidate.FragmentCandidateId
+          && e.ReviewState == FragmentCandidateReviewState.HumanAccepted);
+      Assert.Contains(result.ReviewSnapshotAfterReject.Entries,
+        e => e.FragmentCandidateId == result.RejectedCandidate.FragmentCandidateId
+          && e.ReviewState == FragmentCandidateReviewState.Rejected);
+    }
+    finally
+    {
+      DeleteEnvironmentIfPresent(environment);
+    }
+  }
+
+  [Fact]
+  public async Task ReviewStateSurvivesDisposeAndRecreateProvider()
+  {
+    var environment = CreateEnvironmentPaths();
+
+    try
+    {
+      ParsingExecutableWorkflowResult firstResult;
+      using (var firstProvider = CreateServiceProvider(environment))
+      {
+        firstResult = await ParsingExecutableWorkflowBootstrapper.RunAsync(firstProvider);
+      }
+
+      using var secondProvider = CreateServiceProvider(environment);
+      await ParsingExecutableWorkflowBootstrapper.MigrateAsync(secondProvider);
+      await using var scope = secondProvider.CreateAsyncScope();
+      var loadReview = scope.ServiceProvider.GetRequiredService<IQueryHandler<LoadFragmentReviewSnapshotQuery, LoadFragmentReviewSnapshotResult>>();
+
+      var reloadedAccepted = await loadReview.HandleAsync(
+        new LoadFragmentReviewSnapshotQuery(
+          firstResult.CreatedProject.ProjectId,
+          FragmentCandidateReviewState.HumanAccepted,
+          null,
+          null,
+          null,
+          100));
+
+      var reloadedRejected = await loadReview.HandleAsync(
+        new LoadFragmentReviewSnapshotQuery(
+          firstResult.CreatedProject.ProjectId,
+          FragmentCandidateReviewState.Rejected,
+          null,
+          null,
+          null,
+          100));
+
+      Assert.Contains(reloadedAccepted.Entries,
+        e => e.FragmentCandidateId == firstResult.AcceptedCandidate.FragmentCandidateId);
+      Assert.Contains(reloadedRejected.Entries,
+        e => e.FragmentCandidateId == firstResult.RejectedCandidate.FragmentCandidateId);
+    }
+    finally
+    {
+      DeleteEnvironmentIfPresent(environment);
+    }
+  }
+
+  [Fact]
+  public async Task WorkflowProducesExpectedFailurePresentations()
+  {
+    var environment = CreateEnvironmentPaths();
+
+    try
+    {
+      using var serviceProvider = CreateServiceProvider(environment);
+      var result = await ParsingExecutableWorkflowBootstrapper.RunAsync(serviceProvider);
+
+      Assert.True(result.FailurePresentations.Count >= 4, $"Expected at least 4 failure presentations, got {result.FailurePresentations.Count}");
+      Assert.Contains(result.FailurePresentations, f => f.Scenario == "wrong-project-review");
+      Assert.Contains(result.FailurePresentations, f => f.Scenario == "already-reviewed-candidate");
+      Assert.Contains(result.FailurePresentations, f => f.Scenario == "conflicting-accept-after-reject");
+      Assert.Contains(result.FailurePresentations, f => f.Scenario == "missing-candidate");
+    }
+    finally
+    {
+      DeleteEnvironmentIfPresent(environment);
+    }
+  }
+
+  [Fact]
+  public async Task TwoSourcesAreParsedAndBothProduceCandidates()
+  {
+    var environment = CreateEnvironmentPaths();
+
+    try
+    {
+      using var serviceProvider = CreateServiceProvider(environment);
+      var result = await ParsingExecutableWorkflowBootstrapper.RunAsync(serviceProvider);
+
+      Assert.Equal(ParserRunState.Completed, result.FirstParseResult.State);
+      Assert.True(result.FirstParseResult.FragmentCandidateIds.Count > 0);
+
+      Assert.Equal(ParserRunState.Completed, result.SourceBParseResult.State);
+      Assert.True(result.SourceBParseResult.FragmentCandidateIds.Count > 0);
+
+      Assert.NotEqual(result.ImportedSourceA.ImportedSourceId, result.ImportedSourceB.ImportedSourceId);
     }
     finally
     {

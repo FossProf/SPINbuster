@@ -25,7 +25,7 @@ SPINbuster is an offline-first engineering knowledge platform with layered code 
 
 ## Active Implementation Package
 
-- `PARSING-EXECUTABLE-SLICE-0.1-RC`
+- `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1-RC`
 
 ## Current Milestone
 
@@ -33,7 +33,7 @@ SPINbuster is an offline-first engineering knowledge platform with layered code 
 
 ## Current Active Task
 
-- Begin `PARSING-EXECUTABLE-SLICE-0.1-RC`
+- `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1-RC` Prompt 4 complete — awaiting review
 
 ## Authoritative Files
 

@@ -620,4 +620,507 @@ public sealed class ParserEngineTests
     Assert.Equal(2, c2.Ordinal);
     Assert.Equal(3, c3.Ordinal);
   }
+
+  // --- Rehydration Validation ---
+
+  [Fact]
+  public void RehydrateRestoresPersistedStateWithoutRecomputingIdentity()
+  {
+    var sourceId = ImportedSourceId.New();
+    var locator = new FragmentLocator(FragmentLocatorType.WholeDocument, "*");
+    var expectedKey = FragmentCandidate.ComputeIdentityKey(sourceId, "pdf-parser", "2.0.0", locator);
+    var expectedHash = ComputeHashHelper(expectedKey);
+
+    var candidate = FragmentCandidate.Rehydrate(
+      FragmentCandidateId.New(),
+      ParserRunId.New(),
+      ProjectId.New(),
+      sourceId,
+      "source-hash",
+      locator,
+      1,
+      ContentKind.PlainText,
+      "parsed content",
+      14,
+      ConfidenceBand.High,
+      expectedKey,
+      expectedHash,
+      BaseTime,
+      FragmentCandidateReviewState.Generated,
+      null,
+      null,
+      null,
+      []);
+
+    Assert.Equal(expectedKey, candidate.IdentityKey);
+    Assert.Equal(expectedHash, candidate.IdentityKeyHash);
+    Assert.Equal(14, candidate.TextLength);
+    Assert.Equal("parsed content", candidate.ExtractedText);
+  }
+
+  [Fact]
+  public void RehydrateRejectsMismatchedTextLength()
+  {
+    var sourceId = ImportedSourceId.New();
+    var locator = new FragmentLocator(FragmentLocatorType.WholeDocument, "*");
+    var identityKey = FragmentCandidate.ComputeIdentityKey(sourceId, "parser", "1.0.0", locator);
+    var identityKeyHash = ComputeHashHelper(identityKey);
+
+    Assert.Throws<DomainInvariantException>(() =>
+      FragmentCandidate.Rehydrate(
+        FragmentCandidateId.New(),
+        ParserRunId.New(),
+        ProjectId.New(),
+        sourceId,
+        "source-hash",
+        locator,
+        1,
+        ContentKind.PlainText,
+        "text",
+        99,
+        ConfidenceBand.High,
+        identityKey,
+        identityKeyHash,
+        BaseTime,
+        FragmentCandidateReviewState.Generated,
+        null,
+        null,
+        null,
+        []));
+  }
+
+  [Fact]
+  public void RehydrateRejectsMismatchedIdentityKeyHash()
+  {
+    var sourceId = ImportedSourceId.New();
+    var locator = new FragmentLocator(FragmentLocatorType.WholeDocument, "*");
+    var identityKey = FragmentCandidate.ComputeIdentityKey(sourceId, "parser", "1.0.0", locator);
+
+    Assert.Throws<DomainInvariantException>(() =>
+      FragmentCandidate.Rehydrate(
+        FragmentCandidateId.New(),
+        ParserRunId.New(),
+        ProjectId.New(),
+        sourceId,
+        "source-hash",
+        locator,
+        1,
+        ContentKind.PlainText,
+        "text",
+        4,
+        ConfidenceBand.High,
+        identityKey,
+        "0000000000000000000000000000000000000000000000000000000000000000",
+        BaseTime,
+        FragmentCandidateReviewState.Generated,
+        null,
+        null,
+        null,
+        []));
+  }
+
+  [Fact]
+  public void RehydrateRejectsEmptyIdentityKey()
+  {
+    var sourceId = ImportedSourceId.New();
+    var locator = new FragmentLocator(FragmentLocatorType.WholeDocument, "*");
+
+    Assert.Throws<DomainInvariantException>(() =>
+      FragmentCandidate.Rehydrate(
+        FragmentCandidateId.New(),
+        ParserRunId.New(),
+        ProjectId.New(),
+        sourceId,
+        "source-hash",
+        locator,
+        1,
+        ContentKind.PlainText,
+        "text",
+        4,
+        ConfidenceBand.High,
+        string.Empty,
+        "hash",
+        BaseTime,
+        FragmentCandidateReviewState.Generated,
+        null,
+        null,
+        null,
+        []));
+  }
+
+  [Fact]
+  public void RehydrateRejectsZeroOrdinal()
+  {
+    var sourceId = ImportedSourceId.New();
+    var locator = new FragmentLocator(FragmentLocatorType.WholeDocument, "*");
+    var identityKey = FragmentCandidate.ComputeIdentityKey(sourceId, "parser", "1.0.0", locator);
+    var identityKeyHash = ComputeHashHelper(identityKey);
+
+    Assert.Throws<DomainInvariantException>(() =>
+      FragmentCandidate.Rehydrate(
+        FragmentCandidateId.New(),
+        ParserRunId.New(),
+        ProjectId.New(),
+        sourceId,
+        "source-hash",
+        locator,
+        0,
+        ContentKind.PlainText,
+        "text",
+        4,
+        ConfidenceBand.High,
+        identityKey,
+        identityKeyHash,
+        BaseTime,
+        FragmentCandidateReviewState.Generated,
+        null,
+        null,
+        null,
+        []));
+  }
+
+  [Fact]
+  public void RehydrateRejectsEmptyExtractedText()
+  {
+    var sourceId = ImportedSourceId.New();
+    var locator = new FragmentLocator(FragmentLocatorType.WholeDocument, "*");
+    var identityKey = FragmentCandidate.ComputeIdentityKey(sourceId, "parser", "1.0.0", locator);
+    var identityKeyHash = ComputeHashHelper(identityKey);
+
+    Assert.Throws<DomainInvariantException>(() =>
+      FragmentCandidate.Rehydrate(
+        FragmentCandidateId.New(),
+        ParserRunId.New(),
+        ProjectId.New(),
+        sourceId,
+        "source-hash",
+        locator,
+        1,
+        ContentKind.PlainText,
+        string.Empty,
+        0,
+        ConfidenceBand.High,
+        identityKey,
+        identityKeyHash,
+        BaseTime,
+        FragmentCandidateReviewState.Generated,
+        null,
+        null,
+        null,
+        []));
+  }
+
+  [Fact]
+  public void IdentityChangesWhenParserKeyChanges()
+  {
+    var sourceId = ImportedSourceId.New();
+    var locator = new FragmentLocator(FragmentLocatorType.Page, "1");
+
+    var key1 = FragmentCandidate.ComputeIdentityKey(sourceId, "parser-a", "1.0.0", locator);
+    var key2 = FragmentCandidate.ComputeIdentityKey(sourceId, "parser-b", "1.0.0", locator);
+
+    Assert.NotEqual(key1, key2);
+  }
+
+  [Fact]
+  public void IdentityChangesWhenContractVersionChanges()
+  {
+    var sourceId = ImportedSourceId.New();
+    var locator = new FragmentLocator(FragmentLocatorType.Page, "1");
+
+    var key1 = FragmentCandidate.ComputeIdentityKey(sourceId, "parser", "1.0.0", locator);
+    var key2 = FragmentCandidate.ComputeIdentityKey(sourceId, "parser", "2.0.0", locator);
+
+    Assert.NotEqual(key1, key2);
+  }
+
+  [Fact]
+  public void ComputeIdentityKeyIsCanonicalAndOwnedByDomain()
+  {
+    var sourceId = ImportedSourceId.New();
+    var locator = new FragmentLocator(FragmentLocatorType.Paragraph, "3:2");
+
+    var key = FragmentCandidate.ComputeIdentityKey(sourceId, "test-parser", "1.0.0", locator);
+
+    Assert.Contains(sourceId.ToString(), key, StringComparison.Ordinal);
+    Assert.Contains("test-parser@1.0.0", key, StringComparison.Ordinal);
+    Assert.Contains("Paragraph", key, StringComparison.Ordinal);
+    Assert.Contains("3:2", key, StringComparison.Ordinal);
+  }
+
+  private static string ComputeHashHelper(string value)
+  {
+    var bytes = System.Text.Encoding.UTF8.GetBytes(value);
+    return Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes));
+  }
+
+  // --- Review Lifecycle ---
+
+  [Fact]
+  public void NewCandidateStartsWithGeneratedReviewState()
+  {
+    var candidate = CreateCandidate();
+
+    Assert.Equal(FragmentCandidateReviewState.Generated, candidate.ReviewState);
+    Assert.Null(candidate.ReviewedBy);
+    Assert.Null(candidate.ReviewedAtUtc);
+    Assert.Null(candidate.ReviewNotes);
+  }
+
+  [Fact]
+  public void AcceptTransitionsFromGeneratedToHumanAccepted()
+  {
+    var candidate = CreateCandidate();
+
+    candidate.Accept("reviewer@example.invalid", BaseTime.AddHours(1), "Looks good.");
+
+    Assert.Equal(FragmentCandidateReviewState.HumanAccepted, candidate.ReviewState);
+    Assert.Equal("reviewer@example.invalid", candidate.ReviewedBy);
+    Assert.Equal(BaseTime.AddHours(1), candidate.ReviewedAtUtc);
+    Assert.Equal("Looks good.", candidate.ReviewNotes);
+  }
+
+  [Fact]
+  public void RejectTransitionsFromGeneratedToRejected()
+  {
+    var candidate = CreateCandidate();
+
+    candidate.Reject("reviewer@example.invalid", BaseTime.AddHours(1), "Not relevant.");
+
+    Assert.Equal(FragmentCandidateReviewState.Rejected, candidate.ReviewState);
+    Assert.Equal("reviewer@example.invalid", candidate.ReviewedBy);
+    Assert.Equal(BaseTime.AddHours(1), candidate.ReviewedAtUtc);
+    Assert.Equal("Not relevant.", candidate.ReviewNotes);
+  }
+
+  [Fact]
+  public void AcceptFromHumanAcceptedThrows()
+  {
+    var candidate = CreateCandidate();
+    candidate.Accept("reviewer@example.invalid", BaseTime.AddHours(1), null);
+
+    Assert.Throws<LifecycleTransitionException>(() =>
+      candidate.Accept("other@example.invalid", BaseTime.AddHours(2), null));
+  }
+
+  [Fact]
+  public void RejectFromHumanAcceptedThrows()
+  {
+    var candidate = CreateCandidate();
+    candidate.Accept("reviewer@example.invalid", BaseTime.AddHours(1), null);
+
+    Assert.Throws<LifecycleTransitionException>(() =>
+      candidate.Reject("other@example.invalid", BaseTime.AddHours(2), null));
+  }
+
+  [Fact]
+  public void AcceptFromRejectedThrows()
+  {
+    var candidate = CreateCandidate();
+    candidate.Reject("reviewer@example.invalid", BaseTime.AddHours(1), null);
+
+    Assert.Throws<LifecycleTransitionException>(() =>
+      candidate.Accept("other@example.invalid", BaseTime.AddHours(2), null));
+  }
+
+  [Fact]
+  public void RejectFromRejectedThrows()
+  {
+    var candidate = CreateCandidate();
+    candidate.Reject("reviewer@example.invalid", BaseTime.AddHours(1), null);
+
+    Assert.Throws<LifecycleTransitionException>(() =>
+      candidate.Reject("other@example.invalid", BaseTime.AddHours(2), null));
+  }
+
+  [Fact]
+  public void AcceptRejectsEmptyActor()
+  {
+    var candidate = CreateCandidate();
+
+    Assert.Throws<DomainInvariantException>(() =>
+      candidate.Accept(string.Empty, BaseTime.AddHours(1), null));
+  }
+
+  [Fact]
+  public void RejectRejectsEmptyActor()
+  {
+    var candidate = CreateCandidate();
+
+    Assert.Throws<DomainInvariantException>(() =>
+      candidate.Reject(string.Empty, BaseTime.AddHours(1), null));
+  }
+
+  [Fact]
+  public void AcceptRejectsDefaultTimestamp()
+  {
+    var candidate = CreateCandidate();
+
+    Assert.Throws<DomainInvariantException>(() =>
+      candidate.Accept("reviewer@example.invalid", default, null));
+  }
+
+  [Fact]
+  public void RejectRejectsDefaultTimestamp()
+  {
+    var candidate = CreateCandidate();
+
+    Assert.Throws<DomainInvariantException>(() =>
+      candidate.Reject("reviewer@example.invalid", default, null));
+  }
+
+  [Fact]
+  public void AcceptTrimsReviewNotes()
+  {
+    var candidate = CreateCandidate();
+
+    candidate.Accept("reviewer@example.invalid", BaseTime.AddHours(1), "  trimmed  ");
+
+    Assert.Equal("trimmed", candidate.ReviewNotes);
+  }
+
+  [Fact]
+  public void AcceptRejectsExcessiveReviewNotes()
+  {
+    var candidate = CreateCandidate();
+    var longNotes = new string('n', 2_001);
+
+    Assert.Throws<DomainInvariantException>(() =>
+      candidate.Accept("reviewer@example.invalid", BaseTime.AddHours(1), longNotes));
+  }
+
+  [Fact]
+  public void AcceptEmitsAuditEvent()
+  {
+    var candidate = CreateCandidate();
+
+    candidate.Accept("reviewer@example.invalid", BaseTime.AddHours(1), "Accepted.");
+
+    Assert.Equal(2, candidate.AuditTrail.Count);
+    Assert.Equal("FragmentCandidateHumanAccepted", candidate.AuditTrail[1].EventType);
+    Assert.Equal("reviewer@example.invalid", candidate.AuditTrail[1].Actor);
+  }
+
+  [Fact]
+  public void RejectEmitsAuditEvent()
+  {
+    var candidate = CreateCandidate();
+
+    candidate.Reject("reviewer@example.invalid", BaseTime.AddHours(1), "Rejected.");
+
+    Assert.Equal(2, candidate.AuditTrail.Count);
+    Assert.Equal("FragmentCandidateRejected", candidate.AuditTrail[1].EventType);
+    Assert.Equal("reviewer@example.invalid", candidate.AuditTrail[1].Actor);
+  }
+
+  [Fact]
+  public void FailedReviewTransitionEmitsNoAuditEvent()
+  {
+    var candidate = CreateCandidate();
+    candidate.Accept("reviewer@example.invalid", BaseTime.AddHours(1), null);
+    var countBefore = candidate.AuditTrail.Count;
+
+    Assert.Throws<LifecycleTransitionException>(() =>
+      candidate.Reject("other@example.invalid", BaseTime.AddHours(2), null));
+
+    Assert.Equal(countBefore, candidate.AuditTrail.Count);
+  }
+
+  [Fact]
+  public void ReviewDoesNotMutateIdentityOrProvenance()
+  {
+    var candidate = CreateCandidate();
+    var originalIdentityKey = candidate.IdentityKey;
+    var originalIdentityKeyHash = candidate.IdentityKeyHash;
+    var originalSourceContentHash = candidate.SourceContentHash;
+    var originalLocator = candidate.Locator;
+    var originalExtractedText = candidate.ExtractedText;
+    var originalParserRunId = candidate.ParserRunId;
+    var originalImportedSourceId = candidate.ImportedSourceId;
+
+    candidate.Accept("reviewer@example.invalid", BaseTime.AddHours(1), "Accepted.");
+
+    Assert.Equal(originalIdentityKey, candidate.IdentityKey);
+    Assert.Equal(originalIdentityKeyHash, candidate.IdentityKeyHash);
+    Assert.Equal(originalSourceContentHash, candidate.SourceContentHash);
+    Assert.Equal(originalLocator, candidate.Locator);
+    Assert.Equal(originalExtractedText, candidate.ExtractedText);
+    Assert.Equal(originalParserRunId, candidate.ParserRunId);
+    Assert.Equal(originalImportedSourceId, candidate.ImportedSourceId);
+  }
+
+  [Fact]
+  public void RehydratePreservesReviewState()
+  {
+    var sourceId = ImportedSourceId.New();
+    var locator = new FragmentLocator(FragmentLocatorType.WholeDocument, "*");
+    var identityKey = FragmentCandidate.ComputeIdentityKey(sourceId, "parser", "1.0.0", locator);
+    var identityKeyHash = ComputeHashHelper(identityKey);
+
+    var candidate = FragmentCandidate.Rehydrate(
+      FragmentCandidateId.New(),
+      ParserRunId.New(),
+      ProjectId.New(),
+      sourceId,
+      "source-hash",
+      locator,
+      1,
+      ContentKind.PlainText,
+      "text",
+      4,
+      ConfidenceBand.High,
+      identityKey,
+      identityKeyHash,
+      BaseTime,
+      FragmentCandidateReviewState.HumanAccepted,
+      "reviewer@example.invalid",
+      BaseTime.AddHours(1),
+      "Accepted for review.",
+      []);
+
+    Assert.Equal(FragmentCandidateReviewState.HumanAccepted, candidate.ReviewState);
+    Assert.Equal("reviewer@example.invalid", candidate.ReviewedBy);
+    Assert.Equal(BaseTime.AddHours(1), candidate.ReviewedAtUtc);
+    Assert.Equal("Accepted for review.", candidate.ReviewNotes);
+  }
+
+  [Fact]
+  public void RehydrateRejectsAcceptedStateWithoutReviewedBy()
+  {
+    var sourceId = ImportedSourceId.New();
+    var locator = new FragmentLocator(FragmentLocatorType.WholeDocument, "*");
+    var identityKey = FragmentCandidate.ComputeIdentityKey(sourceId, "parser", "1.0.0", locator);
+    var identityKeyHash = ComputeHashHelper(identityKey);
+
+    Assert.Throws<DomainInvariantException>(() =>
+      FragmentCandidate.Rehydrate(
+        FragmentCandidateId.New(),
+        ParserRunId.New(),
+        ProjectId.New(),
+        sourceId,
+        "source-hash",
+        locator,
+        1,
+        ContentKind.PlainText,
+        "text",
+        4,
+        ConfidenceBand.High,
+        identityKey,
+        identityKeyHash,
+        BaseTime,
+        FragmentCandidateReviewState.HumanAccepted,
+        null,
+        null,
+        null,
+        []));
+  }
+
+  [Fact]
+  public void ReviewStateSubjectTypeUsesFragmentCandidateConstant()
+  {
+    var candidate = CreateCandidate();
+    candidate.Accept("reviewer@example.invalid", BaseTime.AddHours(1), null);
+
+    Assert.All(candidate.AuditTrail, e => Assert.Equal("FragmentCandidate", e.SubjectType));
+  }
 }

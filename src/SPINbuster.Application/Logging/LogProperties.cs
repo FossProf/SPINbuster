@@ -28,4 +28,7 @@ public static class LogProperties
   public const string ProcessorKey = "ProcessorKey";
   public const string ParserKey = "ParserKey";
   public const string CandidateCount = "CandidateCount";
+  public const string FragmentCandidateId = "FragmentCandidateId";
+  public const string ParserRunId = "ParserRunId";
+  public const string ReviewState = "ReviewState";
 }

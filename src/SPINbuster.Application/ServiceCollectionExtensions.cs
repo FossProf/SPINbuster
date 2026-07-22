@@ -39,6 +39,9 @@ using SPINbuster.Application.UseCases.SupersedeKnowledgeRevision;
 using SPINbuster.Application.UseCases.LoadParsingSnapshot;
 using SPINbuster.Application.UseCases.RequestDocumentParsing;
 using SPINbuster.Application.UseCases.VerifyKnowledgeRevision;
+using SPINbuster.Application.UseCases.AcceptFragmentCandidate;
+using SPINbuster.Application.UseCases.RejectFragmentCandidate;
+using SPINbuster.Application.UseCases.LoadFragmentReviewSnapshot;
 
 namespace SPINbuster.Application;
 
@@ -86,6 +89,9 @@ public static class ServiceCollectionExtensions
     services.AddScoped<IQueryHandler<LoadReportDraftSnapshotQuery, LoadReportDraftSnapshotResult>, LoadReportDraftSnapshotUseCase>();
     services.AddScoped<ICommandHandler<RequestDocumentParsingCommand, RequestDocumentParsingResult>, RequestDocumentParsingUseCase>();
     services.AddScoped<IQueryHandler<LoadParsingSnapshotQuery, LoadParsingSnapshotResult>, LoadParsingSnapshotUseCase>();
+    services.AddScoped<ICommandHandler<AcceptFragmentCandidateCommand, AcceptFragmentCandidateResult>, AcceptFragmentCandidateUseCase>();
+    services.AddScoped<ICommandHandler<RejectFragmentCandidateCommand, RejectFragmentCandidateResult>, RejectFragmentCandidateUseCase>();
+    services.AddScoped<IQueryHandler<LoadFragmentReviewSnapshotQuery, LoadFragmentReviewSnapshotResult>, LoadFragmentReviewSnapshotUseCase>();
     return services;
   }
 }

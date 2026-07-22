@@ -1,7 +1,7 @@
 # Current State
 
 Repository status:
-Latest governance baseline: `ARCHITECTURE-VISION-2.0`. Latest software baseline: `PARSING-AND-FRAGMENT-FOUNDATION-0.1`. Active implementation package: `PARSING-EXECUTABLE-SLICE-0.1-RC`. Build passing. Domain tests `152/152`. Application tests `156/156`. Documents tests `28/28`. Infrastructure tests `42/42`. Architecture tests `24/24`. Desktop tests `34/34`. Total `442/442`. Warnings `0`.
+Latest governance baseline: `ARCHITECTURE-VISION-2.0`. Latest software baseline: `PARSING-AND-FRAGMENT-FOUNDATION-0.1`. Active implementation package: `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1-RC`. Build passing. Domain tests `181/181`. Application tests `184/184`. Documents tests `28/28`. Infrastructure tests `56/56`. Architecture tests `24/24`. AI tests `6/6`. Desktop tests `39/39`. Total `518/518`. Warnings `0`.
 
 Current branch:
 `main`
@@ -16,7 +16,7 @@ Latest software baseline:
 `PARSING-AND-FRAGMENT-FOUNDATION-0.1`
 
 Active implementation package:
-`PARSING-EXECUTABLE-SLICE-0.1-RC`
+`FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1-RC`
 
 Recent accomplishments:
 
@@ -29,14 +29,21 @@ Recent accomplishments:
 - Added 11 Desktop tests covering parsing, idempotent replay, version coexistence, failure handling, and authority isolation.
 - Resolved EDR-KE-010: candidate-stage fragment identity derived from `{ImportedSourceId}:{ParserKey}@{ParserContractVersion}:{LocatorType}:{NormalizedLocatorValue}`.
 - Created prototype review document at `docs/decisions/status/PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC-PROTOTYPE-REVIEW.md`.
-- All 442 tests passing.
+- Completed `FRAGMENT-INTEGRITY-HARDENING-CHECKPOINT`: fixed `FragmentCandidate.Rehydrate` to restore persisted state directly without invalid placeholders, added `ValidateRehydratedState` with 12 invariant checks, documented contract-version identity choice in `EDR-DE-006`.
+- Completed `FRAGMENT-REVIEW-DOMAIN-AND-SCHEMA-CHECKPOINT` (Prompt 1): implemented `FragmentCandidateReviewState` enum (Generated, HumanAccepted, Rejected), added `Accept()` and `Reject()` methods with audit events and terminal state guards, added review disposition properties (`ReviewState`, `ReviewedBy`, `ReviewedAtUtc`, `ReviewNotes`), updated `InfrastructureMapper` and `SpinbusterModelConfiguration`, created EF migration `AddFragmentCandidateReviewState`, updated `parsing-and-fragment-foundation.md` spec with review semantics, created `EDR-DE-007` for review disposition and promotion prerequisites, added 20 review lifecycle domain tests.
+- Completed `FRAGMENT-REVIEW-APPLICATION-CHECKPOINT` (Prompt 2): implemented `AcceptFragmentCandidateUseCase` and `RejectFragmentCandidateUseCase` commands with audit staging, commit, and structured logging; implemented `LoadFragmentReviewSnapshotUseCase` query with bounded text preview, review metadata, and filter support; extended `IFragmentCandidateRepository` with `GetByIdAsync`, `UpdateAsync`, `GetByProjectAsync`; implemented in `SqliteFragmentCandidateRepository`; registered in `ServiceCollectionExtensions`; added 28 Application tests covering happy paths, terminal state guards, scope rejection, commit failure, audit staging, no-authority-mutation, snapshot bounds, filters, text preview, review metadata, and logging EventIds.
+- Completed `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1-RC` (Prompt 4): extended Desktop executable proof with full review lifecycle, 2-source import, parser version coexistence, 4 expected failure scenarios (wrong-project review, already-reviewed candidate, conflicting accept after reject, missing candidate), authority isolation verification; fixed EF Core tracking conflict in `SqliteFragmentCandidateRepository.UpdateAsync`; created prototype review document at `docs/decisions/status/FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1-RC-REVIEW.md`.
+- All 518 tests passing.
 
 Current architectural decisions:
 
 - `ARCHITECTURE-VISION-2.0` is the active governance baseline.
 - `PARSING-AND-FRAGMENT-FOUNDATION-0.1` is the latest released software baseline.
-- `PARSING-EXECUTABLE-SLICE-0.1-RC` is the active implementation package.
+- `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1-RC` is the active implementation package.
 - Fragment identity is parser-run-scoped, not revision-stable (EDR-KE-010 resolved).
+- Fragment identity uses contract version, not implementation version (EDR-DE-006 accepted).
+- Fragment candidate review uses terminal disposition model: Generated → HumanAccepted or Rejected (EDR-DE-007 accepted).
+- `HumanAccepted` is necessary but insufficient for Knowledge promotion (EDR-DE-007 accepted).
 - Replay key is 5-column: `(ImportedSourceId, ParserKey, ParserVersion, ParserContractVersion, ParserContractHash)`.
 - `SPINbuster.Desktop` remains a temporary bootstrap host, not a MAUI application yet.
 - The Document Engine owns binary-source handling and non-authoritative processing outputs only.
@@ -46,7 +53,7 @@ Current architectural decisions:
 - Knowledge Engine command idempotency is still deferred by `EDR-KE-009`.
 
 Next task:
-Begin `PARSING-EXECUTABLE-SLICE-0.1-RC`
+Awaiting review of `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1-RC`. After approval, determine next package (Knowledge promotion or broader Document Understanding).
 
 Known issues:
 
@@ -59,10 +66,13 @@ Known issues:
 - The generated Windows Desktop apphost may still be blocked by local machine policy even when the managed DLL runs correctly; treat that as environmental for the temporary host.
 - The `MapFailureClassification` in `RequestDocumentParsingUseCase` maps parser failure reasons through string matching, which loses the original parser-specific classification. Acceptable for the foundation but should be refined before production.
 - `AddKnowledgeCitationUseCase` retains direct `new AuditEvent(...)` construction as intentional single-event duplication, not a general pattern for other use cases.
+- The EF migration `AddFragmentCandidateReviewState` was created during the Domain checkpoint (Prompt 1) before Application review workflows were finalized. Treat this as `FRAGMENT-REVIEW-DOMAIN-AND-SCHEMA-CHECKPOINT`. Do not create another migration unless the model genuinely changes.
 
 Requested review:
 
-- Confirm the parsing executable slice boundary before implementation begins
+- Confirm review lifecycle boundary is correct
+- Confirm authority isolation for review workflows
+- Recommend next package after approval
 
 Current capabilities:
 
@@ -77,6 +87,15 @@ Current capabilities:
 - Parser version coexistence preserves historical candidates
 - Unsupported media, cancelled, and malformed content produce terminal failure states without crashing
 - Parsing does not widen Knowledge, Report, or AI authority boundaries
+- Fragment candidate rehydration restores persisted state directly with invariant validation
+- Fragment candidates support review lifecycle with Accept/Reject terminal states
+- Review disposition is audit-tracked and persisted with fragment candidates
+- Application Accept/Reject commands stage new audit events and commit in one transaction
+- LoadFragmentReviewSnapshot returns bounded text preview, review metadata, and filter support
+- Review does not mutate identity, provenance, or locator properties
+- Desktop executable proof exercises full review lifecycle with 2-source import and version coexistence
+- First-commit-wins concurrency and terminal state guards prevent conflicting updates
+- Authority isolation verified: parsing and review do not create Knowledge, Report, or AI records
 
 Released baselines (chronological):
 

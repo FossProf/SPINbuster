@@ -14,6 +14,7 @@ It establishes:
 - fragment-candidate identity, locator model, and content binding
 - deterministic identity derivation from governed inputs
 - non-authoritative boundary enforcement
+- fragment-candidate review lifecycle for human disposition
 - invariants that prevent parser outputs from becoming authoritative knowledge without explicit promotion
 
 ## Scope
@@ -33,6 +34,8 @@ This foundation owns:
 - idempotent replay with 5-column unique index preventing accidental cross-version replay
 - terminal failure states (Failed, Cancelled) with descriptive reasons and audit trail
 - authority isolation: fragment candidates cannot become Knowledge, Report, or AI records directly
+- fragment-candidate review lifecycle (Generated, HumanAccepted, Rejected) with audit trail
+- review disposition metadata: ReviewedBy, ReviewedAtUtc, ReviewNotes
 
 This foundation does not own:
 
@@ -183,6 +186,10 @@ Properties:
 - `IdentityKey` — the derived deterministic identity string
 - `IdentityKeyHash` — SHA-256 of the identity key for indexed lookup
 - `CreatedAtUtc`
+- `ReviewState` — current review disposition (Generated, HumanAccepted, Rejected)
+- `ReviewedBy` — actor who recorded the review disposition (populated on HumanAccepted/Rejected)
+- `ReviewedAtUtc` — timestamp of the review disposition (populated on HumanAccepted/Rejected)
+- `ReviewNotes` — bounded free-text notes from the reviewer (optional, max 2,000 characters)
 - `AuditTrail` — append-only lifecycle events
 
 Invariants:
@@ -194,6 +201,12 @@ Invariants:
 - IdentityKey is derived deterministically and must match the expected derivation
 - Duplicate identity keys within the same parser run are rejected
 - FragmentCandidate cannot be mutated after creation (immutable content)
+- ReviewState starts as Generated on creation
+- HumanAccepted and Rejected are terminal review states (no reopen workflow)
+- HumanAccepted requires a non-empty ReviewedBy and non-default ReviewedAtUtc
+- Rejected requires a non-empty ReviewedBy and non-default ReviewedAtUtc
+- ReviewNotes must be bounded (max 2,000 characters) when provided
+- Review disposition does not alter IdentityKey, SourceContentHash, Locator, ExtractedText, ParserRunId, or ImportedSourceId
 
 ### FragmentLocatorType
 

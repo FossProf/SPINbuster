@@ -35,6 +35,16 @@ public sealed class LogEventsTests
   }
 
   [Fact]
+  public void FragmentReviewEventsAreIn3200Range()
+  {
+    Assert.Equal(3200, LogEvents.FragmentReviewStarting.Id);
+    Assert.Equal(3201, LogEvents.FragmentReviewCompleted.Id);
+    Assert.Equal(3202, LogEvents.FragmentReviewFailed.Id);
+    Assert.Equal(3203, LogEvents.FragmentReviewCancelled.Id);
+    Assert.Equal(3204, LogEvents.FragmentReviewDuplicateRejected.Id);
+  }
+
+  [Fact]
   public void AiProviderEventsAreIn4000Range()
   {
     Assert.Equal(4000, LogEvents.AiProviderInvoked.Id);

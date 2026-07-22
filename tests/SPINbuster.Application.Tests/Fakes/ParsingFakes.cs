@@ -78,6 +78,12 @@ internal sealed class FakeFragmentCandidateRepository : IFragmentCandidateReposi
 {
   private readonly Dictionary<FragmentCandidateId, FragmentCandidate> _candidates = [];
 
+  public Task<FragmentCandidate?> GetByIdAsync(FragmentCandidateId fragmentCandidateId, CancellationToken cancellationToken = default)
+  {
+    _candidates.TryGetValue(fragmentCandidateId, out var candidate);
+    return Task.FromResult(candidate);
+  }
+
   public Task<IReadOnlyCollection<FragmentCandidate>> GetByParserRunAsync(
     ParserRunId parserRunId,
     int maxResults,
@@ -104,12 +110,53 @@ internal sealed class FakeFragmentCandidateRepository : IFragmentCandidateReposi
         .ToArray());
   }
 
+  public Task<IReadOnlyCollection<FragmentCandidate>> GetByProjectAsync(
+    ProjectId projectId,
+    int maxResults,
+    CancellationToken cancellationToken = default)
+  {
+    return Task.FromResult<IReadOnlyCollection<FragmentCandidate>>(
+      _candidates.Values
+        .Where(c => c.ProjectId == projectId)
+        .OrderBy(c => c.CreatedAtUtc)
+        .Take(maxResults)
+        .ToArray());
+  }
+
+  public Task<IReadOnlyCollection<FragmentCandidate>> GetByProjectFilteredAsync(
+    ProjectId projectId,
+    int maxResults,
+    FragmentCandidateReviewState? reviewStateFilter,
+    CancellationToken cancellationToken = default)
+  {
+    var query = _candidates.Values.Where(c => c.ProjectId == projectId);
+    if (reviewStateFilter.HasValue)
+    {
+      query = query.Where(c => c.ReviewState == reviewStateFilter.Value);
+    }
+
+    return Task.FromResult<IReadOnlyCollection<FragmentCandidate>>(
+      query
+        .OrderBy(c => c.CreatedAtUtc)
+        .Take(maxResults)
+        .ToArray());
+  }
+
   public List<FragmentCandidate> AddedCandidates { get; } = [];
+
+  public List<FragmentCandidate> UpdatedCandidates { get; } = [];
 
   public Task AddAsync(FragmentCandidate fragmentCandidate, CancellationToken cancellationToken = default)
   {
     _candidates[fragmentCandidate.Id] = fragmentCandidate;
     AddedCandidates.Add(fragmentCandidate);
+    return Task.CompletedTask;
+  }
+
+  public Task UpdateAsync(FragmentCandidate fragmentCandidate, CancellationToken cancellationToken = default)
+  {
+    _candidates[fragmentCandidate.Id] = fragmentCandidate;
+    UpdatedCandidates.Add(fragmentCandidate);
     return Task.CompletedTask;
   }
 }

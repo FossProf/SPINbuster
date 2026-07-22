@@ -1,13 +1,14 @@
 using System.Text;
-using Microsoft.Extensions.DependencyInjection;
 using SPINbuster.Application;
 using SPINbuster.Application.Contracts;
+using SPINbuster.Application.UseCases.AcceptFragmentCandidate;
 using SPINbuster.Application.UseCases.BeginDocumentImportSession;
 using SPINbuster.Application.UseCases.CompleteDocumentImportSession;
 using SPINbuster.Application.UseCases.CreateProject;
 using SPINbuster.Application.UseCases.ImportDocumentSource;
+using SPINbuster.Application.UseCases.LoadFragmentReviewSnapshot;
 using SPINbuster.Application.UseCases.LoadParsingSnapshot;
-using SPINbuster.Application.UseCases.LoadProjectDocumentWorkflowSnapshot;
+using SPINbuster.Application.UseCases.RejectFragmentCandidate;
 using SPINbuster.Application.UseCases.RequestDocumentParsing;
 using SPINbuster.Domain;
 
@@ -17,19 +18,17 @@ public sealed class ParsingExecutableWorkflowRunner
 {
   private const string ParserKey = "plain-text-deterministic";
   private const string ParserContractVersion = "1.0.0";
-  private const int SnapshotMaxSessions = 50;
-  private const int SnapshotMaxSources = 100;
-  private const int SnapshotMaxAttempts = 20;
-  private const int SnapshotMaxCandidates = 50;
-  private const int SnapshotMaxAudit = 50;
+  private const int ReviewSnapshotMaxResults = 100;
 
-  private readonly ICommandHandler<CreateProjectCommand, CreateProjectResult> _createProject;
+  private readonly ICommandHandler<AcceptFragmentCandidateCommand, AcceptFragmentCandidateResult> _acceptFragmentCandidate;
   private readonly ICommandHandler<BeginDocumentImportSessionCommand, BeginDocumentImportSessionResult> _beginImportSession;
-  private readonly ICommandHandler<ImportDocumentSourceCommand, ImportDocumentSourceResult> _importSource;
   private readonly ICommandHandler<CompleteDocumentImportSessionCommand, CompleteDocumentImportSessionResult> _completeImportSession;
+  private readonly ICommandHandler<CreateProjectCommand, CreateProjectResult> _createProject;
+  private readonly ICommandHandler<ImportDocumentSourceCommand, ImportDocumentSourceResult> _importSource;
+  private readonly ICommandHandler<RejectFragmentCandidateCommand, RejectFragmentCandidateResult> _rejectFragmentCandidate;
   private readonly ICommandHandler<RequestDocumentParsingCommand, RequestDocumentParsingResult> _requestDocumentParsing;
+  private readonly IQueryHandler<LoadFragmentReviewSnapshotQuery, LoadFragmentReviewSnapshotResult> _loadFragmentReviewSnapshot;
   private readonly IQueryHandler<LoadParsingSnapshotQuery, LoadParsingSnapshotResult> _loadParsingSnapshot;
-  private readonly IQueryHandler<LoadProjectDocumentWorkflowSnapshotQuery, LoadProjectDocumentWorkflowSnapshotResult> _loadDocumentWorkflowSnapshot;
 
   public ParsingExecutableWorkflowRunner(
     ICommandHandler<CreateProjectCommand, CreateProjectResult> createProject,
@@ -38,7 +37,9 @@ public sealed class ParsingExecutableWorkflowRunner
     ICommandHandler<CompleteDocumentImportSessionCommand, CompleteDocumentImportSessionResult> completeImportSession,
     ICommandHandler<RequestDocumentParsingCommand, RequestDocumentParsingResult> requestDocumentParsing,
     IQueryHandler<LoadParsingSnapshotQuery, LoadParsingSnapshotResult> loadParsingSnapshot,
-    IQueryHandler<LoadProjectDocumentWorkflowSnapshotQuery, LoadProjectDocumentWorkflowSnapshotResult> loadDocumentWorkflowSnapshot)
+    ICommandHandler<AcceptFragmentCandidateCommand, AcceptFragmentCandidateResult> acceptFragmentCandidate,
+    ICommandHandler<RejectFragmentCandidateCommand, RejectFragmentCandidateResult> rejectFragmentCandidate,
+    IQueryHandler<LoadFragmentReviewSnapshotQuery, LoadFragmentReviewSnapshotResult> loadFragmentReviewSnapshot)
   {
     _createProject = createProject;
     _beginImportSession = beginImportSession;
@@ -46,7 +47,9 @@ public sealed class ParsingExecutableWorkflowRunner
     _completeImportSession = completeImportSession;
     _requestDocumentParsing = requestDocumentParsing;
     _loadParsingSnapshot = loadParsingSnapshot;
-    _loadDocumentWorkflowSnapshot = loadDocumentWorkflowSnapshot;
+    _acceptFragmentCandidate = acceptFragmentCandidate;
+    _rejectFragmentCandidate = rejectFragmentCandidate;
+    _loadFragmentReviewSnapshot = loadFragmentReviewSnapshot;
   }
 
   public async Task<ParsingExecutableWorkflowResult> RunAsync(CancellationToken cancellationToken = default)
@@ -61,17 +64,30 @@ public sealed class ParsingExecutableWorkflowRunner
       new BeginDocumentImportSessionCommand(createdProject.ProjectId),
       cancellationToken);
 
-    var textBytes = Encoding.UTF8.GetBytes(runScope.TextContent);
-    await using var textStream = new MemoryStream(textBytes, writable: false);
-    var importedSource = await _importSource.HandleAsync(
+    var sourceABytes = Encoding.UTF8.GetBytes(runScope.SourceAContent);
+    await using var sourceAStream = new MemoryStream(sourceABytes, writable: false);
+    var importedSourceA = await _importSource.HandleAsync(
       new ImportDocumentSourceCommand(
         beganImportSession.ImportSessionId,
         createdProject.ProjectId,
-        runScope.TextFileName,
+        runScope.SourceAFileName,
         "text/plain",
         ImportedSourceOrigin.LocalFile,
         null,
-        textStream),
+        sourceAStream),
+      cancellationToken);
+
+    var sourceBBytes = Encoding.UTF8.GetBytes(runScope.SourceBContent);
+    await using var sourceBStream = new MemoryStream(sourceBBytes, writable: false);
+    var importedSourceB = await _importSource.HandleAsync(
+      new ImportDocumentSourceCommand(
+        beganImportSession.ImportSessionId,
+        createdProject.ProjectId,
+        runScope.SourceBFileName,
+        "text/plain",
+        ImportedSourceOrigin.LocalFile,
+        null,
+        sourceBStream),
       cancellationToken);
 
     var completedImportSession = await _completeImportSession.HandleAsync(
@@ -81,27 +97,61 @@ public sealed class ParsingExecutableWorkflowRunner
     var firstParseResult = await _requestDocumentParsing.HandleAsync(
       new RequestDocumentParsingCommand(
         createdProject.ProjectId,
-        importedSource.ImportedSourceId,
+        importedSourceA.ImportedSourceId,
         ParserKey,
         ParserContractVersion),
       cancellationToken);
 
     var firstSnapshot = await LoadParsingSnapshotAsync(
       createdProject.ProjectId,
-      importedSource.ImportedSourceId,
+      importedSourceA.ImportedSourceId,
       cancellationToken);
 
     var replayParseResult = await _requestDocumentParsing.HandleAsync(
       new RequestDocumentParsingCommand(
         createdProject.ProjectId,
-        importedSource.ImportedSourceId,
+        importedSourceA.ImportedSourceId,
         ParserKey,
         ParserContractVersion),
       cancellationToken);
 
     var replaySnapshot = await LoadParsingSnapshotAsync(
       createdProject.ProjectId,
-      importedSource.ImportedSourceId,
+      importedSourceA.ImportedSourceId,
+      cancellationToken);
+
+    var sourceBParseResult = await _requestDocumentParsing.HandleAsync(
+      new RequestDocumentParsingCommand(
+        createdProject.ProjectId,
+        importedSourceB.ImportedSourceId,
+        ParserKey,
+        ParserContractVersion),
+      cancellationToken);
+
+    var candidatesToReview = firstSnapshot.ParserRuns
+      .SelectMany(r => r.FragmentCandidates)
+      .ToArray();
+
+    var acceptedCandidate = await _acceptFragmentCandidate.HandleAsync(
+      new AcceptFragmentCandidateCommand(
+        candidatesToReview[0].FragmentCandidateId,
+        "Deterministic fragment review acceptance."),
+      cancellationToken);
+
+    var rejectedCandidate = await _rejectFragmentCandidate.HandleAsync(
+      new RejectFragmentCandidateCommand(
+        candidatesToReview[^1].FragmentCandidateId,
+        "Deterministic fragment review rejection."),
+      cancellationToken);
+
+    var reviewSnapshotAfterAccept = await LoadReviewSnapshotAsync(
+      createdProject.ProjectId,
+      FragmentCandidateReviewState.HumanAccepted,
+      cancellationToken);
+
+    var reviewSnapshotAfterReject = await LoadReviewSnapshotAsync(
+      createdProject.ProjectId,
+      FragmentCandidateReviewState.Rejected,
       cancellationToken);
 
     var unsupportedMediaResult = await RunUnsupportedMediaScenarioAsync(
@@ -119,24 +169,120 @@ public sealed class ParsingExecutableWorkflowRunner
       runScope,
       cancellationToken);
 
+    var failurePresentations = await RunExpectedFailureScenariosAsync(
+      createdProject.ProjectId,
+      candidatesToReview,
+      runScope,
+      cancellationToken);
+
     var finalSnapshot = await LoadParsingSnapshotAsync(
       createdProject.ProjectId,
-      importedSource.ImportedSourceId,
+      importedSourceA.ImportedSourceId,
       cancellationToken);
 
     return new ParsingExecutableWorkflowResult(
       createdProject,
       beganImportSession,
-      importedSource,
+      importedSourceA,
+      importedSourceB,
       completedImportSession,
       firstParseResult,
       firstSnapshot,
       replayParseResult,
       replaySnapshot,
+      sourceBParseResult,
       unsupportedMediaResult,
       cancelledParseResult,
       malformedOutputResult,
-      finalSnapshot);
+      acceptedCandidate,
+      rejectedCandidate,
+      reviewSnapshotAfterAccept,
+      reviewSnapshotAfterReject,
+      finalSnapshot,
+      failurePresentations);
+  }
+
+  private async Task<IReadOnlyList<DesktopWorkflowFailurePresentation>> RunExpectedFailureScenariosAsync(
+    ProjectId projectId,
+    FragmentCandidateSnapshot[] candidatesToReview,
+    WorkflowRunScope runScope,
+    CancellationToken cancellationToken)
+  {
+    var failures = new List<DesktopWorkflowFailurePresentation>();
+
+    failures.Add(await CaptureExpectedFailureAsync(
+      "wrong-project-review",
+      async () =>
+      {
+        var otherProject = await _createProject.HandleAsync(
+          new CreateProjectCommand($"Other {runScope.Suffix}"),
+          cancellationToken);
+        var otherSession = await _beginImportSession.HandleAsync(
+          new BeginDocumentImportSessionCommand(otherProject.ProjectId),
+          cancellationToken);
+        var otherBytes = Encoding.UTF8.GetBytes("other content");
+        await using var otherStream = new MemoryStream(otherBytes, writable: false);
+        var otherSource = await _importSource.HandleAsync(
+          new ImportDocumentSourceCommand(
+            otherSession.ImportSessionId,
+            otherProject.ProjectId,
+            "other.txt",
+            "text/plain",
+            ImportedSourceOrigin.LocalFile,
+            null,
+            otherStream),
+          cancellationToken);
+        await _completeImportSession.HandleAsync(
+          new CompleteDocumentImportSessionCommand(otherSession.ImportSessionId),
+          cancellationToken);
+        await _requestDocumentParsing.HandleAsync(
+          new RequestDocumentParsingCommand(
+            otherProject.ProjectId,
+            otherSource.ImportedSourceId,
+            ParserKey,
+            ParserContractVersion),
+          cancellationToken);
+        await _acceptFragmentCandidate.HandleAsync(
+          new AcceptFragmentCandidateCommand(
+            candidatesToReview[0].FragmentCandidateId,
+            "Cross-project review."),
+          cancellationToken);
+      }));
+
+    failures.Add(await CaptureExpectedFailureAsync(
+      "already-reviewed-candidate",
+      async () =>
+      {
+        await _acceptFragmentCandidate.HandleAsync(
+          new AcceptFragmentCandidateCommand(
+            candidatesToReview[0].FragmentCandidateId,
+            "Double accept."),
+          cancellationToken);
+      }));
+
+    failures.Add(await CaptureExpectedFailureAsync(
+      "conflicting-accept-after-reject",
+      async () =>
+      {
+        await _acceptFragmentCandidate.HandleAsync(
+          new AcceptFragmentCandidateCommand(
+            candidatesToReview[^1].FragmentCandidateId,
+            "Conflict accept."),
+          cancellationToken);
+      }));
+
+    failures.Add(await CaptureExpectedFailureAsync(
+      "missing-candidate",
+      async () =>
+      {
+        await _acceptFragmentCandidate.HandleAsync(
+          new AcceptFragmentCandidateCommand(
+            FragmentCandidateId.New(),
+            "Ghost candidate."),
+          cancellationToken);
+      }));
+
+    return failures;
   }
 
   private async Task<RequestDocumentParsingResult> RunUnsupportedMediaScenarioAsync(
@@ -269,11 +415,50 @@ public sealed class ParsingExecutableWorkflowRunner
       cancellationToken);
   }
 
+  private async Task<LoadFragmentReviewSnapshotResult> LoadReviewSnapshotAsync(
+    ProjectId projectId,
+    FragmentCandidateReviewState reviewState,
+    CancellationToken cancellationToken)
+  {
+    return await _loadFragmentReviewSnapshot.HandleAsync(
+      new LoadFragmentReviewSnapshotQuery(
+        projectId,
+        reviewState,
+        null,
+        null,
+        null,
+        ReviewSnapshotMaxResults),
+      cancellationToken);
+  }
+
+  private static async Task<DesktopWorkflowFailurePresentation> CaptureExpectedFailureAsync(
+    string scenario,
+    Func<Task> operation)
+  {
+    try
+    {
+      await operation();
+    }
+    catch (Exception exception) when (
+      exception is DomainInvariantException
+      || exception is LifecycleTransitionException
+      || exception is InvalidOperationException
+      || exception is ApplicationEntityNotFoundException)
+    {
+      return new DesktopWorkflowFailurePresentation(scenario, exception.GetType().Name, exception.Message);
+
+    }
+
+    throw new InvalidOperationException($"Expected failure scenario '{scenario}' completed successfully.");
+  }
+
   private sealed record WorkflowRunScope(
     string Suffix,
     string ProjectName,
-    string TextFileName,
-    string TextContent,
+    string SourceAFileName,
+    string SourceAContent,
+    string SourceBFileName,
+    string SourceBContent,
     string UnsupportedMediaFileName,
     string CancelFileName,
     string CancelContent,
@@ -287,6 +472,8 @@ public sealed class ParsingExecutableWorkflowRunner
         $"Parsing Proof {suffix}",
         $"specification-{suffix}.txt",
         $"run-scope={suffix}\nSection 03 30 00 requires concrete curing in accordance with the approved project specifications.\n\nField observation: concrete placement was completed and wet curing was initiated.\n\nProvide curing protection immediately after finishing.",
+        $"field-observation-{suffix}.txt",
+        $"run-scope={suffix}\nInspection of concrete placement on level 3 confirmed curing was initiated within specified time limits.\n\nMoisture retention blankets were placed as required.",
         $"unsupported-{suffix}.pdf",
         $"cancel-{suffix}.txt",
         $"run-scope={suffix}\nThis content will be parsed before cancellation.",

@@ -29,6 +29,9 @@ public sealed class LogPropertiesTests
       LogProperties.DeclaredMediaType,
       LogProperties.ProcessorKey,
       LogProperties.CandidateCount,
+      LogProperties.FragmentCandidateId,
+      LogProperties.ParserRunId,
+      LogProperties.ReviewState,
     };
 
     Assert.All(properties, name => Assert.False(string.IsNullOrWhiteSpace(name)));
@@ -50,6 +53,9 @@ public sealed class LogPropertiesTests
     Assert.Equal("DeclaredMediaType", LogProperties.DeclaredMediaType);
     Assert.Equal("ProcessorKey", LogProperties.ProcessorKey);
     Assert.Equal("CandidateCount", LogProperties.CandidateCount);
+    Assert.Equal("FragmentCandidateId", LogProperties.FragmentCandidateId);
+    Assert.Equal("ParserRunId", LogProperties.ParserRunId);
+    Assert.Equal("ReviewState", LogProperties.ReviewState);
   }
 
   [Fact]
@@ -77,6 +83,9 @@ public sealed class LogPropertiesTests
       LogProperties.DeclaredMediaType,
       LogProperties.ProcessorKey,
       LogProperties.CandidateCount,
+      LogProperties.FragmentCandidateId,
+      LogProperties.ParserRunId,
+      LogProperties.ReviewState,
     };
 
     Assert.All(properties, name => Assert.DoesNotContain(" ", name));

@@ -914,6 +914,10 @@ internal static class InfrastructureMapper
       record.IdentityKey,
       record.IdentityKeyHash,
       record.CreatedAtUtc,
+      record.ReviewState,
+      record.ReviewedBy,
+      record.ReviewedAtUtc,
+      record.ReviewNotes,
       auditTrail);
   }
 
@@ -937,6 +941,10 @@ internal static class InfrastructureMapper
       IdentityKey = candidate.IdentityKey,
       IdentityKeyHash = candidate.IdentityKeyHash,
       CreatedAtUtc = candidate.CreatedAtUtc,
+      ReviewState = candidate.ReviewState,
+      ReviewedBy = candidate.ReviewedBy,
+      ReviewedAtUtc = candidate.ReviewedAtUtc,
+      ReviewNotes = candidate.ReviewNotes,
     };
   }
 }

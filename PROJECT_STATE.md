@@ -12,7 +12,7 @@
 
 ## Active Implementation Package
 
-- `PARSING-EXECUTABLE-SLICE-0.1-RC`
+- `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1-RC`
 
 ## Current Branch
 
@@ -32,13 +32,14 @@
 
 ## Test Status
 
-- Domain: `152/152`
-- Application: `156/156`
+- Domain: `181/181`
+- Application: `184/184`
 - Documents: `28/28`
-- Infrastructure: `42/42`
+- Infrastructure: `56/56`
 - Architecture: `24/24`
-- Desktop: `34/34`
-- Total: `442/442`
+- AI: `6/6`
+- Desktop: `39/39`
+- Total: `518/518`
 
 ## Open ADRs
 
@@ -63,6 +64,8 @@
 - `EDR-KE-010` Knowledge fragment identity (`Resolved in PARSING-AND-FRAGMENT-FOUNDATION-0.1`)
 - `EDR-KE-011` Engineering assertion promotion (`Deferred`)
 - `EDR-KE-012` Document Engine ownership boundary (`Accepted`)
+- `EDR-DE-006` Fragment identity contract-version choice (`Accepted`)
+- `EDR-DE-007` Fragment candidate review disposition and promotion prerequisites (`Accepted`)
 
 ## Outstanding Technical Debt
 
@@ -77,7 +80,7 @@
 
 ## Immediate Next Task
 
-- Begin `PARSING-EXECUTABLE-SLICE-0.1-RC`
+- `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1-RC` Prompt 4 complete — awaiting review
 
 ## Fast Context
 
@@ -85,7 +88,7 @@
 - Start every new AI session from `.ai/bootstrap.md`.
 - The latest governance baseline is `ARCHITECTURE-VISION-2.0`.
 - The latest software baseline is `PARSING-AND-FRAGMENT-FOUNDATION-0.1`.
-- The active implementation package is `PARSING-EXECUTABLE-SLICE-0.1-RC`.
+- The active implementation package is `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1-RC`.
 
 ## Current Capabilities
 
@@ -94,3 +97,10 @@
 - Parser runs, fragment candidates, and audit history persist through SQLite and survive provider recreation
 - Parser version coexistence preserves historical candidates
 - Parsing does not widen Knowledge, Report, or AI authority boundaries
+- Domain-level fragment candidate review lifecycle: Generated, HumanAccepted, Rejected
+- Application-layer Accept/Reject commands for fragment candidate review with audit staging and commit
+- Bounded FragmentReviewSnapshot query with text preview, review metadata, and filter support
+- Application review workflows do not create Knowledge, Report, Rule, or AI records
+- Desktop executable proof exercises full review lifecycle with 2-source import and version coexistence
+- First-commit-wins concurrency and terminal state guards prevent conflicting updates
+- Authority isolation verified: parsing and review do not create Knowledge, Report, or AI records

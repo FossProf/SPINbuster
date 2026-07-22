@@ -145,6 +145,19 @@ public sealed class SqliteFragmentCandidateRepository : IFragmentCandidateReposi
     _dbContext = dbContext;
   }
 
+  public async Task<FragmentCandidate?> GetByIdAsync(FragmentCandidateId fragmentCandidateId, CancellationToken cancellationToken = default)
+  {
+    var record = await _dbContext.FragmentCandidates.AsNoTracking()
+      .FirstOrDefaultAsync(item => item.Id == fragmentCandidateId, cancellationToken);
+    if (record is null)
+    {
+      return null;
+    }
+
+    var auditMap = await LoadAuditTrailMapAsync(nameof(FragmentCandidate), [record.Id.ToString()], cancellationToken);
+    return InfrastructureMapper.ToDomain(record, auditMap.TryGetValue(record.Id.ToString(), out var trail) ? trail : []);
+  }
+
   public async Task<IReadOnlyCollection<FragmentCandidate>> GetByParserRunAsync(
     ParserRunId parserRunId,
     int maxResults,
@@ -199,6 +212,78 @@ public sealed class SqliteFragmentCandidateRepository : IFragmentCandidateReposi
   {
     _dbContext.FragmentCandidates.Add(InfrastructureMapper.ToRecord(fragmentCandidate));
     return Task.CompletedTask;
+  }
+
+  public Task UpdateAsync(FragmentCandidate fragmentCandidate, CancellationToken cancellationToken = default)
+  {
+    var record = InfrastructureMapper.ToRecord(fragmentCandidate);
+    var existingEntry = _dbContext.ChangeTracker
+      .Entries<FragmentCandidateRecord>()
+      .FirstOrDefault(e => e.Entity.Id == record.Id);
+    if (existingEntry is not null)
+    {
+      existingEntry.State = EntityState.Detached;
+    }
+
+    _dbContext.FragmentCandidates.Update(record);
+    return Task.CompletedTask;
+  }
+
+  public async Task<IReadOnlyCollection<FragmentCandidate>> GetByProjectFilteredAsync(
+    ProjectId projectId,
+    int maxResults,
+    FragmentCandidateReviewState? reviewStateFilter,
+    CancellationToken cancellationToken = default)
+  {
+    var query = _dbContext.FragmentCandidates.AsNoTracking()
+      .Where(item => item.ProjectId == projectId);
+
+    if (reviewStateFilter.HasValue)
+    {
+      query = query.Where(item => item.ReviewState == reviewStateFilter.Value);
+    }
+
+    var records = await query.ToArrayAsync(cancellationToken);
+    records = records
+      .OrderBy(item => item.CreatedAtUtc)
+      .ThenBy(item => item.Id)
+      .Take(maxResults)
+      .ToArray();
+
+    if (records.Length == 0)
+    {
+      return [];
+    }
+
+    var auditMap = await LoadAuditTrailMapAsync(nameof(FragmentCandidate), records.Select(item => item.Id.ToString()).ToArray(), cancellationToken);
+    return records
+      .Select(record => InfrastructureMapper.ToDomain(record, auditMap.TryGetValue(record.Id.ToString(), out var trail) ? trail : []))
+      .ToArray();
+  }
+
+  public async Task<IReadOnlyCollection<FragmentCandidate>> GetByProjectAsync(
+    ProjectId projectId,
+    int maxResults,
+    CancellationToken cancellationToken = default)
+  {
+    var records = await _dbContext.FragmentCandidates.AsNoTracking()
+      .Where(item => item.ProjectId == projectId)
+      .ToArrayAsync(cancellationToken);
+    records = records
+      .OrderBy(item => item.CreatedAtUtc)
+      .ThenBy(item => item.Id)
+      .Take(maxResults)
+      .ToArray();
+
+    if (records.Length == 0)
+    {
+      return [];
+    }
+
+    var auditMap = await LoadAuditTrailMapAsync(nameof(FragmentCandidate), records.Select(item => item.Id.ToString()).ToArray(), cancellationToken);
+    return records
+      .Select(record => InfrastructureMapper.ToDomain(record, auditMap.TryGetValue(record.Id.ToString(), out var trail) ? trail : []))
+      .ToArray();
   }
 
   private async Task<Dictionary<string, AuditEvent[]>> LoadAuditTrailMapAsync(string subjectType, string[] subjectIds, CancellationToken cancellationToken)

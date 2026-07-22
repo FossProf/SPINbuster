@@ -10,7 +10,7 @@ Latest software baseline:
 PARSING-AND-FRAGMENT-FOUNDATION-0.1
 
 Active implementation package:
-PARSING-EXECUTABLE-SLICE-0.1-RC
+FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1-RC
 
 Status:
 Parsing and fragment foundation released as PARSING-AND-FRAGMENT-FOUNDATION-0.1
@@ -22,49 +22,61 @@ Warnings:
 0
 
 Domain tests:
-152/152 passing
+181/181 passing
 
 Application tests:
-156/156 passing
+184/184 passing
 
 Documents tests:
 28/28 passing
 
 Infrastructure tests:
-42/42 passing
+56/56 passing
 
 Architecture tests:
 24/24 passing
 
+AI tests:
+6/6 passing
+
 Desktop tests:
-34/34 passing
+39/39 passing
 
 Total tests:
-442/442 passing
+518/518 passing
 
 Current task:
-Begin `PARSING-EXECUTABLE-SLICE-0.1-RC`
+`FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1-RC` (Prompt 4) complete — awaiting review
 
 Required outcome:
 
-- Extend the Desktop proof to exercise multi-source parsing, version coexistence, and review workflow.
-- Preserve the frozen governance baseline while extending the parsing proof.
-- Keep OCR, AI extraction, and promotion boundaries governed and deferred until explicitly designed.
-- Do not bypass provenance, validation, scope, lifecycle, or project boundaries.
+- Define FragmentCandidate lifecycle states for human review (Generated, HumanAccepted, Rejected)
+- Review acceptance must not change IdentityKey, provenance, parser binding, or locator
+- Preserve the frozen governance baseline while extending the review model
+- Keep OCR, AI extraction, and promotion boundaries governed and deferred
+- Do not bypass provenance, validation, scope, lifecycle, or project boundaries
 
 Next review:
-Parsing executable slice boundary review
+Awaiting review of `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1-RC` after Prompt 4 completion
 
 Known blockers:
 None
 
+Known process deviation:
+The EF migration `AddFragmentCandidateReviewState` was created during Prompt 1 before Application review workflows were finalized. This was premature per slice boundaries. Treat the checkpoint as `FRAGMENT-REVIEW-DOMAIN-AND-SCHEMA-CHECKPOINT`. Do not create another migration unless the model genuinely changes.
+
 Last completed:
 
-- Released `PARSING-AND-FRAGMENT-FOUNDATION-0.1` with executable proof validated across 4 prompts
+- Released `PARSING-AND-FRAGMENT-FOUNDATION-0.1` with executable proof validated
+- Completed `FRAGMENT-INTEGRITY-HARDENING-CHECKPOINT`: fixed Rehydrate, added rehydration validation, documented contract-version identity choice (EDR-DE-006) across 4 prompts
+- Completed `FRAGMENT-REVIEW-DOMAIN-AND-SCHEMA-CHECKPOINT` (Prompt 1): implemented FragmentCandidateReviewState enum, Accept/Reject methods with audit events, review disposition properties, updated InfrastructureMapper/EF model, added EF migration, updated spec, created EDR-DE-007, added 20 review lifecycle domain tests
+- Completed `FRAGMENT-REVIEW-APPLICATION-CHECKPOINT` (Prompt 2): implemented Accept/Reject use cases, LoadFragmentReviewSnapshot query, repository extensions, DI registration, added 28 Application tests
+- Completed `FRAGMENT-REVIEW-PERSISTENCE-CHECKPOINT` (Prompt 3): verified EF migration integrity, repository update semantics, atomic commit, and concurrency
+- Completed `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1-RC` (Prompt 4): extended Desktop executable proof with full review lifecycle, 2-source import, version coexistence, expected failure scenarios, authority isolation verification, fixed EF Core tracking conflict, created prototype review document
 
 Proposed next direction:
 
-- Begin `PARSING-EXECUTABLE-SLICE-0.1-RC` to extend Desktop proof with multi-source parsing and review workflow
+- Determine next package after review approval (Knowledge promotion or broader Document Understanding)
 - Preserve the non-authoritative document-candidate boundary
 - Keep OCR, AI extraction, and reconciliation workflows deferred until fragment contracts are explicit
 
@@ -110,6 +122,12 @@ Current capabilities:
 - Demonstrate unsupported media, cancelled parse, and malformed output as expected failures without crashing
 - Verify parser version coexistence with historical candidate preservation
 - Verify authority isolation: parsing does not create Knowledge, Report, or AI records
+- Review fragment candidates through Accept/Reject lifecycle with audit trail
+- Persist review disposition (ReviewedBy, ReviewedAtUtc, ReviewNotes) with fragment candidates
+- Verify review does not mutate identity, provenance, or locator properties
+- Execute full Desktop review workflow with 2-source import, version coexistence, and expected failure scenarios
+- Verify first-commit-wins concurrency and terminal state guards
+- Verify authority isolation: parsing and review do not create Knowledge, Report, or AI records
 
 Authoritative context:
 
@@ -133,6 +151,8 @@ Authoritative context:
 - `docs/decisions/edr/EDR-KE-010-knowledge-fragment-identity.md`
 - `docs/decisions/edr/EDR-KE-011-engineering-assertion-promotion.md`
 - `docs/decisions/edr/EDR-KE-012-document-engine-ownership-boundary.md`
+- `docs/decisions/edr/EDR-DE-006-fragment-identity-contract-version-choice.md`
+- `docs/decisions/edr/EDR-DE-007-fragment-candidate-review-disposition-and-promotion-prerequisites.md`
 
 Validation before completion:
 

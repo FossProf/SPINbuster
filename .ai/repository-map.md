@@ -26,6 +26,7 @@ Purpose: Explain how the repository is organized and where different kinds of wo
 - `docs/03-implementation/IMPLEMENTATION_LOG.md` records completed milestones and the next implementation step.
 - `docs/decisions/edr/EDR-KE-001` through `EDR-KE-012` record the current Knowledge Engine and Document Engine deferred or accepted boundaries.
 - `docs/decisions/status/PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC-PROTOTYPE-REVIEW.md` captures the parsing foundation review findings and next-package recommendation.
+- `docs/decisions/status/FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1-RC-REVIEW.md` captures the fragment candidate review slice findings and validation.
 
 ## Specification Layout
 
@@ -62,7 +63,7 @@ Purpose: Explain how the repository is organized and where different kinds of wo
 
 ## Next Active Package
 
-- `PARSING-EXECUTABLE-SLICE-0.1-RC`
+- `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1-RC`
 
 ## Current Document Engine Flow
 

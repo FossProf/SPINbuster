@@ -30,6 +30,13 @@ public enum ContentKind
   Metadata = 4,
 }
 
+public enum FragmentCandidateReviewState
+{
+  Generated = 0,
+  HumanAccepted = 1,
+  Rejected = 2,
+}
+
 public sealed record FragmentLocator
 {
   public FragmentLocator(FragmentLocatorType locatorType, string rawValue)
@@ -276,6 +283,7 @@ public sealed class FragmentCandidate : AuditableEntity
 {
   private const string AuditSubjectType = "FragmentCandidate";
   private const int MaxExtractedTextLength = 100_000;
+  private const int MaxReviewNotesLength = 2_000;
 
   public FragmentCandidate(
     FragmentCandidateId id,
@@ -329,33 +337,96 @@ public sealed class FragmentCandidate : AuditableEntity
       $"Fragment candidate {contentKind} generated at ordinal {ordinal} with locator {locator.NormalizedValue}."));
   }
 
-  public FragmentCandidateId Id { get; }
+  private FragmentCandidate()
+  {
+  }
 
-  public ParserRunId ParserRunId { get; }
+  public void Accept(string reviewedBy, DateTimeOffset reviewedAtUtc, string? reviewNotes)
+  {
+    EnsureReviewNotDecided(nameof(Accept));
 
-  public ProjectId ProjectId { get; }
+    ReviewState = FragmentCandidateReviewState.HumanAccepted;
+    ReviewedBy = DomainGuards.NotNullOrWhiteSpace(reviewedBy, nameof(reviewedBy));
+    ReviewedAtUtc = DomainGuards.NotDefault(reviewedAtUtc, nameof(reviewedAtUtc));
+    ReviewNotes = NormalizeReviewNotes(reviewNotes);
+    AppendAuditEvent(CreateAuditEvent(
+      "FragmentCandidateHumanAccepted",
+      ReviewedBy,
+      reviewedAtUtc,
+      "Fragment candidate recorded as human-accepted review intent only."));
+  }
 
-  public ImportedSourceId ImportedSourceId { get; }
+  public void Reject(string reviewedBy, DateTimeOffset reviewedAtUtc, string? reviewNotes)
+  {
+    EnsureReviewNotDecided(nameof(Reject));
 
-  public string SourceContentHash { get; }
+    ReviewState = FragmentCandidateReviewState.Rejected;
+    ReviewedBy = DomainGuards.NotNullOrWhiteSpace(reviewedBy, nameof(reviewedBy));
+    ReviewedAtUtc = DomainGuards.NotDefault(reviewedAtUtc, nameof(reviewedAtUtc));
+    ReviewNotes = NormalizeReviewNotes(reviewNotes);
+    AppendAuditEvent(CreateAuditEvent(
+      "FragmentCandidateRejected",
+      ReviewedBy,
+      reviewedAtUtc,
+      "Fragment candidate rejected during review."));
+  }
 
-  public FragmentLocator Locator { get; }
+  private void EnsureReviewNotDecided(string transitionName)
+  {
+    if (ReviewState is FragmentCandidateReviewState.HumanAccepted or FragmentCandidateReviewState.Rejected)
+    {
+      throw new LifecycleTransitionException(nameof(FragmentCandidate), ReviewState.ToString(), transitionName);
+    }
+  }
 
-  public int Ordinal { get; }
+  private static string? NormalizeReviewNotes(string? value)
+  {
+    if (string.IsNullOrWhiteSpace(value))
+    {
+      return null;
+    }
 
-  public ContentKind ContentKind { get; }
+    var trimmed = value.Trim();
+    return trimmed.Length > MaxReviewNotesLength
+      ? throw new DomainInvariantException($"ReviewNotes length exceeds maximum of {MaxReviewNotesLength} characters.")
+      : trimmed;
+  }
 
-  public string ExtractedText { get; }
+  public FragmentCandidateId Id { get; private set; }
 
-  public int TextLength { get; }
+  public ParserRunId ParserRunId { get; private set; }
 
-  public ConfidenceBand ConfidenceBand { get; }
+  public ProjectId ProjectId { get; private set; }
 
-  public string IdentityKey { get; }
+  public ImportedSourceId ImportedSourceId { get; private set; }
 
-  public string IdentityKeyHash { get; }
+  public string SourceContentHash { get; private set; } = string.Empty;
 
-  public DateTimeOffset CreatedAtUtc { get; }
+  public FragmentLocator Locator { get; private set; } = null!;
+
+  public int Ordinal { get; private set; }
+
+  public ContentKind ContentKind { get; private set; }
+
+  public string ExtractedText { get; private set; } = string.Empty;
+
+  public int TextLength { get; private set; }
+
+  public ConfidenceBand ConfidenceBand { get; private set; }
+
+  public string IdentityKey { get; private set; } = string.Empty;
+
+  public string IdentityKeyHash { get; private set; } = string.Empty;
+
+  public DateTimeOffset CreatedAtUtc { get; private set; }
+
+  public FragmentCandidateReviewState ReviewState { get; private set; }
+
+  public string? ReviewedBy { get; private set; }
+
+  public DateTimeOffset? ReviewedAtUtc { get; private set; }
+
+  public string? ReviewNotes { get; private set; }
 
   protected override string SubjectType => AuditSubjectType;
 
@@ -376,25 +447,35 @@ public sealed class FragmentCandidate : AuditableEntity
     string identityKey,
     string identityKeyHash,
     DateTimeOffset createdAtUtc,
+    FragmentCandidateReviewState reviewState,
+    string? reviewedBy,
+    DateTimeOffset? reviewedAtUtc,
+    string? reviewNotes,
     IEnumerable<AuditEvent> auditTrail)
   {
-    var candidate = new FragmentCandidate(
-      id,
-      parserRunId,
-      projectId,
-      importedSourceId,
-      sourceContentHash,
-      locator,
-      ordinal,
-      contentKind,
-      extractedText,
-      confidenceBand,
-      string.Empty,
-      string.Empty,
-      createdAtUtc)
+    var candidate = new FragmentCandidate
     {
+      Id = id,
+      ParserRunId = parserRunId,
+      ProjectId = projectId,
+      ImportedSourceId = importedSourceId,
+      SourceContentHash = sourceContentHash,
+      Locator = locator,
+      Ordinal = ordinal,
+      ContentKind = contentKind,
+      ExtractedText = extractedText,
+      TextLength = textLength,
+      ConfidenceBand = confidenceBand,
+      IdentityKey = identityKey,
+      IdentityKeyHash = identityKeyHash,
+      CreatedAtUtc = createdAtUtc,
+      ReviewState = reviewState,
+      ReviewedBy = reviewedBy,
+      ReviewedAtUtc = reviewedAtUtc,
+      ReviewNotes = reviewNotes,
     };
 
+    candidate.ValidateRehydratedState();
     candidate.RestoreAuditTrail(auditTrail);
     return candidate;
   }
@@ -412,5 +493,86 @@ public sealed class FragmentCandidate : AuditableEntity
   {
     var bytes = Encoding.UTF8.GetBytes(value);
     return Convert.ToHexString(SHA256.HashData(bytes));
+  }
+
+  private void ValidateRehydratedState()
+  {
+    if (Id.Value == Guid.Empty)
+    {
+      throw new DomainInvariantException("Rehydrated FragmentCandidate has an empty Id.");
+    }
+
+    if (ParserRunId.Value == Guid.Empty)
+    {
+      throw new DomainInvariantException("Rehydrated FragmentCandidate has an empty ParserRunId.");
+    }
+
+    if (ProjectId.Value == Guid.Empty)
+    {
+      throw new DomainInvariantException("Rehydrated FragmentCandidate has an empty ProjectId.");
+    }
+
+    if (ImportedSourceId.Value == Guid.Empty)
+    {
+      throw new DomainInvariantException("Rehydrated FragmentCandidate has an empty ImportedSourceId.");
+    }
+
+    if (string.IsNullOrWhiteSpace(SourceContentHash))
+    {
+      throw new DomainInvariantException("Rehydrated FragmentCandidate has an empty SourceContentHash.");
+    }
+
+    if (Locator is null)
+    {
+      throw new DomainInvariantException("Rehydrated FragmentCandidate has a null Locator.");
+    }
+
+    if (Ordinal <= 0)
+    {
+      throw new DomainInvariantException($"Rehydrated FragmentCandidate has a non-positive Ordinal value of {Ordinal}.");
+    }
+
+    if (string.IsNullOrWhiteSpace(ExtractedText))
+    {
+      throw new DomainInvariantException("Rehydrated FragmentCandidate has an empty ExtractedText.");
+    }
+
+    if (TextLength != ExtractedText.Length)
+    {
+      throw new DomainInvariantException($"Rehydrated FragmentCandidate TextLength {TextLength} does not match ExtractedText length {ExtractedText.Length}.");
+    }
+
+    if (string.IsNullOrWhiteSpace(IdentityKey))
+    {
+      throw new DomainInvariantException("Rehydrated FragmentCandidate has an empty IdentityKey.");
+    }
+
+    if (string.IsNullOrWhiteSpace(IdentityKeyHash))
+    {
+      throw new DomainInvariantException("Rehydrated FragmentCandidate has an empty IdentityKeyHash.");
+    }
+
+    if (IdentityKeyHash != ComputeHash(IdentityKey))
+    {
+      throw new DomainInvariantException("Rehydrated FragmentCandidate IdentityKeyHash does not match the expected hash of IdentityKey.");
+    }
+
+    if (CreatedAtUtc == default)
+    {
+      throw new DomainInvariantException("Rehydrated FragmentCandidate has a default CreatedAtUtc.");
+    }
+
+    if (ReviewState is FragmentCandidateReviewState.HumanAccepted or FragmentCandidateReviewState.Rejected)
+    {
+      if (string.IsNullOrWhiteSpace(ReviewedBy))
+      {
+        throw new DomainInvariantException("Rehydrated FragmentCandidate has a review disposition but an empty ReviewedBy.");
+      }
+
+      if (ReviewedAtUtc is null || ReviewedAtUtc.Value == default)
+      {
+        throw new DomainInvariantException("Rehydrated FragmentCandidate has a review disposition but a default ReviewedAtUtc.");
+      }
+    }
   }
 }

@@ -208,7 +208,7 @@ public sealed class SqliteReportPersistenceTests : IDisposable
       await migratedContext.Database.MigrateAsync();
 
       var appliedMigrations = (await migratedContext.Database.GetAppliedMigrationsAsync()).ToArray();
-      Assert.Equal(7, appliedMigrations.Length);
+      Assert.Equal(9, appliedMigrations.Length);
 
       var storedProject = await new SqliteProjectRepository(migratedContext).GetByIdAsync(seededInspection.ProjectId);
       var storedInspectionSession = await new SqliteInspectionSessionRepository(migratedContext).GetByIdAsync(seededInspection.InspectionSessionId);

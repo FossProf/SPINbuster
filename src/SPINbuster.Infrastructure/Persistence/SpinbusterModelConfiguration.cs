@@ -554,7 +554,6 @@ internal static class SpinbusterModelConfiguration
     parserRunBuilder.HasOne<ImportedDocumentSourceRecord>().WithMany().HasForeignKey(record => record.ImportedSourceId).OnDelete(DeleteBehavior.Restrict);
 
     var fragmentCandidateBuilder = modelBuilder.Entity<FragmentCandidateRecord>();
-    fragmentCandidateBuilder.ToTable("parser_fragment_candidates");
     fragmentCandidateBuilder.HasKey(record => record.Id);
     fragmentCandidateBuilder.Property(record => record.Id).HasConversion(StronglyTypedIdValueConverters.FragmentCandidateId).ValueGeneratedNever();
     fragmentCandidateBuilder.Property(record => record.ParserRunId).HasConversion(StronglyTypedIdValueConverters.ParserRunId).IsRequired();
@@ -572,9 +571,19 @@ internal static class SpinbusterModelConfiguration
     fragmentCandidateBuilder.Property(record => record.IdentityKey).HasMaxLength(1024).IsRequired();
     fragmentCandidateBuilder.Property(record => record.IdentityKeyHash).HasMaxLength(128).IsRequired();
     fragmentCandidateBuilder.Property(record => record.CreatedAtUtc).IsRequired();
+    fragmentCandidateBuilder.Property(record => record.ReviewState).IsRequired();
+    fragmentCandidateBuilder.Property(record => record.ReviewedBy).HasMaxLength(256);
+    fragmentCandidateBuilder.Property(record => record.ReviewedAtUtc);
+    fragmentCandidateBuilder.Property(record => record.ReviewNotes).HasMaxLength(2000);
     fragmentCandidateBuilder.HasIndex(record => record.ParserRunId);
     fragmentCandidateBuilder.HasIndex(record => record.ImportedSourceId);
     fragmentCandidateBuilder.HasIndex(record => record.IdentityKeyHash);
+    fragmentCandidateBuilder.HasIndex(record => new { record.ProjectId, record.ReviewState }).HasDatabaseName("IX_parser_fragment_candidates_ProjectId_ReviewState");
+    fragmentCandidateBuilder.HasIndex(record => new { record.ParserRunId, record.ReviewState }).HasDatabaseName("IX_parser_fragment_candidates_ParserRunId_ReviewState");
+    fragmentCandidateBuilder.ToTable("parser_fragment_candidates", tableBuilder =>
+      tableBuilder.HasCheckConstraint(
+        "CK_parser_fragment_candidates_review_metadata",
+        "(ReviewState = 0 AND ReviewedBy IS NULL AND ReviewedAtUtc IS NULL) OR (ReviewState IN (1, 2) AND ReviewedBy IS NOT NULL AND ReviewedAtUtc IS NOT NULL)"));
     fragmentCandidateBuilder.HasOne<ParserRunRecord>().WithMany().HasForeignKey(record => record.ParserRunId).OnDelete(DeleteBehavior.Restrict);
     fragmentCandidateBuilder.HasOne<ImportedDocumentSourceRecord>().WithMany().HasForeignKey(record => record.ImportedSourceId).OnDelete(DeleteBehavior.Restrict);
   }

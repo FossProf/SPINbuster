@@ -10,20 +10,35 @@ public static class ParsingExecutableWorkflowConsoleFormatter
     var builder = new StringBuilder();
 
     builder.AppendLine();
-    builder.AppendLine("Parsing and Fragment Foundation - Executable Proof");
+    builder.AppendLine("Fragment Candidate Review - Executable Proof");
     builder.AppendLine();
 
     AppendLineInvariant(builder, $"Project: {result.CreatedProject.Name}");
     AppendLineInvariant(builder, $"Import session state: {result.CompletedImportSession.State}");
     builder.AppendLine();
 
-    builder.AppendLine("=== First Parse ===");
+    builder.AppendLine("=== Source A Parse ===");
     AppendParseResult(builder, "First", result.FirstParseResult);
     AppendSnapshotSummary(builder, result.FirstSnapshot);
 
     builder.AppendLine("=== Replay Parse (Idempotent) ===");
     AppendParseResult(builder, "Replay", result.ReplayParseResult);
     AppendSnapshotSummary(builder, result.ReplaySnapshot);
+
+    builder.AppendLine("=== Source B Parse ===");
+    AppendParseResult(builder, "SourceB", result.SourceBParseResult);
+
+    builder.AppendLine("=== Fragment Review ===");
+    AppendLineInvariant(builder, $"  Accepted candidate ID: {result.AcceptedCandidate.FragmentCandidateId}");
+    AppendLineInvariant(builder, $"  Accepted state: {result.AcceptedCandidate.ReviewState}");
+    AppendLineInvariant(builder, $"  Accepted reviewer: {result.AcceptedCandidate.Reviewer}");
+    AppendLineInvariant(builder, $"  Rejected candidate ID: {result.RejectedCandidate.FragmentCandidateId}");
+    AppendLineInvariant(builder, $"  Rejected state: {result.RejectedCandidate.ReviewState}");
+    AppendLineInvariant(builder, $"  Rejected reviewer: {result.RejectedCandidate.Reviewer}");
+    builder.AppendLine();
+
+    AppendReviewSnapshotSummary(builder, "After Accept", result.ReviewSnapshotAfterAccept);
+    AppendReviewSnapshotSummary(builder, "After Reject", result.ReviewSnapshotAfterReject);
 
     builder.AppendLine("=== Expected Failure: Unsupported Media ===");
     AppendParseResult(builder, "Unsupported", result.UnsupportedMediaResult);
@@ -34,9 +49,15 @@ public static class ParsingExecutableWorkflowConsoleFormatter
     builder.AppendLine("=== Expected Failure: Malformed Output ===");
     AppendParseResult(builder, "Malformed", result.MalformedOutputResult);
 
+    builder.AppendLine("=== Expected Failure: Review Scenarios ===");
+    foreach (var failure in result.FailurePresentations)
+    {
+      AppendLineInvariant(builder, $"  [{failure.Scenario}] {failure.ErrorType}: {failure.Message}");
+    }
+
     builder.AppendLine("=== Parser Version Coexistence ===");
     var finalParserRuns = result.FinalSnapshot.ParserRuns;
-    AppendLineInvariant(builder, $"  Total parser runs for source: {finalParserRuns.Count}");
+    AppendLineInvariant(builder, $"  Total parser runs for source A: {finalParserRuns.Count}");
     foreach (var run in finalParserRuns)
     {
       AppendLineInvariant(builder, $"  - run ID: {run.ParserRunId}");
@@ -93,6 +114,21 @@ public static class ParsingExecutableWorkflowConsoleFormatter
       foreach (var audit in run.AuditHistory)
       {
         AppendLineInvariant(builder, $"      [{audit.EventType}] {audit.Actor} @ {audit.OccurredAtUtc:O}: {audit.Description}");
+      }
+    }
+
+    builder.AppendLine();
+  }
+
+  private static void AppendReviewSnapshotSummary(StringBuilder builder, string label, Application.UseCases.LoadFragmentReviewSnapshot.LoadFragmentReviewSnapshotResult snapshot)
+  {
+    AppendLineInvariant(builder, $"  {label} review snapshot: {snapshot.TotalMatchingCount} entries");
+    foreach (var entry in snapshot.Entries)
+    {
+      AppendLineInvariant(builder, $"    [{entry.ReviewState}] {entry.LocatorType} '{entry.LocatorValue}' kind={entry.ContentKind} textLen={entry.TextLength}");
+      if (entry.ReviewedBy is not null)
+      {
+        AppendLineInvariant(builder, $"      reviewed by: {entry.ReviewedBy} @ {entry.ReviewedAtUtc:O}");
       }
     }
 
