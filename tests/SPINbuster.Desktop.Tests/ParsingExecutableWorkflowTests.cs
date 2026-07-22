@@ -458,6 +458,154 @@ public sealed class ParsingExecutableWorkflowTests
     }
   }
 
+  [Fact]
+  public async Task StructuredTextSourceParsesAndProducesFragments()
+  {
+    var environment = CreateEnvironmentPaths();
+
+    try
+    {
+      using var serviceProvider = CreateServiceProvider(environment);
+      var result = await ParsingExecutableWorkflowBootstrapper.RunAsync(serviceProvider);
+
+      Assert.Equal(ParserRunState.Completed, result.StructuredTextParseResult.State);
+      Assert.True(result.StructuredTextParseResult.FragmentCandidateIds.Count > 0);
+    }
+    finally
+    {
+      DeleteEnvironmentIfPresent(environment);
+    }
+  }
+
+  [Fact]
+  public async Task StructuredTextSnapshotContainsStructuredParserKeyAndCandidates()
+  {
+    var environment = CreateEnvironmentPaths();
+
+    try
+    {
+      using var serviceProvider = CreateServiceProvider(environment);
+      var result = await ParsingExecutableWorkflowBootstrapper.RunAsync(serviceProvider);
+
+      var snapshot = result.StructuredTextSnapshot;
+      Assert.Single(snapshot.ParserRuns);
+      var run = snapshot.ParserRuns[0];
+      Assert.Equal("structured-text-deterministic", run.ParserKey);
+      Assert.Equal(ParserContractVersion, run.ParserContractVersion);
+      Assert.True(run.FragmentCandidates.Count > 0);
+    }
+    finally
+    {
+      DeleteEnvironmentIfPresent(environment);
+    }
+  }
+
+  [Fact]
+  public async Task StructuredTextDiagnosticsArePersistedAndLoadedViaSnapshot()
+  {
+    var environment = CreateEnvironmentPaths();
+
+    try
+    {
+      using var serviceProvider = CreateServiceProvider(environment);
+      var result = await ParsingExecutableWorkflowBootstrapper.RunAsync(serviceProvider);
+
+      var snapshot = result.StructuredTextSnapshot;
+      var allDiagnostics = snapshot.ParserRuns.SelectMany(r => r.Diagnostics).ToArray();
+      Assert.True(allDiagnostics.Length > 0, "Expected at least one diagnostic from structured text parsing.");
+      Assert.Contains(allDiagnostics, d => d.Code == "OVERLAPPING_CONTENT");
+    }
+    finally
+    {
+      DeleteEnvironmentIfPresent(environment);
+    }
+  }
+
+  [Fact]
+  public async Task StructuredTextDiagnosticSeverityAndRefTypeArePreserved()
+  {
+    var environment = CreateEnvironmentPaths();
+
+    try
+    {
+      using var serviceProvider = CreateServiceProvider(environment);
+      var result = await ParsingExecutableWorkflowBootstrapper.RunAsync(serviceProvider);
+
+      var snapshot = result.StructuredTextSnapshot;
+      var diagnostics = snapshot.ParserRuns.SelectMany(r => r.Diagnostics).ToArray();
+      Assert.Contains(diagnostics, d => d.Severity == DiagnosticSeverity.Warning && d.Code == "OVERLAPPING_CONTENT");
+      Assert.All(diagnostics, d =>
+      {
+        Assert.False(string.IsNullOrWhiteSpace(d.Code));
+        Assert.False(string.IsNullOrWhiteSpace(d.Message));
+      });
+    }
+    finally
+    {
+      DeleteEnvironmentIfPresent(environment);
+    }
+  }
+
+  [Fact]
+  public async Task StructuredTextParseResultIsDistinctFromPlainTextParseResult()
+  {
+    var environment = CreateEnvironmentPaths();
+
+    try
+    {
+      using var serviceProvider = CreateServiceProvider(environment);
+      var result = await ParsingExecutableWorkflowBootstrapper.RunAsync(serviceProvider);
+
+      Assert.NotEqual(result.FirstParseResult.ParserRunId, result.StructuredTextParseResult.ParserRunId);
+      Assert.NotEqual(result.ImportedSourceA.ImportedSourceId, result.StructuredTextSource.ImportedSourceId);
+    }
+    finally
+    {
+      DeleteEnvironmentIfPresent(environment);
+    }
+  }
+
+  [Fact]
+  public async Task StructuredTextDiagnosticsSurviveDisposeAndRecreateProvider()
+  {
+    var environment = CreateEnvironmentPaths();
+
+    try
+    {
+      ParsingExecutableWorkflowResult firstResult;
+      using (var firstProvider = CreateServiceProvider(environment))
+      {
+        firstResult = await ParsingExecutableWorkflowBootstrapper.RunAsync(firstProvider);
+      }
+
+      var originalDiagnostics = firstResult.StructuredTextSnapshot.ParserRuns
+        .SelectMany(r => r.Diagnostics)
+        .ToArray();
+      Assert.True(originalDiagnostics.Length > 0);
+
+      using var secondProvider = CreateServiceProvider(environment);
+      await ParsingExecutableWorkflowBootstrapper.MigrateAsync(secondProvider);
+      await using var scope = secondProvider.CreateAsyncScope();
+      var loadParsingSnapshot = scope.ServiceProvider.GetRequiredService<IQueryHandler<LoadParsingSnapshotQuery, LoadParsingSnapshotResult>>();
+
+      var reloadedSnapshot = await loadParsingSnapshot.HandleAsync(
+        new LoadParsingSnapshotQuery(
+          firstResult.CreatedProject.ProjectId,
+          firstResult.StructuredTextSource.ImportedSourceId));
+
+      var reloadedDiagnostics = reloadedSnapshot.ParserRuns.SelectMany(r => r.Diagnostics).ToArray();
+      Assert.Equal(originalDiagnostics.Length, reloadedDiagnostics.Length);
+
+      var originalCodeSet = originalDiagnostics.Select(d => d.Code).OrderBy(c => c).ToArray();
+      var reloadedCodeSet = reloadedDiagnostics.Select(d => d.Code).OrderBy(c => c).ToArray();
+      Assert.Equal(originalCodeSet, reloadedCodeSet);
+    }
+    finally
+    {
+      DeleteEnvironmentIfPresent(environment);
+    }
+  }
+
   private static ServiceProvider CreateServiceProvider(
     TestEnvironmentPaths environment,
     Action<IServiceCollection>? configureServices = null)

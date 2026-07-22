@@ -11,15 +11,17 @@ namespace SPINbuster.Application.UseCases.RequestDocumentParsing;
 public sealed class RequestDocumentParsingUseCase : ICommandHandler<RequestDocumentParsingCommand, RequestDocumentParsingResult>
 {
   private const int MaxFragmentCandidates = 10_000;
+  private const int MaxDiagnostics = 100;
 
   private readonly IAuditRecorder _auditRecorder;
   private readonly IClock _clock;
   private readonly ICurrentUser _currentUser;
-  private readonly IDocumentParser _documentParser;
+  private readonly IDocumentParserRegistry _parserRegistry;
   private readonly IFragmentCandidateRepository _fragmentCandidateRepository;
   private readonly IImmutableContentStore _immutableContentStore;
   private readonly IImportedDocumentSourceRepository _importedSourceRepository;
   private readonly ILogger<RequestDocumentParsingUseCase> _logger;
+  private readonly IParserDiagnosticRepository _parserDiagnosticRepository;
   private readonly IParserRunRepository _parserRunRepository;
   private readonly IProjectRepository _projectRepository;
   private readonly IUnitOfWork _unitOfWork;
@@ -28,9 +30,10 @@ public sealed class RequestDocumentParsingUseCase : ICommandHandler<RequestDocum
     IProjectRepository projectRepository,
     IImportedDocumentSourceRepository importedSourceRepository,
     IImmutableContentStore immutableContentStore,
-    IDocumentParser documentParser,
+    IDocumentParserRegistry parserRegistry,
     IParserRunRepository parserRunRepository,
     IFragmentCandidateRepository fragmentCandidateRepository,
+    IParserDiagnosticRepository parserDiagnosticRepository,
     IUnitOfWork unitOfWork,
     IClock clock,
     ICurrentUser currentUser,
@@ -40,9 +43,10 @@ public sealed class RequestDocumentParsingUseCase : ICommandHandler<RequestDocum
     _projectRepository = projectRepository;
     _importedSourceRepository = importedSourceRepository;
     _immutableContentStore = immutableContentStore;
-    _documentParser = documentParser;
+    _parserRegistry = parserRegistry;
     _parserRunRepository = parserRunRepository;
     _fragmentCandidateRepository = fragmentCandidateRepository;
+    _parserDiagnosticRepository = parserDiagnosticRepository;
     _unitOfWork = unitOfWork;
     _clock = clock;
     _currentUser = currentUser;
@@ -80,7 +84,9 @@ public sealed class RequestDocumentParsingUseCase : ICommandHandler<RequestDocum
         throw new DomainInvariantException("Imported source does not belong to the specified project.");
       }
 
-      var descriptor = _documentParser.Describe();
+      var documentParser = _parserRegistry.GetRequired(command.ParserKey);
+      var descriptor = documentParser.Describe();
+
       if (descriptor.Determinism != ParserDeterminism.Deterministic)
       {
         throw new DomainInvariantException($"Parser '{command.ParserKey}' is non-deterministic. Only deterministic parsers are supported.");
@@ -88,12 +94,12 @@ public sealed class RequestDocumentParsingUseCase : ICommandHandler<RequestDocum
 
       if (!string.Equals(command.ParserKey, descriptor.ParserKey, StringComparison.Ordinal))
       {
-        throw new DomainInvariantException($"Parser key '{command.ParserKey}' does not match the configured parser identity '{descriptor.ParserKey}'.");
+        throw new DomainInvariantException($"Parser key '{command.ParserKey}' does not match the resolved parser identity '{descriptor.ParserKey}'.");
       }
 
       if (!string.Equals(command.ParserContractVersion, descriptor.ContractVersion, StringComparison.Ordinal))
       {
-        throw new DomainInvariantException($"Parser contract version '{command.ParserContractVersion}' does not match the configured parser contract version '{descriptor.ContractVersion}'.");
+        throw new DomainInvariantException($"Parser contract version '{command.ParserContractVersion}' does not match the resolved parser contract version '{descriptor.ContractVersion}'.");
       }
 
       var existingRun = await _parserRunRepository.GetBySourceAndParserAsync(
@@ -118,7 +124,7 @@ public sealed class RequestDocumentParsingUseCase : ICommandHandler<RequestDocum
           replayCandidateIds);
       }
 
-      var parserRun = CreateParserRun(command, source, null);
+      var parserRun = CreateParserRun(command, source, descriptor);
       await _parserRunRepository.AddAsync(parserRun, cancellationToken);
       Internal.DocumentAuditStager.Stage(_auditRecorder, parserRun.AuditTrail);
       await _unitOfWork.CommitAsync(cancellationToken);
@@ -131,7 +137,7 @@ public sealed class RequestDocumentParsingUseCase : ICommandHandler<RequestDocum
       catch (Exception)
       {
         parserRun.Fail(_clock.UtcNow, "Source content is not currently available.");
-        await PersistTerminalRunStateAsync(parserRun, [], CancellationToken.None);
+        await PersistTerminalRunStateAsync(parserRun, [], [], CancellationToken.None);
         stopwatch.Stop();
         _logger.LogWarning(LogEvents.ParserRunFailed,
           "{UseCase} source open failure in {DurationMs}ms for imported source {ImportedSourceId}, parser run {ParserRunId}",
@@ -142,7 +148,7 @@ public sealed class RequestDocumentParsingUseCase : ICommandHandler<RequestDocum
       if (openResult.AvailabilityState != StorageAvailabilityState.Available)
       {
         parserRun.Fail(_clock.UtcNow, "Source content is not currently available.");
-        await PersistTerminalRunStateAsync(parserRun, [], CancellationToken.None);
+        await PersistTerminalRunStateAsync(parserRun, [], [], CancellationToken.None);
         stopwatch.Stop();
         _logger.LogWarning(LogEvents.ParserRunFailed,
           "{UseCase} source unavailable in {DurationMs}ms for imported source {ImportedSourceId}, parser run {ParserRunId}",
@@ -156,7 +162,7 @@ public sealed class RequestDocumentParsingUseCase : ICommandHandler<RequestDocum
         || openResult.ContentLength != source.ContentLength)
       {
         parserRun.Fail(_clock.UtcNow, "Stored content no longer matches the authoritative immutable identity.");
-        await PersistTerminalRunStateAsync(parserRun, [], CancellationToken.None);
+        await PersistTerminalRunStateAsync(parserRun, [], [], CancellationToken.None);
         stopwatch.Stop();
         _logger.LogWarning(LogEvents.ParserRunFailed,
           "{UseCase} integrity mismatch in {DurationMs}ms for imported source {ImportedSourceId}, parser run {ParserRunId}",
@@ -169,7 +175,7 @@ public sealed class RequestDocumentParsingUseCase : ICommandHandler<RequestDocum
         await using var content = openResult.Content;
         parserRun.Start(_clock.UtcNow);
 
-        var parserResult = await _documentParser.ParseAsync(new ParserInput(
+        var parserResult = await documentParser.ParseAsync(new ParserInput(
           source.Id,
           source.ProjectId,
           source.OriginalFileName,
@@ -182,7 +188,9 @@ public sealed class RequestDocumentParsingUseCase : ICommandHandler<RequestDocum
           content), cancellationToken);
 
         var createdCandidates = new List<FragmentCandidate>();
-        if (!parserResult.Success)
+        var createdDiagnostics = new List<ParserDiagnostic>();
+
+        if (parserResult.Status == ParserExecutionStatus.Failed)
         {
           if (parserResult.FailureClassification == ParserRunFailureClassification.Cancelled)
           {
@@ -215,12 +223,95 @@ public sealed class RequestDocumentParsingUseCase : ICommandHandler<RequestDocum
             createdCandidates.Add(candidate);
           }
 
+          // Map parser diagnostics to durable ParserDiagnostic entities.
+          // Resolve candidate references by ordinal lookup within the same run's output.
+          var candidateByOrdinal = createdCandidates.ToDictionary(c => c.Ordinal);
+          var diagnosticCount = 0;
+
+          foreach (var diagnostic in parserResult.Diagnostics)
+          {
+            if (diagnosticCount >= MaxDiagnostics)
+            {
+              break;
+            }
+
+            // Drop diagnostics with Error severity on successful results —
+            // Error is reserved for Failed status per the severity contract.
+            if (diagnostic.Severity == DiagnosticSeverity.Error)
+            {
+              continue;
+            }
+
+            string? resolvedRefValue = null;
+            DiagnosticRefType? resolvedRefType = null;
+            FragmentLocatorType? resolvedLocatorType = null;
+            string? resolvedLocatorValue = null;
+
+            if (diagnostic.CandidateRefType.HasValue && !string.IsNullOrWhiteSpace(diagnostic.CandidateRefValue))
+            {
+              FragmentCandidate? matchedCandidate = null;
+
+              if (diagnostic.CandidateRefType == DiagnosticRefType.Ordinal
+                && int.TryParse(diagnostic.CandidateRefValue, out var refOrdinal)
+                && candidateByOrdinal.TryGetValue(refOrdinal, out matchedCandidate))
+              {
+                resolvedRefType = DiagnosticRefType.Ordinal;
+                resolvedRefValue = matchedCandidate.IdentityKey;
+              }
+              else if (diagnostic.CandidateRefType == DiagnosticRefType.NormalizedLocator)
+              {
+                matchedCandidate = createdCandidates.FirstOrDefault(c =>
+                  string.Equals(c.Locator.NormalizedValue, diagnostic.CandidateRefValue, StringComparison.Ordinal));
+
+                if (matchedCandidate is not null)
+                {
+                  resolvedRefType = DiagnosticRefType.NormalizedLocator;
+                  resolvedRefValue = matchedCandidate.IdentityKey;
+                }
+              }
+
+              // If no candidate matched, drop the diagnostic — do not persist orphaned references.
+              if (matchedCandidate is null)
+              {
+                _logger.LogDebug(
+                  "{UseCase} dropping diagnostic {DiagnosticCode} with unresolved candidate reference {RefType}:{RefValue}",
+                  useCaseName, diagnostic.Code, diagnostic.CandidateRefType, diagnostic.CandidateRefValue);
+                continue;
+              }
+            }
+
+            if (diagnostic.LocatorType.HasValue && !string.IsNullOrWhiteSpace(diagnostic.LocatorValue))
+            {
+              resolvedLocatorType = diagnostic.LocatorType;
+              resolvedLocatorValue = diagnostic.LocatorValue;
+            }
+
+            createdDiagnostics.Add(new ParserDiagnostic(
+              ParserDiagnosticId.New(),
+              parserRun.Id,
+              diagnostic.Severity,
+              diagnostic.Code,
+              diagnostic.Message,
+              _clock.UtcNow,
+              resolvedRefType,
+              resolvedRefValue,
+              resolvedLocatorType,
+              resolvedLocatorValue));
+
+            diagnosticCount++;
+          }
+
           parserRun.Complete(_clock.UtcNow);
         }
 
         foreach (var candidate in createdCandidates)
         {
           await _fragmentCandidateRepository.AddAsync(candidate, cancellationToken);
+        }
+
+        if (createdDiagnostics.Count > 0)
+        {
+          await _parserDiagnosticRepository.AddRangeAsync(createdDiagnostics, cancellationToken);
         }
 
         await _parserRunRepository.UpdateAsync(parserRun, cancellationToken);
@@ -248,9 +339,10 @@ public sealed class RequestDocumentParsingUseCase : ICommandHandler<RequestDocum
         }
         else
         {
+          var warningCount = createdDiagnostics.Count(d => d.Severity == DiagnosticSeverity.Warning);
           _logger.LogInformation(LogEvents.ParserRunCompleted,
-            "{UseCase} completed in {DurationMs}ms for imported source {ImportedSourceId}, parser run {ParserRunId}, state {ParserRunState}, candidates {CandidateCount}",
-            useCaseName, stopwatch.ElapsedMilliseconds, importedSourceId, parserRun.Id, parserRun.State, createdCandidates.Count);
+            "{UseCase} completed in {DurationMs}ms for imported source {ImportedSourceId}, parser run {ParserRunId}, state {ParserRunState}, candidates {CandidateCount}, diagnostics {DiagnosticCount}, warnings {WarningCount}",
+            useCaseName, stopwatch.ElapsedMilliseconds, importedSourceId, parserRun.Id, parserRun.State, createdCandidates.Count, createdDiagnostics.Count, warningCount);
         }
 
         return CreateResult(parserRun, createdCandidates);
@@ -258,7 +350,7 @@ public sealed class RequestDocumentParsingUseCase : ICommandHandler<RequestDocum
       catch (OperationCanceledException)
       {
         parserRun.Cancel(_clock.UtcNow, "Parser run was cancelled.");
-        await PersistTerminalRunStateAsync(parserRun, [], CancellationToken.None);
+        await PersistTerminalRunStateAsync(parserRun, [], [], CancellationToken.None);
         stopwatch.Stop();
         _logger.LogWarning(LogEvents.ParserRunCancelled,
           "{UseCase} cancelled in {DurationMs}ms for imported source {ImportedSourceId}, parser run {ParserRunId}",
@@ -274,7 +366,7 @@ public sealed class RequestDocumentParsingUseCase : ICommandHandler<RequestDocum
           parserRun.Fail(_clock.UtcNow, $"Unexpected parser failure: {exception.Message}");
         }
 
-        await PersistTerminalRunStateAsync(parserRun, [], CancellationToken.None);
+        await PersistTerminalRunStateAsync(parserRun, [], [], CancellationToken.None);
         stopwatch.Stop();
         _logger.LogError(LogEvents.ParserRunFailed,
           exception,
@@ -288,9 +380,8 @@ public sealed class RequestDocumentParsingUseCase : ICommandHandler<RequestDocum
   private ParserRun CreateParserRun(
     RequestDocumentParsingCommand command,
     ImportedDocumentSource source,
-    string? failureReason)
+    ParserDescriptor descriptor)
   {
-    var descriptor = _documentParser.Describe();
     var run = new ParserRun(
       ParserRunId.New(),
       command.ProjectId,
@@ -311,11 +402,17 @@ public sealed class RequestDocumentParsingUseCase : ICommandHandler<RequestDocum
   private async Task PersistTerminalRunStateAsync(
     ParserRun parserRun,
     List<FragmentCandidate> createdCandidates,
+    List<ParserDiagnostic> createdDiagnostics,
     CancellationToken cancellationToken)
   {
     foreach (var candidate in createdCandidates)
     {
       await _fragmentCandidateRepository.AddAsync(candidate, cancellationToken);
+    }
+
+    if (createdDiagnostics.Count > 0)
+    {
+      await _parserDiagnosticRepository.AddRangeAsync(createdDiagnostics, cancellationToken);
     }
 
     await _parserRunRepository.UpdateAsync(parserRun, cancellationToken);

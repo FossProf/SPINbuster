@@ -15,6 +15,7 @@ public sealed class LoadParsingSnapshotUseCase : IQueryHandler<LoadParsingSnapsh
   private readonly IFragmentCandidateRepository _fragmentCandidateRepository;
   private readonly IImportedDocumentSourceRepository _importedSourceRepository;
   private readonly ILogger<LoadParsingSnapshotUseCase> _logger;
+  private readonly IParserDiagnosticRepository _parserDiagnosticRepository;
   private readonly IParserRunRepository _parserRunRepository;
   private readonly IProjectRepository _projectRepository;
 
@@ -23,12 +24,14 @@ public sealed class LoadParsingSnapshotUseCase : IQueryHandler<LoadParsingSnapsh
     IImportedDocumentSourceRepository importedSourceRepository,
     IParserRunRepository parserRunRepository,
     IFragmentCandidateRepository fragmentCandidateRepository,
+    IParserDiagnosticRepository parserDiagnosticRepository,
     ILogger<LoadParsingSnapshotUseCase> logger)
   {
     _projectRepository = projectRepository;
     _importedSourceRepository = importedSourceRepository;
     _parserRunRepository = parserRunRepository;
     _fragmentCandidateRepository = fragmentCandidateRepository;
+    _parserDiagnosticRepository = parserDiagnosticRepository;
     _logger = logger;
   }
 
@@ -78,6 +81,18 @@ public sealed class LoadParsingSnapshotUseCase : IQueryHandler<LoadParsingSnapsh
           c.IdentityKeyHash,
           c.CreatedAtUtc)).ToArray();
 
+        var runDiagnostics = await _parserDiagnosticRepository.GetByParserRunAsync(run.Id, cancellationToken);
+        var diagnosticSnapshots = runDiagnostics.Select(d => new ParserDiagnosticSnapshot(
+          d.Id,
+          d.Severity,
+          d.Code,
+          d.Message,
+          d.CandidateRefType,
+          d.CandidateRefValue,
+          d.LocatorType,
+          d.LocatorValue,
+          d.CreatedAtUtc)).ToArray();
+
         var auditSnapshots = run.AuditTrail
           .Take(MaxAuditEvents)
           .Select(a => new AuditEventSnapshot(
@@ -98,6 +113,7 @@ public sealed class LoadParsingSnapshotUseCase : IQueryHandler<LoadParsingSnapsh
           run.StartedAtUtc,
           run.CompletedAtUtc,
           candidateSnapshots,
+          diagnosticSnapshots,
           auditSnapshots));
       }
 

@@ -25,8 +25,10 @@ Purpose: Explain how the repository is organized and where different kinds of wo
 - `docs/decisions/status/` contains baseline, review, and status records.
 - `docs/03-implementation/IMPLEMENTATION_LOG.md` records completed milestones and the next implementation step.
 - `docs/decisions/edr/EDR-KE-001` through `EDR-KE-012` record the current Knowledge Engine and Document Engine deferred or accepted boundaries.
+- `docs/decisions/edr/EDR-DE-008` records the parser diagnostics and registry decision for the text adapter.
 - `docs/decisions/status/PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC-PROTOTYPE-REVIEW.md` captures the parsing foundation review findings and next-package recommendation.
 - `docs/decisions/status/FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1-RC-REVIEW.md` captures the fragment candidate review slice findings and validation.
+- `docs/decisions/status/DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC-PROTOTYPE-REVIEW.md` captures the text adapter RC findings, structured text parsing, and diagnostics validation.
 
 ## Specification Layout
 
@@ -46,16 +48,17 @@ Purpose: Explain how the repository is organized and where different kinds of wo
 - `src/SPINbuster.Domain` contains authoritative business concepts and invariants.
 - `src/SPINbuster.Application` contains orchestration, command and query workflows, transaction boundaries, and project-scope enforcement.
 - `src/SPINbuster.Infrastructure` contains persistence and adapter implementations.
-- `src/SPINbuster.Documents` contains deterministic Document Engine adapters for hashing, media inspection, immutable content storage, fixture processing, the review-candidate local filesystem adapter, and the deterministic PlainTextDocument parser.
+- `src/SPINbuster.Documents` contains deterministic Document Engine adapters for hashing, media inspection, immutable content storage, fixture processing, the review-candidate local filesystem adapter, the deterministic PlainTextDocument parser, and the StructuredTextDocument parser for markdown heading/clause/table extraction.
 - `src/SPINbuster.Rules` is reserved for future deterministic rule definitions and evaluators.
 - `src/SPINbuster.AI` contains AI integration adapters and advisory proposal support.
 - `src/SPINbuster.Reporting` contains reporting composition and report output support.
 - `src/SPINbuster.Server` contains the server host and composition root.
-- `src/SPINbuster.Desktop` is currently a temporary bootstrap host and not yet a MAUI Blazor Hybrid application. It now contains the parsing executable workflow runner in addition to the earlier AI, Knowledge, and Document executable slices.
+- `src/SPINbuster.Desktop` is currently a temporary bootstrap host and not yet a MAUI Blazor Hybrid application. It now contains the parsing executable workflow runner (with structured text and diagnostics support) in addition to the earlier AI, Knowledge, and Document executable slices.
 
 ## Current Released Baseline
 
 - `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1` is the latest released baseline.
+- `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC` is validated as release candidate but not released.
 
 ## Current Governance Baseline
 
@@ -63,7 +66,8 @@ Purpose: Explain how the repository is organized and where different kinds of wo
 
 ## Next Active Package
 
-- `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC`
+- `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC` (release candidate, not released)
+- After release decision: `FRAGMENT-TO-KNOWLEDGE-PROMOTION-FOUNDATION-0.1-RC` (recommended)
 
 ## Current Document Engine Flow
 
@@ -81,11 +85,16 @@ Purpose: Explain how the repository is organized and where different kinds of wo
   - missing and corrupt file detection against persisted bytes
   - bounded orphan visibility through adapter-specific inventory
   - reload of document audit history and authority-isolation state
-  - deterministic text parsing with fragment candidate production
-  - idempotent replay of parser runs across provider recreation
-  - parser version coexistence with historical candidate preservation
-  - unsupported media, cancelled, and malformed content failure handling
-  - authority isolation from Knowledge, Report, and AI records through parsing
+   - deterministic text parsing with fragment candidate production
+   - idempotent replay of parser runs across provider recreation
+   - parser version coexistence with historical candidate preservation
+   - unsupported media, cancelled, and malformed content failure handling
+   - authority isolation from Knowledge, Report, and AI records through parsing
+   - structured text parsing with heading, clause, and table extraction
+   - parser diagnostics with OVERLAPPING_CONTENT detection and persistence
+   - parser registry resolving parser by key through DocumentParserRegistry
+   - parser execution status distinguishing Completed, CompletedWithWarnings, and Failed
+   - restart validation confirming diagnostics survive provider recreation
 - The Infrastructure layer now also contains a host-facing database migrator abstraction so startup migration stays outside the Desktop host's direct EF Core concerns.
 - The Desktop host now resolves its default durable document root under `%LOCALAPPDATA%\\SPINbuster\\document-content` rather than under build-output directories.
 

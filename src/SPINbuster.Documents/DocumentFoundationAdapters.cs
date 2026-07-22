@@ -25,6 +25,8 @@ public static class ServiceCollectionExtensions
     services.AddSingleton<DeterministicDocumentProcessor>();
     services.AddSingleton<IDocumentProcessor>(provider => provider.GetRequiredService<DeterministicDocumentProcessor>());
     services.AddSingleton<IDocumentParser, PlainTextDocumentParser>();
+    services.AddSingleton<IDocumentParser, StructuredTextDocumentParser>();
+    services.AddSingleton<IDocumentParserRegistry, DocumentParserRegistry>();
     return services;
   }
 }
@@ -94,6 +96,7 @@ public sealed class BasicImportedContentInspector : IImportedContentInspector
     [".tif"] = "image/tiff",
     [".tiff"] = "image/tiff",
     [".docx"] = "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    [".md"] = "text/markdown",
   };
 
   public Task<ImportedContentInspectionResult> InspectAsync(

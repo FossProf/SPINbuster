@@ -84,12 +84,12 @@ public sealed class RequestDocumentParsingUseCaseTests
   }
 
   [Fact]
-  public async Task ParserKeyMismatchThrowsDomainInvariantException()
+  public async Task ParserKeyMismatchThrowsKeyNotFoundException()
   {
     var fixture = CreateFixture();
     var sourceId = await SeedSourceAsync(fixture);
 
-    await Assert.ThrowsAsync<DomainInvariantException>(async () =>
+    await Assert.ThrowsAsync<KeyNotFoundException>(async () =>
       await CreateUseCase(fixture).HandleAsync(
         new RequestDocumentParsingCommand(fixture.ProjectId, sourceId, "wrong-parser", "1.0.0")));
   }
@@ -109,7 +109,12 @@ public sealed class RequestDocumentParsingUseCaseTests
   public async Task NonDeterministicParserThrowsDomainInvariantException()
   {
     var fixture = CreateFixture();
-    fixture = fixture with { DocumentParser = new FakeDocumentParser { Determinism = ParserDeterminism.NonDeterministic } };
+    var parser = new FakeDocumentParser { Determinism = ParserDeterminism.NonDeterministic };
+    fixture = fixture with
+    {
+      DocumentParser = parser,
+      ParserRegistry = new FakeDocumentParserRegistry(parser)
+    };
     var sourceId = await SeedSourceAsync(fixture);
 
     await Assert.ThrowsAsync<DomainInvariantException>(async () =>
@@ -176,13 +181,15 @@ public sealed class RequestDocumentParsingUseCaseTests
   public async Task IdempotentReplayReturnsExistingFailedRunWithEmptyFragments()
   {
     var fixture = CreateFixture();
+    var failedParser = new FakeDocumentParser
+    {
+      ParseAsyncCore = (_, _) => Task.FromResult(new ParserExecutionResult(
+        ParserExecutionStatus.Failed, ParserRunFailureClassification.ParserFailure, "parser crashed", [], []))
+    };
     fixture = fixture with
     {
-      DocumentParser = new FakeDocumentParser
-      {
-        ParseAsyncCore = (_, _) => Task.FromResult(new ParserExecutionResult(
-          false, ParserRunFailureClassification.ParserFailure, "parser crashed", []))
-      }
+      DocumentParser = failedParser,
+      ParserRegistry = new FakeDocumentParserRegistry(failedParser)
     };
     var sourceId = await SeedSourceAsync(fixture);
 
@@ -194,10 +201,15 @@ public sealed class RequestDocumentParsingUseCaseTests
     var newParser = new FakeDocumentParser
     {
       ParseAsyncCore = (_, _) => Task.FromResult(new ParserExecutionResult(
-        true, ParserRunFailureClassification.None, null,
-        [new ParserFragmentResult(FragmentLocatorType.WholeDocument, string.Empty, 1, ContentKind.PlainText, "text", ConfidenceBand.High, [])]))
+        ParserExecutionStatus.Completed, ParserRunFailureClassification.None, null,
+        [new ParserFragmentResult(FragmentLocatorType.WholeDocument, string.Empty, 1, ContentKind.PlainText, "text", ConfidenceBand.High)],
+        []))
     };
-    fixture = fixture with { DocumentParser = newParser };
+    fixture = fixture with
+    {
+      DocumentParser = newParser,
+      ParserRegistry = new FakeDocumentParserRegistry(newParser)
+    };
 
     var secondResult = await CreateUseCase(fixture).HandleAsync(
       new RequestDocumentParsingCommand(fixture.ProjectId, sourceId, "test-parser", "1.0.0"));
@@ -211,13 +223,15 @@ public sealed class RequestDocumentParsingUseCaseTests
   public async Task ParserFailurePersistsTerminalRunStateAndDoesNotReportSuccess()
   {
     var fixture = CreateFixture();
+    var parser = new FakeDocumentParser
+    {
+      ParseAsyncCore = (_, _) => Task.FromResult(new ParserExecutionResult(
+        ParserExecutionStatus.Failed, ParserRunFailureClassification.ParserFailure, "unexpected format", [], []))
+    };
     fixture = fixture with
     {
-      DocumentParser = new FakeDocumentParser
-      {
-        ParseAsyncCore = (_, _) => Task.FromResult(new ParserExecutionResult(
-          false, ParserRunFailureClassification.ParserFailure, "unexpected format", []))
-      }
+      DocumentParser = parser,
+      ParserRegistry = new FakeDocumentParserRegistry(parser)
     };
     var sourceId = await SeedSourceAsync(fixture);
 
@@ -234,17 +248,19 @@ public sealed class RequestDocumentParsingUseCaseTests
   public async Task ParserCancellationPersistsTerminalRunState()
   {
     var fixture = CreateFixture();
+    var parser = new FakeDocumentParser
+    {
+      ParseAsyncCore = (_, ct) =>
+      {
+        ct.ThrowIfCancellationRequested();
+        return Task.FromResult(new ParserExecutionResult(
+          ParserExecutionStatus.Failed, ParserRunFailureClassification.Cancelled, "cancelled", [], []));
+      }
+    };
     fixture = fixture with
     {
-      DocumentParser = new FakeDocumentParser
-      {
-        ParseAsyncCore = (_, ct) =>
-        {
-          ct.ThrowIfCancellationRequested();
-          return Task.FromResult(new ParserExecutionResult(
-            false, ParserRunFailureClassification.Cancelled, "cancelled", []));
-        }
-      }
+      DocumentParser = parser,
+      ParserRegistry = new FakeDocumentParserRegistry(parser)
     };
     var sourceId = await SeedSourceAsync(fixture);
     using var cts = new CancellationTokenSource();
@@ -269,6 +285,10 @@ public sealed class RequestDocumentParsingUseCaseTests
       {
         ParseAsyncCore = (_, _) => throw new InvalidOperationException("parser boom")
       }
+    };
+    fixture = fixture with
+    {
+      ParserRegistry = new FakeDocumentParserRegistry(fixture.DocumentParser)
     };
     var sourceId = await SeedSourceAsync(fixture);
 
@@ -296,18 +316,21 @@ public sealed class RequestDocumentParsingUseCaseTests
   public async Task MalformedParserOutputRejectsInvalidLocatorAndDoesNotPartiallyPersist()
   {
     var fixture = CreateFixture();
+    var parser = new FakeDocumentParser
+    {
+      ParseAsyncCore = (_, _) => Task.FromResult(new ParserExecutionResult(
+        ParserExecutionStatus.Completed,
+        ParserRunFailureClassification.None,
+        null,
+        [
+          new ParserFragmentResult(FragmentLocatorType.Page, "not-a-number", 1, ContentKind.PlainText, "text", ConfidenceBand.High),
+        ],
+        []))
+    };
     fixture = fixture with
     {
-      DocumentParser = new FakeDocumentParser
-      {
-        ParseAsyncCore = (_, _) => Task.FromResult(new ParserExecutionResult(
-          true,
-          ParserRunFailureClassification.None,
-          null,
-          [
-            new ParserFragmentResult(FragmentLocatorType.Page, "not-a-number", 1, ContentKind.PlainText, "text", ConfidenceBand.High, []),
-          ]))
-      }
+      DocumentParser = parser,
+      ParserRegistry = new FakeDocumentParserRegistry(parser)
     };
     var sourceId = await SeedSourceAsync(fixture);
 
@@ -355,9 +378,10 @@ public sealed class RequestDocumentParsingUseCaseTests
       fixture.ProjectRepository,
       fixture.ImportedSourceRepository,
       fixture.ImmutableContentStore,
-      fixture.DocumentParser,
+      fixture.ParserRegistry,
       fixture.ParserRunRepository,
       fixture.FragmentCandidateRepository,
+      fixture.ParserDiagnosticRepository,
       fixture.UnitOfWork,
       fixture.Clock,
       fixture.CurrentUser,
@@ -376,13 +400,15 @@ public sealed class RequestDocumentParsingUseCaseTests
   public async Task LoggingVerifiesFailureEventIdOnProviderFailure()
   {
     var fixture = CreateFixture();
+    var parser = new FakeDocumentParser
+    {
+      ParseAsyncCore = (_, _) => Task.FromResult(new ParserExecutionResult(
+        ParserExecutionStatus.Failed, ParserRunFailureClassification.ParserFailure, "test failure", [], []))
+    };
     fixture = fixture with
     {
-      DocumentParser = new FakeDocumentParser
-      {
-        ParseAsyncCore = (_, _) => Task.FromResult(new ParserExecutionResult(
-          false, ParserRunFailureClassification.ParserFailure, "test failure", []))
-      }
+      DocumentParser = parser,
+      ParserRegistry = new FakeDocumentParserRegistry(parser)
     };
     var logSpy = new LogSpy<RequestDocumentParsingUseCase>();
     var sourceId = await SeedSourceAsync(fixture);
@@ -391,9 +417,10 @@ public sealed class RequestDocumentParsingUseCaseTests
       fixture.ProjectRepository,
       fixture.ImportedSourceRepository,
       fixture.ImmutableContentStore,
-      fixture.DocumentParser,
+      fixture.ParserRegistry,
       fixture.ParserRunRepository,
       fixture.FragmentCandidateRepository,
+      fixture.ParserDiagnosticRepository,
       fixture.UnitOfWork,
       fixture.Clock,
       fixture.CurrentUser,
@@ -431,9 +458,10 @@ public sealed class RequestDocumentParsingUseCaseTests
       fixture.ProjectRepository,
       fixture.ImportedSourceRepository,
       fixture.ImmutableContentStore,
-      fixture.DocumentParser,
+      fixture.ParserRegistry,
       fixture.ParserRunRepository,
       fixture.FragmentCandidateRepository,
+      fixture.ParserDiagnosticRepository,
       fixture.UnitOfWork,
       fixture.Clock,
       fixture.CurrentUser,
@@ -487,14 +515,17 @@ public sealed class RequestDocumentParsingUseCaseTests
     var projectRepository = new FakeProjectRepository();
     projectRepository.AddAsync(project).GetAwaiter().GetResult();
 
+    var parser = new FakeDocumentParser(operationLog);
     return new ParsingFixture(
       projectId,
       projectRepository,
       new FakeImportedDocumentSourceRepository(),
       new FakeImmutableContentStore(),
-      new FakeDocumentParser(operationLog),
+      parser,
+      new FakeDocumentParserRegistry(parser),
       new FakeParserRunRepository(),
       new FakeFragmentCandidateRepository(),
+      new FakeParserDiagnosticRepository(),
       new FakeUnitOfWork(operationLog),
       new FakeClock(TestTime),
       new FakeCurrentUser("parser.requester@example.invalid"),
@@ -507,8 +538,10 @@ public sealed class RequestDocumentParsingUseCaseTests
     FakeImportedDocumentSourceRepository ImportedSourceRepository,
     FakeImmutableContentStore ImmutableContentStore,
     FakeDocumentParser DocumentParser,
+    FakeDocumentParserRegistry ParserRegistry,
     FakeParserRunRepository ParserRunRepository,
     FakeFragmentCandidateRepository FragmentCandidateRepository,
+    FakeParserDiagnosticRepository ParserDiagnosticRepository,
     FakeUnitOfWork UnitOfWork,
     FakeClock Clock,
     FakeCurrentUser CurrentUser,

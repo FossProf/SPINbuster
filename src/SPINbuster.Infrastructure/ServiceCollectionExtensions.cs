@@ -40,6 +40,7 @@ public static class ServiceCollectionExtensions
     services.AddScoped<IDocumentCandidateRepository, SqliteDocumentCandidateRepository>();
     services.AddScoped<IParserRunRepository, SqliteParserRunRepository>();
     services.AddScoped<IFragmentCandidateRepository, SqliteFragmentCandidateRepository>();
+    services.AddScoped<IParserDiagnosticRepository, SqliteParserDiagnosticRepository>();
     return services;
   }
 }

@@ -234,3 +234,26 @@ internal sealed class FragmentCandidateRecord
 
   public string? ReviewNotes { get; set; }
 }
+
+internal sealed class ParserDiagnosticRecord
+{
+  public ParserDiagnosticId Id { get; set; }
+
+  public ParserRunId ParserRunId { get; set; }
+
+  public DiagnosticSeverity Severity { get; set; }
+
+  public string Code { get; set; } = string.Empty;
+
+  public string Message { get; set; } = string.Empty;
+
+  public DateTimeOffset CreatedAtUtc { get; set; }
+
+  public DiagnosticRefType? CandidateRefType { get; set; }
+
+  public string? CandidateRefValue { get; set; }
+
+  public FragmentLocatorType? LocatorType { get; set; }
+
+  public string? LocatorValue { get; set; }
+}

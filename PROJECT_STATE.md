@@ -13,6 +13,7 @@
 ## Active Implementation Package
 
 - `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC`
+- Status: `Release Candidate` (not released)
 
 ## Current Branch
 
@@ -20,11 +21,11 @@
 
 ## Last Completed Milestone
 
-- Fragment candidate review lifecycle released
+- Document understanding text adapter RC validation complete
 
 ## Current Implementation Phase
 
-- Document Understanding — review lifecycle complete
+- Document Understanding — text adapter RC validated, pending release decision
 
 ## Current Milestone
 
@@ -34,12 +35,12 @@
 
 - Domain: `181/181`
 - Application: `184/184`
-- Documents: `28/28`
-- Infrastructure: `56/56`
+- Documents: `63/63`
+- Infrastructure: `61/61`
 - Architecture: `24/24`
 - AI: `6/6`
-- Desktop: `39/39`
-- Total: `518/518`
+- Desktop: `45/45`
+- Total: `564/564`
 
 ## Open ADRs
 
@@ -66,6 +67,7 @@
 - `EDR-KE-012` Document Engine ownership boundary (`Accepted`)
 - `EDR-DE-006` Fragment identity contract-version choice (`Accepted`)
 - `EDR-DE-007` Fragment candidate review disposition and promotion prerequisites (`Accepted`)
+- `EDR-DE-008` Parser diagnostics and registry (`Accepted for DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC`)
 
 ## Outstanding Technical Debt
 
@@ -78,22 +80,23 @@
 - Immutable-object reconciliation and deletion remain deferred; local filesystem inventory is diagnostic only.
 - The Windows Desktop apphost may still be blocked by local machine policy even when the managed DLL executes correctly.
 - Fragment candidate review concurrency relies on aggregate-level guards (`EnsureReviewNotDecided`). Before server or multi-user work, the database update itself should verify original state with a conditional SQL `WHERE ReviewState = Generated` to ensure true multi-process safety.
+- Pre-existing CA1848 warnings throughout Application use cases (LoggerMessage delegates) are acknowledged technical debt.
 
 ## Immediate Next Task
 
-- `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1` released. Next: `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC`
+- `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC` validated as release candidate. Awaiting release decision.
 
 ## Fast Context
 
 - The repository is the source of truth for project state and architecture.
 - Start every new AI session from `.ai/bootstrap.md`.
 - The latest governance baseline is `ARCHITECTURE-VISION-2.0`.
-- The latest software baseline is `PARSING-AND-FRAGMENT-FOUNDATION-0.1`.
-- The active implementation package is `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC`.
+- The latest software baseline is `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1`.
+- The active implementation package is `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC` (release candidate, not released).
 
 ## Current Capabilities
 
-- Current released capabilities include `PARSING-AND-FRAGMENT-FOUNDATION-0.1`
+- Current released capabilities include `PARSING-AND-FRAGMENT-FOUNDATION-0.1` and `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1`
 - Deterministic text parsing produces fragment candidates with reproducible identity
 - Parser runs, fragment candidates, and audit history persist through SQLite and survive provider recreation
 - Parser version coexistence preserves historical candidates
@@ -105,3 +108,10 @@
 - Desktop executable proof exercises full review lifecycle with 2-source import and version coexistence
 - First-commit-wins concurrency and terminal state guards prevent conflicting updates
 - Authority isolation verified: parsing and review do not create Knowledge, Report, or AI records
+- Structured text parsing extracts headings, numbered clauses, lettered clauses, and pipe-delimited tables
+- Parser diagnostics model: ParserDiagnostic with severity, code, message, and candidate reference
+- Overlapping-fragment policy: line-range overlap detection with OVERLAPPING_CONTENT diagnostic
+- Parser registry: DocumentParserRegistry resolves parser by key from DI
+- Parser execution status: Completed, CompletedWithWarnings, Failed (replaces boolean success)
+- Diagnostic persistence: parser_diagnostics table with full round-trip through SQLite
+- Desktop executable proof exercises structured text parsing with diagnostics display

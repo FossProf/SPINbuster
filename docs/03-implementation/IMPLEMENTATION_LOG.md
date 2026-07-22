@@ -59,6 +59,19 @@ Next:
 
 - Begin `PARSING-EXECUTABLE-SLICE-0.1-RC`
 
+## 2026-07-22
+
+Completed:
+
+- `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC` Prompt 1: Domain & Application substrate — `ParserExecutionStatus` enum, `DiagnosticSeverity` enum, `DiagnosticRefType` enum, `ParserDiagnostic` immutable entity, `ParserDiagnosticId`, `IParserDiagnosticRepository`, `DocumentParserRegistry`, `ParserDescriptor`, updated `ParserExecutionResult` with diagnostics, updated `RequestDocumentParsingUseCase` to resolve via registry and persist diagnostics, updated `LoadParsingSnapshotUseCase` and `LoadFragmentReviewSnapshotUseCase` to load diagnostics, created `AddParserDiagnostics` EF migration (10 total), `ParserDiagnosticRecord` with EF Core mapping, registered repositories in DI, added 25 domain tests and 25 Application tests.
+- `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC` Prompt 2: Documents Adapter — Implemented `StructuredTextDocumentParser` with heading extraction, numbered/lettered clause extraction, pipe-delimited table extraction, line-range overlap detection, `OVERLAPPING_CONTENT` diagnostic emission, contract hash via SHA-256. Registered as `IDocumentParser` singleton. Added `.md` extension mapping. Added 25 structured text parser tests.
+- `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC` Prompt 3: Infrastructure & Executable Proof — Extended `ParsingExecutableWorkflowRunner` with structured text source import and parsing. Updated `ParsingExecutableWorkflowResult` with structured text fields. Added diagnostics display to `ParsingExecutableWorkflowConsoleFormatter`. Added 5 infrastructure persistence tests for `parser_diagnostics` table. Added 6 Desktop integration tests for structured text parsing, diagnostics round-trip, and restart validation.
+- `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC` Prompt 5: Governance & RC Review — Created prototype review document, updated all governance and continuity files, validated format/build/test (564/564 passing), left repository at release candidate without release.
+
+Next:
+
+- Await release decision for `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC` or begin `FRAGMENT-TO-KNOWLEDGE-PROMOTION-FOUNDATION-0.1-RC`
+
 ## 2026-07-15
 
 Completed:

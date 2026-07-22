@@ -37,6 +37,38 @@ public enum FragmentCandidateReviewState
   Rejected = 2,
 }
 
+/// <summary>
+/// Deterministic parser execution status. Replaces the boolean success flag to
+/// distinguish full completion from degraded-but-successful extraction.
+/// </summary>
+public enum ParserExecutionStatus
+{
+  Completed = 0,
+  CompletedWithWarnings = 1,
+  Failed = 2,
+}
+
+/// <summary>
+/// Diagnostic severity. Info and Warning are carried on successful results.
+/// Error is reserved for Failed status only.
+/// </summary>
+public enum DiagnosticSeverity
+{
+  Info = 0,
+  Warning = 1,
+  Error = 2,
+}
+
+/// <summary>
+/// How a diagnostic references a specific fragment within a parser run.
+/// Application resolves the reference to a FragmentCandidate.IdentityKey after construction.
+/// </summary>
+public enum DiagnosticRefType
+{
+  Ordinal = 0,
+  NormalizedLocator = 1,
+}
+
 public sealed record FragmentLocator
 {
   public FragmentLocator(FragmentLocatorType locatorType, string rawValue)
@@ -106,6 +138,86 @@ public sealed record FragmentLocator
       .Trim('/')
       .ToLowerInvariant();
   }
+}
+
+/// <summary>
+/// Immutable diagnostic record attached to a parser run. Diagnostics are durable
+/// parser evidence, not independently authoritative aggregates. They carry no
+/// audit lifecycle and no review state.
+/// </summary>
+public sealed class ParserDiagnostic
+{
+  private const int MaxCodeLength = 100;
+  private const int MaxMessageLength = 500;
+
+  public ParserDiagnostic(
+    ParserDiagnosticId id,
+    ParserRunId parserRunId,
+    DiagnosticSeverity severity,
+    string code,
+    string message,
+    DateTimeOffset createdAtUtc,
+    DiagnosticRefType? candidateRefType = null,
+    string? candidateRefValue = null,
+    FragmentLocatorType? locatorType = null,
+    string? locatorValue = null)
+  {
+    if (string.IsNullOrWhiteSpace(code))
+    {
+      throw new DomainInvariantException($"{nameof(code)} cannot be empty.");
+    }
+
+    if (code.Length > MaxCodeLength)
+    {
+      throw new DomainInvariantException($"{nameof(code)} length exceeds maximum of {MaxCodeLength} characters.");
+    }
+
+    if (string.IsNullOrWhiteSpace(message))
+    {
+      throw new DomainInvariantException($"{nameof(message)} cannot be empty.");
+    }
+
+    if (message.Length > MaxMessageLength)
+    {
+      throw new DomainInvariantException($"{nameof(message)} length exceeds maximum of {MaxMessageLength} characters.");
+    }
+
+    if (candidateRefType.HasValue && string.IsNullOrWhiteSpace(candidateRefValue))
+    {
+      throw new DomainInvariantException($"{nameof(candidateRefValue)} must be non-empty when {nameof(candidateRefType)} is set.");
+    }
+
+    Id = id;
+    ParserRunId = parserRunId;
+    Severity = severity;
+    Code = code.Trim();
+    Message = message.Trim();
+    CreatedAtUtc = DomainGuards.NotDefault(createdAtUtc, nameof(createdAtUtc));
+    CandidateRefType = candidateRefType;
+    CandidateRefValue = candidateRefValue?.Trim();
+    LocatorType = locatorType;
+    LocatorValue = locatorValue?.Trim();
+  }
+
+  public ParserDiagnosticId Id { get; }
+
+  public ParserRunId ParserRunId { get; }
+
+  public DiagnosticSeverity Severity { get; }
+
+  public string Code { get; }
+
+  public string Message { get; }
+
+  public DateTimeOffset CreatedAtUtc { get; }
+
+  public DiagnosticRefType? CandidateRefType { get; }
+
+  public string? CandidateRefValue { get; }
+
+  public FragmentLocatorType? LocatorType { get; }
+
+  public string? LocatorValue { get; }
 }
 
 public sealed class ParserRun : AuditableEntity

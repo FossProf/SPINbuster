@@ -586,5 +586,20 @@ internal static class SpinbusterModelConfiguration
         "(ReviewState = 0 AND ReviewedBy IS NULL AND ReviewedAtUtc IS NULL) OR (ReviewState IN (1, 2) AND ReviewedBy IS NOT NULL AND ReviewedAtUtc IS NOT NULL)"));
     fragmentCandidateBuilder.HasOne<ParserRunRecord>().WithMany().HasForeignKey(record => record.ParserRunId).OnDelete(DeleteBehavior.Restrict);
     fragmentCandidateBuilder.HasOne<ImportedDocumentSourceRecord>().WithMany().HasForeignKey(record => record.ImportedSourceId).OnDelete(DeleteBehavior.Restrict);
+
+    var parserDiagnosticBuilder = modelBuilder.Entity<ParserDiagnosticRecord>();
+    parserDiagnosticBuilder.ToTable("parser_diagnostics");
+    parserDiagnosticBuilder.HasKey(record => record.Id);
+    parserDiagnosticBuilder.Property(record => record.Id).HasConversion(StronglyTypedIdValueConverters.ParserDiagnosticId).ValueGeneratedNever();
+    parserDiagnosticBuilder.Property(record => record.ParserRunId).HasConversion(StronglyTypedIdValueConverters.ParserRunId).IsRequired();
+    parserDiagnosticBuilder.Property(record => record.Severity).IsRequired();
+    parserDiagnosticBuilder.Property(record => record.Code).HasMaxLength(100).IsRequired();
+    parserDiagnosticBuilder.Property(record => record.Message).HasMaxLength(500).IsRequired();
+    parserDiagnosticBuilder.Property(record => record.CreatedAtUtc).IsRequired();
+    parserDiagnosticBuilder.Property(record => record.CandidateRefValue).HasMaxLength(1024);
+    parserDiagnosticBuilder.Property(record => record.LocatorValue).HasMaxLength(512);
+    parserDiagnosticBuilder.HasIndex(record => record.ParserRunId);
+    parserDiagnosticBuilder.HasIndex(record => new { record.ParserRunId, record.CandidateRefValue }).HasDatabaseName("IX_parser_diagnostics_ParserRunId_CandidateRefValue");
+    parserDiagnosticBuilder.HasOne<ParserRunRecord>().WithMany().HasForeignKey(record => record.ParserRunId).OnDelete(DeleteBehavior.Restrict);
   }
 }

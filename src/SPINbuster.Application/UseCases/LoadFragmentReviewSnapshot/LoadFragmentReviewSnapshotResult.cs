@@ -26,6 +26,18 @@ public sealed record FragmentReviewSnapshotEntry(
   DateTimeOffset? ReviewedAtUtc,
   string? ReviewNotes,
   string TextPreview,
+  IReadOnlyList<FragmentDiagnosticSnapshot> Diagnostics,
+  DateTimeOffset CreatedAtUtc);
+
+public sealed record FragmentDiagnosticSnapshot(
+  ParserDiagnosticId DiagnosticId,
+  DiagnosticSeverity Severity,
+  string Code,
+  string Message,
+  DiagnosticRefType? CandidateRefType,
+  string? CandidateRefValue,
+  FragmentLocatorType? LocatorType,
+  string? LocatorValue,
   DateTimeOffset CreatedAtUtc);
 
 public sealed record FragmentReviewAuditSnapshot(

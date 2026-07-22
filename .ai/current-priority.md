@@ -13,13 +13,13 @@ Active implementation package:
 DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC
 
 Status:
-FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1 released
+DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC validated as release candidate, not released
 
 Build:
 Passing
 
 Warnings:
-0
+Pre-existing CA1848 (LoggerMessage delegates) — acknowledged technical debt
 
 Domain tests:
 181/181 passing
@@ -28,10 +28,10 @@ Application tests:
 184/184 passing
 
 Documents tests:
-28/28 passing
+63/63 passing
 
 Infrastructure tests:
-56/56 passing
+61/61 passing
 
 Architecture tests:
 24/24 passing
@@ -40,13 +40,13 @@ AI tests:
 6/6 passing
 
 Desktop tests:
-39/39 passing
+45/45 passing
 
 Total tests:
-518/518 passing
+564/564 passing
 
 Current task:
-`FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1` released. Begin `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC`
+`DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC` validated as release candidate. Awaiting release decision.
 
 Required outcome:
 
@@ -57,7 +57,7 @@ Required outcome:
 - Preserve authority isolation
 
 Next review:
-After `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC` completion
+After `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC` release decision
 
 Known blockers:
 None
@@ -73,11 +73,15 @@ Last completed:
 - Completed `FRAGMENT-REVIEW-APPLICATION-CHECKPOINT` (Prompt 2): implemented Accept/Reject use cases, LoadFragmentReviewSnapshot query, repository extensions, DI registration, added 28 Application tests
 - Completed `FRAGMENT-REVIEW-PERSISTENCE-CHECKPOINT` (Prompt 3): verified EF migration integrity, repository update semantics, atomic commit, and concurrency
 - Completed `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1-RC` (Prompt 4): extended Desktop executable proof with full review lifecycle, 2-source import, version coexistence, expected failure scenarios, authority isolation verification, fixed EF Core tracking conflict, created prototype review document
+- Completed `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC` Prompt 1: Domain & Application substrate — ParserExecutionStatus, DiagnosticSeverity, DiagnosticRefType, ParserDiagnostic, DocumentParserRegistry, ParserDescriptor, updated use cases, EF migration, 50 tests
+- Completed `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC` Prompt 2: StructuredTextDocumentParser with heading/clause/table extraction, overlap detection, diagnostics, 25 tests
+- Completed `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC` Prompt 3: Infrastructure & Executable Proof — workflow runner extension, console formatter diagnostics, persistence tests, integration tests, 11 tests
+- Completed `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC` Prompt 5: Governance & RC Review — prototype review, continuity updates, full validation, 564/564 tests
 
 Proposed next direction:
 
-- Begin `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC` for structural text extraction
-- After that, proceed to `FRAGMENT-TO-KNOWLEDGE-PROMOTION-FOROUNDATION-0.1-RC`
+- Await release decision for `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC`
+- After that, proceed to `FRAGMENT-TO-KNOWLEDGE-PROMOTION-FOUNDATION-0.1-RC`
 - Preserve the non-authoritative document-candidate boundary
 - Keep OCR, AI extraction, and reconciliation workflows deferred until fragment contracts are explicit
 
@@ -130,6 +134,13 @@ Current capabilities:
 - Verify first-commit-wins concurrency and terminal state guards
 - Verify authority isolation: parsing and review do not create Knowledge, Report, or AI records
 - Record concurrency technical debt for server/multi-user safety
+- Parse structured text (markdown) with heading, clause, and table extraction
+- Detect overlapping structural fragments and emit OVERLAPPING_CONTENT diagnostics
+- Persist parser diagnostics through parser_diagnostics SQLite table
+- Reload parser diagnostics through LoadParsingSnapshotUseCase
+- Display parser diagnostics in Desktop console output
+- Resolve parser by key through DocumentParserRegistry
+- Distinguish Completed, CompletedWithWarnings, and Failed parser statuses
 
 Authoritative context:
 
@@ -145,6 +156,8 @@ Authoritative context:
 - `spec/documents/document-engine-foundation.md`
 - `spec/documents/parsing-and-fragment-foundation.md`
 - `docs/decisions/status/PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC-PROTOTYPE-REVIEW.md`
+- `docs/decisions/status/FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1-RC-REVIEW.md`
+- `docs/decisions/status/DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC-PROTOTYPE-REVIEW.md`
 - `spec/rules/README.md`
 - `spec/rules/rule-engine-boundary.md`
 - `docs/00-governance/ROADMAP.md`
@@ -155,6 +168,7 @@ Authoritative context:
 - `docs/decisions/edr/EDR-KE-012-document-engine-ownership-boundary.md`
 - `docs/decisions/edr/EDR-DE-006-fragment-identity-contract-version-choice.md`
 - `docs/decisions/edr/EDR-DE-007-fragment-candidate-review-disposition-and-promotion-prerequisites.md`
+- `docs/decisions/edr/EDR-DE-008-parser-diagnostics-and-registry.md`
 
 Validation before completion:
 

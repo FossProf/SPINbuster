@@ -3,10 +3,11 @@ using SPINbuster.Domain;
 namespace SPINbuster.Application.Contracts;
 
 public sealed record ParserExecutionResult(
-  bool Success,
+  ParserExecutionStatus Status,
   ParserRunFailureClassification FailureClassification,
   string? FailureDetails,
-  IReadOnlyList<ParserFragmentResult> Fragments);
+  IReadOnlyList<ParserFragmentResult> Fragments,
+  IReadOnlyList<ParserDiagnosticResult> Diagnostics);
 
 public sealed record ParserFragmentResult(
   FragmentLocatorType LocatorType,
@@ -14,8 +15,16 @@ public sealed record ParserFragmentResult(
   int Ordinal,
   ContentKind ContentKind,
   string ExtractedText,
-  ConfidenceBand ConfidenceBand,
-  IReadOnlyList<string> DiagnosticCodes);
+  ConfidenceBand ConfidenceBand);
+
+public sealed record ParserDiagnosticResult(
+  DiagnosticSeverity Severity,
+  string Code,
+  string Message,
+  DiagnosticRefType? CandidateRefType,
+  string? CandidateRefValue,
+  FragmentLocatorType? LocatorType,
+  string? LocatorValue);
 
 public enum ParserRunFailureClassification
 {

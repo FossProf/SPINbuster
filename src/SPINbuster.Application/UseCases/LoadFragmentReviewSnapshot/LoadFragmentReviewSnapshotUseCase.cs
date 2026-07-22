@@ -11,16 +11,19 @@ public sealed class LoadFragmentReviewSnapshotUseCase : IQueryHandler<LoadFragme
   private const int MaxTextPreviewLength = 200;
 
   private readonly IFragmentCandidateRepository _fragmentCandidateRepository;
+  private readonly IParserDiagnosticRepository _parserDiagnosticRepository;
   private readonly IParserRunRepository _parserRunRepository;
   private readonly ILogger<LoadFragmentReviewSnapshotUseCase> _logger;
 
   public LoadFragmentReviewSnapshotUseCase(
     IFragmentCandidateRepository fragmentCandidateRepository,
     IParserRunRepository parserRunRepository,
+    IParserDiagnosticRepository parserDiagnosticRepository,
     ILogger<LoadFragmentReviewSnapshotUseCase> logger)
   {
     _fragmentCandidateRepository = fragmentCandidateRepository;
     _parserRunRepository = parserRunRepository;
+    _parserDiagnosticRepository = parserDiagnosticRepository;
     _logger = logger;
   }
 
@@ -58,6 +61,7 @@ public sealed class LoadFragmentReviewSnapshotUseCase : IQueryHandler<LoadFragme
       }
 
       var parserRunCache = new Dictionary<ParserRunId, ParserRun?>(capacity: 0);
+      var runDiagnosticsCache = new Dictionary<ParserRunId, IReadOnlyList<ParserDiagnostic>>(capacity: 0);
 
       var filtered = candidates
         .Where(c => c.ProjectId == query.ProjectId)
@@ -77,8 +81,19 @@ public sealed class LoadFragmentReviewSnapshotUseCase : IQueryHandler<LoadFragme
         filtered = filtered.Where(c => c.ContentKind == query.ContentKindFilter.Value);
       }
 
-      var entries = filtered
-        .Take(query.MaxResults)
+      var projectedCandidates = filtered.Take(query.MaxResults).ToList();
+
+      var requiredRunIds = projectedCandidates.Select(c => c.ParserRunId).Distinct().ToList();
+      foreach (var runId in requiredRunIds)
+      {
+        if (!runDiagnosticsCache.ContainsKey(runId))
+        {
+          var diagnostics = await _parserDiagnosticRepository.GetByParserRunAsync(runId, cancellationToken);
+          runDiagnosticsCache[runId] = diagnostics;
+        }
+      }
+
+      var entries = projectedCandidates
         .Select(c =>
         {
           if (!parserRunCache.TryGetValue(c.ParserRunId, out var run))
@@ -86,6 +101,29 @@ public sealed class LoadFragmentReviewSnapshotUseCase : IQueryHandler<LoadFragme
             run = _parserRunRepository.GetByIdAsync(c.ParserRunId, cancellationToken).GetAwaiter().GetResult();
             parserRunCache[c.ParserRunId] = run;
           }
+
+          IReadOnlyList<ParserDiagnostic> candidateDiagnostics;
+          if (runDiagnosticsCache.TryGetValue(c.ParserRunId, out var runDiagnostics))
+          {
+            candidateDiagnostics = runDiagnostics
+              .Where(d => string.Equals(d.CandidateRefValue, c.IdentityKey, StringComparison.Ordinal))
+              .ToList();
+          }
+          else
+          {
+            candidateDiagnostics = Array.Empty<ParserDiagnostic>();
+          }
+
+          var diagnosticSnapshots = candidateDiagnostics.Select(d => new FragmentDiagnosticSnapshot(
+            d.Id,
+            d.Severity,
+            d.Code,
+            d.Message,
+            d.CandidateRefType,
+            d.CandidateRefValue,
+            d.LocatorType,
+            d.LocatorValue,
+            d.CreatedAtUtc)).ToArray();
 
           return new FragmentReviewSnapshotEntry(
             c.Id,
@@ -109,6 +147,7 @@ public sealed class LoadFragmentReviewSnapshotUseCase : IQueryHandler<LoadFragme
             c.ExtractedText.Length > MaxTextPreviewLength
               ? string.Concat(c.ExtractedText.AsSpan(0, MaxTextPreviewLength), "...")
               : c.ExtractedText,
+            diagnosticSnapshots,
             c.CreatedAtUtc);
         })
         .ToArray();

@@ -558,6 +558,7 @@ public sealed class FragmentReviewUseCaseTests
     return new LoadFragmentReviewSnapshotUseCase(
       fixture.FragmentCandidateRepository,
       fixture.ParserRunRepository,
+      fixture.ParserDiagnosticRepository,
       NullLogger<LoadFragmentReviewSnapshotUseCase>.Instance);
   }
 
@@ -574,6 +575,7 @@ public sealed class FragmentReviewUseCaseTests
       new FakeImportedDocumentSourceRepository(),
       new FakeParserRunRepository(),
       new FakeFragmentCandidateRepository(),
+      new FakeParserDiagnosticRepository(),
       new FakeUnitOfWork(operationLog),
       new FakeClock(TestTime),
       new FakeCurrentUser("reviewer@example.invalid"),
@@ -586,6 +588,7 @@ public sealed class FragmentReviewUseCaseTests
     FakeImportedDocumentSourceRepository ImportedSourceRepository,
     FakeParserRunRepository ParserRunRepository,
     FakeFragmentCandidateRepository FragmentCandidateRepository,
+    FakeParserDiagnosticRepository ParserDiagnosticRepository,
     FakeUnitOfWork UnitOfWork,
     FakeClock Clock,
     FakeCurrentUser CurrentUser,

@@ -765,6 +765,210 @@ public sealed class SqliteParsingPersistenceTests : IDisposable
     Assert.Empty(pendingMigrations);
   }
 
+  [Fact]
+  public async Task ParserDiagnosticsTableExistsAfterMigration()
+  {
+    await using var dbContext = CreateDbContext();
+    await dbContext.Database.MigrateAsync();
+
+    var tableExists = await QueryCountAsync(dbContext,
+      "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='parser_diagnostics'");
+    Assert.Equal(1, tableExists);
+  }
+
+  [Fact]
+  public async Task AddRangePersistsDiagnosticsAndReloads()
+  {
+    var seeded = await SeedSourceAsync();
+    var createdAt = seeded.CreatedAtUtc;
+    var runId = ParserRunId.New();
+    var diagnosticId1 = ParserDiagnosticId.New();
+    var diagnosticId2 = ParserDiagnosticId.New();
+
+    await using (var dbContext = CreateDbContext())
+    {
+      var auditRecorder = new SqliteAuditRecorder();
+      var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
+      var run = CreateParserRun(seeded.ProjectId, seeded.SourceId, createdAt);
+      await new SqliteParserRunRepository(dbContext).AddAsync(run);
+      StageAuditEvents(auditRecorder, run.AuditTrail);
+      runId = run.Id;
+      await unitOfWork.CommitAsync();
+    }
+
+    var diagnostics = new[]
+    {
+      new ParserDiagnostic(
+        diagnosticId1,
+        runId,
+        DiagnosticSeverity.Warning,
+        "OVERLAPPING_CONTENT",
+        "Fragment at ordinal 2 overlaps with fragment at ordinal 1.",
+        createdAt.AddMinutes(1),
+        DiagnosticRefType.Ordinal,
+        "2"),
+      new ParserDiagnostic(
+        diagnosticId2,
+        runId,
+        DiagnosticSeverity.Info,
+        "TABLE_SEPARATOR_MISSING",
+        "Pipe-delimited table row was missing a trailing separator.",
+        createdAt.AddMinutes(2),
+        DiagnosticRefType.NormalizedLocator,
+        "structural:section-2",
+        FragmentLocatorType.StructuralPath,
+        "section-2"),
+    };
+
+    await using (var dbContext = CreateDbContext())
+    {
+      var diagnosticRepo = new SqliteParserDiagnosticRepository(dbContext);
+      await diagnosticRepo.AddRangeAsync(diagnostics);
+      await dbContext.SaveChangesAsync();
+    }
+
+    await using var verificationContext = CreateDbContext();
+    var loaded = await new SqliteParserDiagnosticRepository(verificationContext).GetByParserRunAsync(runId);
+    Assert.Equal(2, loaded.Count);
+
+    var loaded1 = loaded.First(d => d.Id == diagnosticId1);
+    Assert.Equal(DiagnosticSeverity.Warning, loaded1.Severity);
+    Assert.Equal("OVERLAPPING_CONTENT", loaded1.Code);
+    Assert.Equal(DiagnosticRefType.Ordinal, loaded1.CandidateRefType);
+    Assert.Equal("2", loaded1.CandidateRefValue);
+    Assert.Null(loaded1.LocatorType);
+    Assert.Null(loaded1.LocatorValue);
+
+    var loaded2 = loaded.First(d => d.Id == diagnosticId2);
+    Assert.Equal(DiagnosticSeverity.Info, loaded2.Severity);
+    Assert.Equal("TABLE_SEPARATOR_MISSING", loaded2.Code);
+    Assert.Equal(DiagnosticRefType.NormalizedLocator, loaded2.CandidateRefType);
+    Assert.Equal("structural:section-2", loaded2.CandidateRefValue);
+    Assert.Equal(FragmentLocatorType.StructuralPath, loaded2.LocatorType);
+    Assert.Equal("section-2", loaded2.LocatorValue);
+  }
+
+  [Fact]
+  public async Task GetByParserRunAndCandidateFiltersByCandidateRefValue()
+  {
+    var seeded = await SeedSourceAsync();
+    var createdAt = seeded.CreatedAtUtc;
+    ParserRunId runId;
+
+    await using (var dbContext = CreateDbContext())
+    {
+      var auditRecorder = new SqliteAuditRecorder();
+      var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
+      var run = CreateParserRun(seeded.ProjectId, seeded.SourceId, createdAt);
+      await new SqliteParserRunRepository(dbContext).AddAsync(run);
+      StageAuditEvents(auditRecorder, run.AuditTrail);
+      runId = run.Id;
+      await unitOfWork.CommitAsync();
+    }
+
+    var diagnostics = new[]
+    {
+      new ParserDiagnostic(
+        ParserDiagnosticId.New(),
+        runId,
+        DiagnosticSeverity.Warning,
+        "OVERLAPPING_CONTENT",
+        "Overlap detected.",
+        createdAt.AddMinutes(1),
+        DiagnosticRefType.Ordinal,
+        "1"),
+      new ParserDiagnostic(
+        ParserDiagnosticId.New(),
+        runId,
+        DiagnosticSeverity.Info,
+        "HEADING_EXTRACTED",
+        "Heading extracted.",
+        createdAt.AddMinutes(2),
+        DiagnosticRefType.Ordinal,
+        "2"),
+    };
+
+    await using (var dbContext = CreateDbContext())
+    {
+      await new SqliteParserDiagnosticRepository(dbContext).AddRangeAsync(diagnostics);
+      await dbContext.SaveChangesAsync();
+    }
+
+    await using var verificationContext = CreateDbContext();
+    var filtered = await new SqliteParserDiagnosticRepository(verificationContext)
+      .GetByParserRunAndCandidateAsync(runId, "2");
+
+    Assert.Single(filtered);
+    Assert.Equal("HEADING_EXTRACTED", filtered[0].Code);
+  }
+
+  [Fact]
+  public async Task DiagnosticsPersistAcrossMultipleParserRuns()
+  {
+    var seeded = await SeedSourceAsync();
+    var createdAt = seeded.CreatedAtUtc;
+    var runId1 = ParserRunId.New();
+    var runId2 = ParserRunId.New();
+
+    await using (var dbContext = CreateDbContext())
+    {
+      var auditRecorder = new SqliteAuditRecorder();
+      var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
+
+      var run1 = new ParserRun(runId1, seeded.ProjectId, seeded.SourceId, "parser-a", "1.0.0", "1.0.0", "hash-a", "content-hash", "SHA-256", 1, "test@example.invalid", createdAt);
+      var run2 = new ParserRun(runId2, seeded.ProjectId, seeded.SourceId, "parser-b", "1.0.0", "1.0.0", "hash-b", "content-hash", "SHA-256", 1, "test@example.invalid", createdAt);
+
+      await new SqliteParserRunRepository(dbContext).AddAsync(run1);
+      await new SqliteParserRunRepository(dbContext).AddAsync(run2);
+      StageAuditEvents(auditRecorder, run1.AuditTrail);
+      StageAuditEvents(auditRecorder, run2.AuditTrail);
+      await unitOfWork.CommitAsync();
+    }
+
+    await using (var dbContext = CreateDbContext())
+    {
+      var repo = new SqliteParserDiagnosticRepository(dbContext);
+      await repo.AddRangeAsync(new[]
+      {
+        new ParserDiagnostic(ParserDiagnosticId.New(), runId1, DiagnosticSeverity.Info, "CODE-A", "Diagnostic for run A.", createdAt.AddMinutes(1)),
+        new ParserDiagnostic(ParserDiagnosticId.New(), runId2, DiagnosticSeverity.Warning, "CODE-B", "Diagnostic for run B.", createdAt.AddMinutes(2)),
+      });
+      await dbContext.SaveChangesAsync();
+    }
+
+    await using var verificationContext = CreateDbContext();
+    var repo1 = new SqliteParserDiagnosticRepository(verificationContext);
+    var run1Diags = await repo1.GetByParserRunAsync(runId1);
+    Assert.Single(run1Diags);
+    Assert.Equal("CODE-A", run1Diags[0].Code);
+
+    var repo2 = new SqliteParserDiagnosticRepository(verificationContext);
+    var run2Diags = await repo2.GetByParserRunAsync(runId2);
+    Assert.Single(run2Diags);
+    Assert.Equal("CODE-B", run2Diags[0].Code);
+  }
+
+  [Fact]
+  public async Task DiagnosticsAreEmptyForRunWithNoDiagnostics()
+  {
+    var seeded = await SeedSourceAsync();
+    var createdAt = seeded.CreatedAtUtc;
+
+    await using (var dbContext = CreateDbContext())
+    {
+      var auditRecorder = new SqliteAuditRecorder();
+      var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
+      var run = CreateParserRun(seeded.ProjectId, seeded.SourceId, createdAt);
+      await new SqliteParserRunRepository(dbContext).AddAsync(run);
+      StageAuditEvents(auditRecorder, run.AuditTrail);
+      await unitOfWork.CommitAsync();
+
+      await using var verificationContext = CreateDbContext();
+      var loaded = await new SqliteParserDiagnosticRepository(verificationContext).GetByParserRunAsync(run.Id);
+      Assert.Empty(loaded);
+    }
+  }
+
   public void Dispose()
   {
     try

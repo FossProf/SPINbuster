@@ -28,6 +28,11 @@ public static class ParsingExecutableWorkflowConsoleFormatter
     builder.AppendLine("=== Source B Parse ===");
     AppendParseResult(builder, "SourceB", result.SourceBParseResult);
 
+    builder.AppendLine("=== Structured Text Parse ===");
+    AppendParseResult(builder, "StructuredText", result.StructuredTextParseResult);
+    AppendSnapshotSummary(builder, result.StructuredTextSnapshot);
+    AppendDiagnosticsSummary(builder, result.StructuredTextSnapshot);
+
     builder.AppendLine("=== Fragment Review ===");
     AppendLineInvariant(builder, $"  Accepted candidate ID: {result.AcceptedCandidate.FragmentCandidateId}");
     AppendLineInvariant(builder, $"  Accepted state: {result.AcceptedCandidate.ReviewState}");
@@ -138,5 +143,28 @@ public static class ParsingExecutableWorkflowConsoleFormatter
   private static void AppendLineInvariant(StringBuilder builder, FormattableString value)
   {
     builder.AppendLine(value.ToString(CultureInfo.InvariantCulture));
+  }
+
+  private static void AppendDiagnosticsSummary(StringBuilder builder, Application.UseCases.LoadParsingSnapshot.LoadParsingSnapshotResult snapshot)
+  {
+    var allDiagnostics = snapshot.ParserRuns.SelectMany(r => r.Diagnostics).ToArray();
+    if (allDiagnostics.Length == 0)
+    {
+      AppendLineInvariant(builder, $"  Diagnostics: (none)");
+      builder.AppendLine();
+      return;
+    }
+
+    AppendLineInvariant(builder, $"  Diagnostics: {allDiagnostics.Length}");
+    foreach (var diagnostic in allDiagnostics)
+    {
+      AppendLineInvariant(builder, $"    [{diagnostic.Severity}] {diagnostic.Code}: {diagnostic.Message}");
+      if (diagnostic.CandidateRefType is not null)
+      {
+        AppendLineInvariant(builder, $"      ref: {diagnostic.CandidateRefType}={diagnostic.CandidateRefValue}");
+      }
+    }
+
+    builder.AppendLine();
   }
 }

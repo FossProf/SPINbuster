@@ -33,14 +33,20 @@ Chronological released history:
 
 ## Current State
 
-- Latest released baseline: `PARSING-AND-FRAGMENT-FOUNDATION-0.1`
-- Next active package recommendation: `PARSING-EXECUTABLE-SLICE-0.1-RC`
+- Latest released baseline: `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1`
+- Active release candidate: `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC` (validated, not released)
+- Next active package recommendation: TBD after RC release decision
 
-Why this next package:
+Why this package was next:
 
-- The parsing and fragment foundation is released with executable proof validated through the Desktop host.
-- The next increment should extend the Desktop proof to exercise multi-source parsing, version coexistence, and review workflow.
-- This stays focused on the executable proof without prematurely broadening into Knowledge promotion, OCR, or AI extraction.
+- The fragment candidate review lifecycle was released with executable proof.
+- The next increment extended Desktop proof to exercise structural text extraction, parser diagnostics, and the parser registry.
+- This stayed focused on the executable proof without prematurely broadening into Knowledge promotion, OCR, or AI extraction.
+
+Why release is deferred:
+
+- The RC validates structured text parsing, diagnostics, and the parser registry, but the review found that diagnostic aggregation, export, and cross-run comparison are production concerns that may benefit from further iteration before release.
+- Knowledge promotion from reviewed candidates (`EDR-KE-011`) is the natural next capability phase and may influence how diagnostics interact with promotion workflows.
 
 ## Released Foundations
 

@@ -3,6 +3,8 @@ using SPINbuster.Application.Contracts;
 using SPINbuster.Application.Repositories;
 using SPINbuster.Domain;
 
+#pragma warning disable CA1848
+
 namespace SPINbuster.Application.Tests.Fakes;
 
 internal sealed class FakeParserRunRepository : IParserRunRepository
@@ -176,7 +178,7 @@ internal sealed class FakeDocumentParser : IDocumentParser
     (input, _) =>
     {
       return Task.FromResult(new ParserExecutionResult(
-        true,
+        ParserExecutionStatus.Completed,
         ParserRunFailureClassification.None,
         null,
         [
@@ -186,9 +188,9 @@ internal sealed class FakeDocumentParser : IDocumentParser
             1,
             ContentKind.PlainText,
             "Parsed text content.",
-            ConfidenceBand.High,
-            []),
-        ]));
+            ConfidenceBand.High),
+        ],
+        []));
     };
 
   public ParserDeterminism Determinism { get; set; } = ParserDeterminism.Deterministic;
@@ -210,5 +212,62 @@ internal sealed class FakeDocumentParser : IDocumentParser
     SequenceLog.Add("parser-run");
     _sharedOperationLog?.Add("parser-run");
     return ParseAsyncCore(input, cancellationToken);
+  }
+}
+
+internal sealed class FakeDocumentParserRegistry : IDocumentParserRegistry
+{
+  private readonly Dictionary<string, IDocumentParser> _parsers = new(StringComparer.Ordinal);
+
+  public FakeDocumentParserRegistry(IDocumentParser parser)
+  {
+    var descriptor = parser.Describe();
+    _parsers[descriptor.ParserKey] = parser;
+  }
+
+  public void Register(IDocumentParser parser)
+  {
+    var descriptor = parser.Describe();
+    _parsers[descriptor.ParserKey] = parser;
+  }
+
+  public IDocumentParser GetRequired(string parserKey)
+  {
+    if (_parsers.TryGetValue(parserKey, out var parser))
+    {
+      return parser;
+    }
+
+    throw new KeyNotFoundException($"Parser '{parserKey}' not found in registry.");
+  }
+
+  public IReadOnlyList<ParserDescriptor> List()
+  {
+    return _parsers.Values.Select(p => p.Describe()).ToArray();
+  }
+}
+
+internal sealed class FakeParserDiagnosticRepository : IParserDiagnosticRepository
+{
+  private readonly List<ParserDiagnostic> _diagnostics = [];
+
+  public List<ParserDiagnostic> AddedDiagnostics => _diagnostics;
+
+  public Task AddRangeAsync(IReadOnlyList<ParserDiagnostic> diagnostics, CancellationToken cancellationToken = default)
+  {
+    _diagnostics.AddRange(diagnostics);
+    return Task.CompletedTask;
+  }
+
+  public Task<IReadOnlyList<ParserDiagnostic>> GetByParserRunAsync(ParserRunId parserRunId, CancellationToken cancellationToken = default)
+  {
+    return Task.FromResult<IReadOnlyList<ParserDiagnostic>>(
+      _diagnostics.Where(d => d.ParserRunId == parserRunId).ToArray());
+  }
+
+  public Task<IReadOnlyList<ParserDiagnostic>> GetByParserRunAndCandidateAsync(ParserRunId parserRunId, string candidateRefValue, CancellationToken cancellationToken = default)
+  {
+    return Task.FromResult<IReadOnlyList<ParserDiagnostic>>(
+      _diagnostics.Where(d => d.ParserRunId == parserRunId && d.CandidateRefValue == candidateRefValue).ToArray());
   }
 }

@@ -1,8 +1,9 @@
 # Parsing and Fragment Foundation
 
-Status: Review Candidate (Executable Proof Validated)
-Baseline: `PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC`
+Status: Released (Extended with Diagnostics and Registry)
+Baseline: `PARSING-AND-FRAGMENT-FOUNDATION-0.1` (extended by `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC`)
 Supersedes: `EDR-KE-010` (candidate-stage fragment identity resolved here)
+Extends: `EDR-DE-008` (parser diagnostics and registry)
 
 ## Purpose
 

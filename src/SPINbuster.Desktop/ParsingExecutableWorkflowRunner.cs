@@ -17,6 +17,7 @@ namespace SPINbuster.Desktop;
 public sealed class ParsingExecutableWorkflowRunner
 {
   private const string ParserKey = "plain-text-deterministic";
+  private const string StructuredParserKey = "structured-text-deterministic";
   private const string ParserContractVersion = "1.0.0";
   private const int ReviewSnapshotMaxResults = 100;
 
@@ -90,6 +91,19 @@ public sealed class ParsingExecutableWorkflowRunner
         sourceBStream),
       cancellationToken);
 
+    var structuredTextBytes = Encoding.UTF8.GetBytes(runScope.StructuredTextContent);
+    await using var structuredTextStream = new MemoryStream(structuredTextBytes, writable: false);
+    var structuredTextSource = await _importSource.HandleAsync(
+      new ImportDocumentSourceCommand(
+        beganImportSession.ImportSessionId,
+        createdProject.ProjectId,
+        runScope.StructuredTextFileName,
+        "text/markdown",
+        ImportedSourceOrigin.LocalFile,
+        null,
+        structuredTextStream),
+      cancellationToken);
+
     var completedImportSession = await _completeImportSession.HandleAsync(
       new CompleteDocumentImportSessionCommand(beganImportSession.ImportSessionId),
       cancellationToken);
@@ -126,6 +140,19 @@ public sealed class ParsingExecutableWorkflowRunner
         importedSourceB.ImportedSourceId,
         ParserKey,
         ParserContractVersion),
+      cancellationToken);
+
+    var structuredTextParseResult = await _requestDocumentParsing.HandleAsync(
+      new RequestDocumentParsingCommand(
+        createdProject.ProjectId,
+        structuredTextSource.ImportedSourceId,
+        StructuredParserKey,
+        ParserContractVersion),
+      cancellationToken);
+
+    var structuredTextSnapshot = await LoadParsingSnapshotAsync(
+      createdProject.ProjectId,
+      structuredTextSource.ImportedSourceId,
       cancellationToken);
 
     var candidatesToReview = firstSnapshot.ParserRuns
@@ -185,12 +212,15 @@ public sealed class ParsingExecutableWorkflowRunner
       beganImportSession,
       importedSourceA,
       importedSourceB,
+      structuredTextSource,
       completedImportSession,
       firstParseResult,
       firstSnapshot,
       replayParseResult,
       replaySnapshot,
       sourceBParseResult,
+      structuredTextParseResult,
+      structuredTextSnapshot,
       unsupportedMediaResult,
       cancelledParseResult,
       malformedOutputResult,
@@ -459,6 +489,8 @@ public sealed class ParsingExecutableWorkflowRunner
     string SourceAContent,
     string SourceBFileName,
     string SourceBContent,
+    string StructuredTextFileName,
+    string StructuredTextContent,
     string UnsupportedMediaFileName,
     string CancelFileName,
     string CancelContent,
@@ -474,6 +506,8 @@ public sealed class ParsingExecutableWorkflowRunner
         $"run-scope={suffix}\nSection 03 30 00 requires concrete curing in accordance with the approved project specifications.\n\nField observation: concrete placement was completed and wet curing was initiated.\n\nProvide curing protection immediately after finishing.",
         $"field-observation-{suffix}.txt",
         $"run-scope={suffix}\nInspection of concrete placement on level 3 confirmed curing was initiated within specified time limits.\n\nMoisture retention blankets were placed as required.",
+        $"specification-{suffix}.md",
+        $"# Section 03 30 00 - Cast-in-Place Concrete\n\n## 1. General\n\n1.1 This section covers cast-in-place concrete work and includes the following table:\n| Material | Standard |\n| --- | --- |\n| Cement | ASTM C150 |\n| Aggregate | ASTM C33 |\n\n1.2 All concrete shall comply with ASTM C150.\n\n## 2. Materials\n\n| Material | Standard |\n| --- | --- |\n| Cement | ASTM C150 |\n| Aggregate | ASTM C33 |",
         $"unsupported-{suffix}.pdf",
         $"cancel-{suffix}.txt",
         $"run-scope={suffix}\nThis content will be parsed before cancellation.",

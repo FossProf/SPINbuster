@@ -40,18 +40,20 @@ public sealed class PlainTextDocumentParser : IDocumentParser
     if (!IsSupportedMediaType(input.DeclaredMediaType) && !IsSupportedMediaType(input.DetectedMediaType))
     {
       return new ParserExecutionResult(
-        false,
+        ParserExecutionStatus.Failed,
         ParserRunFailureClassification.UnsupportedMedia,
         $"Media type '{input.DetectedMediaType ?? input.DeclaredMediaType}' is not supported. Supported: text/plain.",
+        [],
         []);
     }
 
     if (input.ContentLength > MaxContentLength)
     {
       return new ParserExecutionResult(
-        false,
+        ParserExecutionStatus.Failed,
         ParserRunFailureClassification.LimitExceeded,
         $"Content length {input.ContentLength} exceeds maximum of {MaxContentLength} bytes.",
+        [],
         []);
     }
 
@@ -76,9 +78,10 @@ public sealed class PlainTextDocumentParser : IDocumentParser
         if (totalRead > MaxContentLength)
         {
           return new ParserExecutionResult(
-            false,
+            ParserExecutionStatus.Failed,
             ParserRunFailureClassification.LimitExceeded,
             $"Content length exceeds maximum of {MaxContentLength} bytes.",
+            [],
             []);
         }
 
@@ -90,18 +93,20 @@ public sealed class PlainTextDocumentParser : IDocumentParser
     catch (DecoderFallbackException ex)
     {
       return new ParserExecutionResult(
-        false,
+        ParserExecutionStatus.Failed,
         ParserRunFailureClassification.MalformedOutput,
         $"Content is not valid UTF-8: {ex.Message}",
+        [],
         []);
     }
 
     if (string.IsNullOrWhiteSpace(text))
     {
       return new ParserExecutionResult(
-        false,
+        ParserExecutionStatus.Failed,
         ParserRunFailureClassification.MalformedOutput,
         "Content is empty or contains only whitespace.",
+        [],
         []);
     }
 
@@ -114,8 +119,7 @@ public sealed class PlainTextDocumentParser : IDocumentParser
       ordinal++,
       ContentKind.PlainText,
       text,
-      ConfidenceBand.High,
-      []));
+      ConfidenceBand.High));
 
     var lines = text.Split(["\r\n", "\r", "\n"], StringSplitOptions.None);
     var paragraphs = SplitIntoParagraphs(lines);
@@ -135,8 +139,7 @@ public sealed class PlainTextDocumentParser : IDocumentParser
         ordinal++,
         ContentKind.PlainText,
         paragraphText,
-        ConfidenceBand.High,
-        []));
+        ConfidenceBand.High));
     }
 
     for (var i = 0; i < lines.Length; i += LinesPerGroup)
@@ -156,15 +159,15 @@ public sealed class PlainTextDocumentParser : IDocumentParser
         ordinal++,
         ContentKind.PlainText,
         groupText,
-        ConfidenceBand.High,
-        []));
+        ConfidenceBand.High));
     }
 
     return new ParserExecutionResult(
-      true,
+      ParserExecutionStatus.Completed,
       ParserRunFailureClassification.None,
       null,
-      fragments);
+      fragments,
+      []);
   }
 
   private static bool IsSupportedMediaType(string? mediaType)

@@ -24,6 +24,7 @@ public sealed record ParserRunSnapshot(
   DateTimeOffset? StartedAtUtc,
   DateTimeOffset? CompletedAtUtc,
   IReadOnlyList<FragmentCandidateSnapshot> FragmentCandidates,
+  IReadOnlyList<ParserDiagnosticSnapshot> Diagnostics,
   IReadOnlyList<AuditEventSnapshot> AuditHistory);
 
 public sealed record FragmentCandidateSnapshot(
@@ -36,6 +37,17 @@ public sealed record FragmentCandidateSnapshot(
   int TextLength,
   ConfidenceBand ConfidenceBand,
   string IdentityKeyHash,
+  DateTimeOffset CreatedAtUtc);
+
+public sealed record ParserDiagnosticSnapshot(
+  ParserDiagnosticId DiagnosticId,
+  DiagnosticSeverity Severity,
+  string Code,
+  string Message,
+  DiagnosticRefType? CandidateRefType,
+  string? CandidateRefValue,
+  FragmentLocatorType? LocatorType,
+  string? LocatorValue,
   DateTimeOffset CreatedAtUtc);
 
 public sealed record AuditEventSnapshot(

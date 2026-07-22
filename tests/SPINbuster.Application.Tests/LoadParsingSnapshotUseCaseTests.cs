@@ -184,9 +184,10 @@ public sealed class LoadParsingSnapshotUseCaseTests
       fixture.ProjectRepository,
       fixture.ImportedSourceRepository,
       fixture.ImmutableContentStore,
-      fixture.DocumentParser,
+      fixture.ParserRegistry,
       fixture.ParserRunRepository,
       fixture.FragmentCandidateRepository,
+      fixture.ParserDiagnosticRepository,
       fixture.UnitOfWork,
       fixture.Clock,
       fixture.CurrentUser,
@@ -206,6 +207,7 @@ public sealed class LoadParsingSnapshotUseCaseTests
       fixture.ImportedSourceRepository,
       fixture.ParserRunRepository,
       fixture.FragmentCandidateRepository,
+      fixture.ParserDiagnosticRepository,
       NullLogger<LoadParsingSnapshotUseCase>.Instance);
   }
 
@@ -216,14 +218,17 @@ public sealed class LoadParsingSnapshotUseCaseTests
     var projectRepository = new FakeProjectRepository();
     projectRepository.AddAsync(project).GetAwaiter().GetResult();
 
+    var parser = new FakeDocumentParser(operationLog);
     return new ParsingFixture(
       projectId,
       projectRepository,
       new FakeImportedDocumentSourceRepository(),
       new FakeImmutableContentStore(),
-      new FakeDocumentParser(operationLog),
+      parser,
+      new FakeDocumentParserRegistry(parser),
       new FakeParserRunRepository(),
       new FakeFragmentCandidateRepository(),
+      new FakeParserDiagnosticRepository(),
       new FakeUnitOfWork(operationLog),
       new FakeClock(TestTime),
       new FakeCurrentUser("parser.requester@example.invalid"),
@@ -236,8 +241,10 @@ public sealed class LoadParsingSnapshotUseCaseTests
     FakeImportedDocumentSourceRepository ImportedSourceRepository,
     FakeImmutableContentStore ImmutableContentStore,
     FakeDocumentParser DocumentParser,
+    FakeDocumentParserRegistry ParserRegistry,
     FakeParserRunRepository ParserRunRepository,
     FakeFragmentCandidateRepository FragmentCandidateRepository,
+    FakeParserDiagnosticRepository ParserDiagnosticRepository,
     FakeUnitOfWork UnitOfWork,
     FakeClock Clock,
     FakeCurrentUser CurrentUser,
