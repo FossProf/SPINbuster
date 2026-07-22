@@ -1,9 +1,10 @@
 # FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1-RC Prototype Review
 
 Date: 2026-07-21
-Status: Review Candidate
-Active implementation package: `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1-RC`
-Next active package: TBD (recommended after review)
+Status: Released
+Active implementation package: `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1`
+Released baseline: `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1`
+Next active package: `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC` (recommended)
 
 ## Validation snapshot
 

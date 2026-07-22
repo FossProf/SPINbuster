@@ -55,7 +55,7 @@ Purpose: Explain how the repository is organized and where different kinds of wo
 
 ## Current Released Baseline
 
-- `PARSING-AND-FRAGMENT-FOUNDATION-0.1` is the latest released baseline.
+- `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1` is the latest released baseline.
 
 ## Current Governance Baseline
 
@@ -63,7 +63,7 @@ Purpose: Explain how the repository is organized and where different kinds of wo
 
 ## Next Active Package
 
-- `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1-RC`
+- `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC`
 
 ## Current Document Engine Flow
 

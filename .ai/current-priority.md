@@ -7,13 +7,13 @@ Latest governance baseline:
 ARCHITECTURE-VISION-2.0
 
 Latest software baseline:
-PARSING-AND-FRAGMENT-FOUNDATION-0.1
+FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1
 
 Active implementation package:
-FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1-RC
+DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC
 
 Status:
-Parsing and fragment foundation released as PARSING-AND-FRAGMENT-FOUNDATION-0.1
+FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1 released
 
 Build:
 Passing
@@ -46,18 +46,18 @@ Total tests:
 518/518 passing
 
 Current task:
-`FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1-RC` (Prompt 4) complete — awaiting review
+`FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1` released. Begin `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC`
 
 Required outcome:
 
-- Define FragmentCandidate lifecycle states for human review (Generated, HumanAccepted, Rejected)
-- Review acceptance must not change IdentityKey, provenance, parser binding, or locator
-- Preserve the frozen governance baseline while extending the review model
-- Keep OCR, AI extraction, and promotion boundaries governed and deferred
-- Do not bypass provenance, validation, scope, lifecycle, or project boundaries
+- Implement structural text extraction: headings, numbered clauses, tables, source-location fidelity
+- Establish overlapping-fragment policy
+- Add parser diagnostics and partial-success semantics
+- Keep review lifecycle boundaries from FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1 intact
+- Preserve authority isolation
 
 Next review:
-Awaiting review of `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1-RC` after Prompt 4 completion
+After `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC` completion
 
 Known blockers:
 None
@@ -76,7 +76,8 @@ Last completed:
 
 Proposed next direction:
 
-- Determine next package after review approval (Knowledge promotion or broader Document Understanding)
+- Begin `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC` for structural text extraction
+- After that, proceed to `FRAGMENT-TO-KNOWLEDGE-PROMOTION-FOROUNDATION-0.1-RC`
 - Preserve the non-authoritative document-candidate boundary
 - Keep OCR, AI extraction, and reconciliation workflows deferred until fragment contracts are explicit
 
@@ -128,6 +129,7 @@ Current capabilities:
 - Execute full Desktop review workflow with 2-source import, version coexistence, and expected failure scenarios
 - Verify first-commit-wins concurrency and terminal state guards
 - Verify authority isolation: parsing and review do not create Knowledge, Report, or AI records
+- Record concurrency technical debt for server/multi-user safety
 
 Authoritative context:
 

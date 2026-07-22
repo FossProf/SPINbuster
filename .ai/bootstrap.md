@@ -11,7 +11,7 @@ SPINbuster is an offline-first engineering knowledge platform with layered code 
 - Repository scaffold exists and builds successfully.
 - Architecture guardrails are in place and passing.
 - The repository includes released foundations for Application, Infrastructure, AI proposal workflows, Knowledge Engine workflows, Document Engine workflows, the local filesystem storage adapter, and the parsing and fragment foundation.
-- The latest software baseline is `PARSING-AND-FRAGMENT-FOUNDATION-0.1`.
+- The latest software baseline is `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1`.
 - The latest governance baseline is `ARCHITECTURE-VISION-2.0`.
 - The roadmap is organized by long-term capability evolution.
 
@@ -21,11 +21,11 @@ SPINbuster is an offline-first engineering knowledge platform with layered code 
 
 ## Latest Software Baseline
 
-- `PARSING-AND-FRAGMENT-FOUNDATION-0.1`
+- `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1`
 
 ## Active Implementation Package
 
-- `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1-RC`
+- `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC`
 
 ## Current Milestone
 
@@ -33,7 +33,7 @@ SPINbuster is an offline-first engineering knowledge platform with layered code 
 
 ## Current Active Task
 
-- `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1-RC` Prompt 4 complete — awaiting review
+- Begin `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC`
 
 ## Authoritative Files
 

@@ -7,12 +7,12 @@
 
 ## Latest Software Baseline
 
-- `PARSING-AND-FRAGMENT-FOUNDATION-0.1`
+- `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1`
 - Status: `Released`
 
 ## Active Implementation Package
 
-- `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1-RC`
+- `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC`
 
 ## Current Branch
 
@@ -20,11 +20,11 @@
 
 ## Last Completed Milestone
 
-- Parsing and fragment foundation released
+- Fragment candidate review lifecycle released
 
 ## Current Implementation Phase
 
-- Document Understanding — parsing foundation complete
+- Document Understanding — review lifecycle complete
 
 ## Current Milestone
 
@@ -77,10 +77,11 @@
 - Document OCR, fragment promotion, assertion promotion, and broader retrieval remain deferred beyond the current foundation.
 - Immutable-object reconciliation and deletion remain deferred; local filesystem inventory is diagnostic only.
 - The Windows Desktop apphost may still be blocked by local machine policy even when the managed DLL executes correctly.
+- Fragment candidate review concurrency relies on aggregate-level guards (`EnsureReviewNotDecided`). Before server or multi-user work, the database update itself should verify original state with a conditional SQL `WHERE ReviewState = Generated` to ensure true multi-process safety.
 
 ## Immediate Next Task
 
-- `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1-RC` Prompt 4 complete — awaiting review
+- `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1` released. Next: `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC`
 
 ## Fast Context
 
@@ -88,7 +89,7 @@
 - Start every new AI session from `.ai/bootstrap.md`.
 - The latest governance baseline is `ARCHITECTURE-VISION-2.0`.
 - The latest software baseline is `PARSING-AND-FRAGMENT-FOUNDATION-0.1`.
-- The active implementation package is `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1-RC`.
+- The active implementation package is `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC`.
 
 ## Current Capabilities
 

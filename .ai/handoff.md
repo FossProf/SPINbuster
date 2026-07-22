@@ -1,7 +1,7 @@
 # Current State
 
 Repository status:
-Latest governance baseline: `ARCHITECTURE-VISION-2.0`. Latest software baseline: `PARSING-AND-FRAGMENT-FOUNDATION-0.1`. Active implementation package: `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1-RC`. Build passing. Domain tests `181/181`. Application tests `184/184`. Documents tests `28/28`. Infrastructure tests `56/56`. Architecture tests `24/24`. AI tests `6/6`. Desktop tests `39/39`. Total `518/518`. Warnings `0`.
+Latest governance baseline: `ARCHITECTURE-VISION-2.0`. Latest software baseline: `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1`. Active implementation package: `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC`. Build passing. Domain tests `181/181`. Application tests `184/184`. Documents tests `28/28`. Infrastructure tests `56/56`. Architecture tests `24/24`. AI tests `6/6`. Desktop tests `39/39`. Total `518/518`. Warnings `0`.
 
 Current branch:
 `main`
@@ -13,10 +13,10 @@ Latest governance baseline:
 `ARCHITECTURE-VISION-2.0`
 
 Latest software baseline:
-`PARSING-AND-FRAGMENT-FOUNDATION-0.1`
+`FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1`
 
 Active implementation package:
-`FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1-RC`
+`DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC`
 
 Recent accomplishments:
 
@@ -53,7 +53,7 @@ Current architectural decisions:
 - Knowledge Engine command idempotency is still deferred by `EDR-KE-009`.
 
 Next task:
-Awaiting review of `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1-RC`. After approval, determine next package (Knowledge promotion or broader Document Understanding).
+Begin `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC`
 
 Known issues:
 
@@ -67,11 +67,11 @@ Known issues:
 - The `MapFailureClassification` in `RequestDocumentParsingUseCase` maps parser failure reasons through string matching, which loses the original parser-specific classification. Acceptable for the foundation but should be refined before production.
 - `AddKnowledgeCitationUseCase` retains direct `new AuditEvent(...)` construction as intentional single-event duplication, not a general pattern for other use cases.
 - The EF migration `AddFragmentCandidateReviewState` was created during the Domain checkpoint (Prompt 1) before Application review workflows were finalized. Treat this as `FRAGMENT-REVIEW-DOMAIN-AND-SCHEMA-CHECKPOINT`. Do not create another migration unless the model genuinely changes.
+- Fragment candidate review concurrency relies on aggregate-level guards (`EnsureReviewNotDecided`). Before server or multi-user work, the database update itself should verify original state with a conditional SQL `WHERE ReviewState = Generated` to ensure true multi-process safety.
 
 Requested review:
 
-- Confirm review lifecycle boundary is correct
-- Confirm authority isolation for review workflows
+- Approved. No release blockers.
 - Recommend next package after approval
 
 Current capabilities:
@@ -110,3 +110,4 @@ Released baselines (chronological):
 9. `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1`
 10. `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1`
 11. `PARSING-AND-FRAGMENT-FOUNDATION-0.1`
+12. `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1`
