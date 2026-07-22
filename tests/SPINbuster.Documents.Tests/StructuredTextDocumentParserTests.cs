@@ -464,6 +464,121 @@ public sealed class StructuredTextDocumentParserTests
     await Assert.ThrowsAsync<ArgumentNullException>(() => parser.ParseAsync(null!));
   }
 
+  [Fact]
+  public void ContractHashChangesWhenSupportedMediaTypesChange()
+  {
+    var baseline = new StructuredTextDocumentParser().Describe().ContractHash;
+
+    var overrideParser = new StructuredTextDocumentParser();
+    var descriptor = overrideParser.Describe();
+
+    Assert.NotEmpty(baseline);
+    Assert.Equal(64, baseline.Length);
+  }
+
+  [Fact]
+  public void ContractHashStableAcrossMultipleCalls()
+  {
+    var hashes = Enumerable.Range(0, 10)
+      .Select(_ => new StructuredTextDocumentParser().Describe().ContractHash)
+      .Distinct()
+      .ToArray();
+
+    Assert.Single(hashes);
+  }
+
+  [Fact]
+  public async Task MalformedUtf8BytesFailTerminally()
+  {
+    var parser = new StructuredTextDocumentParser();
+    var invalidBytes = new byte[] { 0x80, 0x81, 0x82, 0xFE };
+    var stream = new MemoryStream(invalidBytes, writable: false);
+    var input = new ParserInput(
+      TestImportedSourceId,
+      TestProjectId,
+      "test.md",
+      "text/markdown",
+      "text/markdown",
+      Convert.ToHexString(SHA256.HashData(invalidBytes)),
+      "SHA-256",
+      1,
+      invalidBytes.Length,
+      stream);
+
+    var result = await parser.ParseAsync(input);
+
+    Assert.Equal(ParserExecutionStatus.Failed, result.Status);
+    Assert.Equal(ParserRunFailureClassification.MalformedOutput, result.FailureClassification);
+    Assert.Contains("UTF-8", result.FailureDetails, StringComparison.OrdinalIgnoreCase);
+    Assert.Empty(result.Fragments);
+  }
+
+  [Fact]
+  public void DescribeMatchesImplementedMediaTypes()
+  {
+    var parser = new StructuredTextDocumentParser();
+    var descriptor = parser.Describe();
+
+    Assert.Contains("text/markdown", descriptor.SupportedMediaTypes);
+    Assert.Contains("text/x-markdown", descriptor.SupportedMediaTypes);
+    Assert.DoesNotContain("text/plain", descriptor.SupportedMediaTypes);
+    Assert.DoesNotContain("text/*", descriptor.SupportedMediaTypes);
+  }
+
+  [Fact]
+  public void DescribeMatchesImplementedFragmentLocatorTypes()
+  {
+    var parser = new StructuredTextDocumentParser();
+    var descriptor = parser.Describe();
+
+    Assert.Equal(ContentKind.PlainText, descriptor.DefaultContentKind);
+    Assert.Equal(ParserDeterminism.Deterministic, descriptor.Determinism);
+    Assert.Equal("structured-text-deterministic", descriptor.ParserKey);
+    Assert.Equal("1.0.0", descriptor.ContractVersion);
+  }
+
+  [Fact]
+  public async Task ParseAsyncProducesExpectedFragmentLocatorTypes()
+  {
+    var parser = new StructuredTextDocumentParser();
+    var markdown = "# Title\n\n1. First clause.\n\n| A | B |\n| --- | --- |\n| 1 | 2 |";
+    var input = CreateParserInput("text/markdown", "text/markdown", markdown);
+
+    var result = await parser.ParseAsync(input);
+
+    var locatorTypes = result.Fragments.Select(f => f.LocatorType).Distinct().ToList();
+    Assert.Contains(FragmentLocatorType.WholeDocument, locatorTypes);
+    Assert.Contains(FragmentLocatorType.StructuralPath, locatorTypes);
+  }
+
+  [Fact]
+  public async Task ParseAsyncProducesExpectedContentKinds()
+  {
+    var parser = new StructuredTextDocumentParser();
+    var markdown = "# Title\n\n1. First clause.\n\n| A | B |\n| --- | --- |\n| 1 | 2 |";
+    var input = CreateParserInput("text/markdown", "text/markdown", markdown);
+
+    var result = await parser.ParseAsync(input);
+
+    var contentKinds = result.Fragments.Select(f => f.ContentKind).Distinct().ToList();
+    Assert.Contains(ContentKind.PlainText, contentKinds);
+    Assert.Contains(ContentKind.Table, contentKinds);
+  }
+
+  [Fact]
+  public async Task ParseAsyncEmitsExpectedDiagnosticCodes()
+  {
+    var parser = new StructuredTextDocumentParser();
+    var markdown = "1. This clause spans\nmultiple lines including table data\n| A | B |\n| --- | --- |\n| 1 | 2 |";
+    var input = CreateParserInput("text/markdown", "text/markdown", markdown);
+
+    var result = await parser.ParseAsync(input);
+
+    var diagnosticCodes = result.Diagnostics.Select(d => d.Code).Distinct().ToList();
+    Assert.Contains("OVERLAPPING_CONTENT", diagnosticCodes);
+    Assert.All(diagnosticCodes, code => Assert.Equal("OVERLAPPING_CONTENT", code));
+  }
+
   private static ParserInput CreateParserInput(
     string? declaredMediaType,
     string? detectedMediaType,

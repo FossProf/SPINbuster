@@ -394,6 +394,7 @@ public sealed class ParsingExecutableWorkflowRunner
       return new RequestDocumentParsingResult(
         ParserRunId.New(),
         ParserRunState.Cancelled,
+        ParserExecutionStatus.Failed,
         ParserRunFailureClassification.Cancelled,
         "Parser run was cancelled.",
         []);

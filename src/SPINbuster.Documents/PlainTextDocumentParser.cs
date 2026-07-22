@@ -60,7 +60,8 @@ public sealed class PlainTextDocumentParser : IDocumentParser
     string text;
     try
     {
-      using var reader = new StreamReader(input.Content, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, leaveOpen: false);
+      var strictUtf8 = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
+      using var reader = new StreamReader(input.Content, strictUtf8, detectEncodingFromByteOrderMarks: true, leaveOpen: false);
       var buffer = new char[32768];
       var sb = new StringBuilder();
       int totalRead = 0;
@@ -214,8 +215,17 @@ public sealed class PlainTextDocumentParser : IDocumentParser
 
   private static string ComputeContractHash()
   {
-    var definition = $"{ParserKey}:{ParserVersion}:{ContractVersion}:{string.Join(",", SupportedMediaTypes)}:{ContentKind.PlainText}";
-    var bytes = Encoding.UTF8.GetBytes(definition);
+    var descriptor = $"ParserKey={ParserKey}|" +
+      $"ParserVersion={ParserVersion}|" +
+      $"ContractVersion={ContractVersion}|" +
+      $"SupportedMediaTypes=[{string.Join(",", SupportedMediaTypes)}]|" +
+      $"ContentKind={ContentKind.PlainText}|" +
+      $"FragmentMappings=[WholeDocument,Paragraph,LineRange]|" +
+      $"MaxContentLength={MaxContentLength}|" +
+      $"LinesPerGroup={LinesPerGroup}|" +
+      $"ParagraphSplitByBlankLine=true|" +
+      $"StrictUtf8Decoder=true";
+    var bytes = Encoding.UTF8.GetBytes(descriptor);
     return Convert.ToHexString(SHA256.HashData(bytes));
   }
 

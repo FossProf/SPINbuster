@@ -89,6 +89,7 @@ public static class ParsingExecutableWorkflowConsoleFormatter
   {
     AppendLineInvariant(builder, $"  {label} parser run ID: {parseResult.ParserRunId}");
     AppendLineInvariant(builder, $"  {label} state: {parseResult.State}");
+    AppendLineInvariant(builder, $"  {label} execution status: {parseResult.ExecutionStatus}");
     AppendLineInvariant(builder, $"  {label} failure classification: {parseResult.FailureClassification}");
     if (parseResult.FailureDetails is not null)
     {
@@ -108,7 +109,7 @@ public static class ParsingExecutableWorkflowConsoleFormatter
     foreach (var run in snapshot.ParserRuns)
     {
       AppendLineInvariant(builder, $"  Parser run: {run.ParserKey} v{run.ParserVersion} (contract {run.ParserContractVersion})");
-      AppendLineInvariant(builder, $"    state: {run.State}, fragments: {run.FragmentCandidates.Count}");
+      AppendLineInvariant(builder, $"    state: {run.State}, execution: {run.ExecutionStatus}, fragments: {run.FragmentCandidates.Count}");
 
       foreach (var candidate in run.FragmentCandidates)
       {

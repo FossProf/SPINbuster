@@ -19,24 +19,30 @@ public sealed class StructuredTextDocumentParser : IDocumentParser
 
   private static readonly string ContractHash = ComputeContractHash();
 
+  private const string HeadingRegexPattern = @"^(#{1,6})\s+(.+)$";
+  private const string NumberedClauseRegexPattern = @"^\s*(\d+(?:\.\d+)+)\s+(.+)$|^\s*(\d+)\.\s+(.+)$";
+  private const string LetteredClauseRegexPattern = @"^\s*([a-z])\)\s+(.+)$";
+  private const string TableSeparatorRegexPattern = @"^\|?\s*[-:]+(?:\s*\|\s*[-:]+)*\s*\|?\s*$";
+  private const string TableRowRegexPattern = @"^\|(.+)\|$";
+
   private static readonly Regex HeadingPattern = new(
-    @"^(#{1,6})\s+(.+)$",
+    HeadingRegexPattern,
     RegexOptions.Compiled | RegexOptions.Multiline);
 
   private static readonly Regex NumberedClausePattern = new(
-    @"^\s*(\d+(?:\.\d+)+)\s+(.+)$|^\s*(\d+)\.\s+(.+)$",
+    NumberedClauseRegexPattern,
     RegexOptions.Compiled | RegexOptions.Multiline);
 
   private static readonly Regex LetteredClausePattern = new(
-    @"^\s*([a-z])\)\s+(.+)$",
+    LetteredClauseRegexPattern,
     RegexOptions.Compiled | RegexOptions.Multiline);
 
   private static readonly Regex TableSeparatorPattern = new(
-    @"^\|?\s*[-:]+(?:\s*\|\s*[-:]+)*\s*\|?\s*$",
+    TableSeparatorRegexPattern,
     RegexOptions.Compiled);
 
   private static readonly Regex TableRowPattern = new(
-    @"^\|(.+)\|$",
+    TableRowRegexPattern,
     RegexOptions.Compiled);
 
   public ParserDescriptor Describe()
@@ -80,7 +86,8 @@ public sealed class StructuredTextDocumentParser : IDocumentParser
     string text;
     try
     {
-      using var reader = new StreamReader(input.Content, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, leaveOpen: false);
+      var strictUtf8 = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
+      using var reader = new StreamReader(input.Content, strictUtf8, detectEncodingFromByteOrderMarks: true, leaveOpen: false);
       var buffer = new char[32768];
       var sb = new StringBuilder();
       int totalRead = 0;
@@ -386,8 +393,25 @@ public sealed class StructuredTextDocumentParser : IDocumentParser
 
   private static string ComputeContractHash()
   {
-    var definition = $"{ParserKey}:{ParserVersion}:{ContractVersion}:{string.Join(",", SupportedMediaTypes)}:{ContentKind.PlainText}";
-    var bytes = Encoding.UTF8.GetBytes(definition);
+    var descriptor = $"ParserKey={ParserKey}|" +
+      $"ParserVersion={ParserVersion}|" +
+      $"ContractVersion={ContractVersion}|" +
+      $"SupportedMediaTypes=[{string.Join(",", SupportedMediaTypes)}]|" +
+      $"ContentKind={ContentKind.PlainText}|" +
+      $"FragmentMappings=[WholeDocument,StructuralPath]|" +
+      $"MaxContentLength={MaxContentLength}|" +
+      $"StrictUtf8Decoder=true|" +
+      $"HeadingPattern={HeadingRegexPattern}|" +
+      $"NumberedClausePattern={NumberedClauseRegexPattern}|" +
+      $"LetteredClausePattern={LetteredClauseRegexPattern}|" +
+      $"TableRowPattern={TableRowRegexPattern}|" +
+      $"TableSeparatorPattern={TableSeparatorRegexPattern}|" +
+      $"TableMinLines=3|" +
+      $"TableRequiresSeparatorAfterHeaderRow=true|" +
+      $"ClauseTerminationByBlankLineOrStructuralElement=true|" +
+      $"WholeDocumentExcludedFromOverlapDetection=true|" +
+      $"DiagnosticCodes=[OVERLAPPING_CONTENT]";
+    var bytes = Encoding.UTF8.GetBytes(descriptor);
     return Convert.ToHexString(SHA256.HashData(bytes));
   }
 

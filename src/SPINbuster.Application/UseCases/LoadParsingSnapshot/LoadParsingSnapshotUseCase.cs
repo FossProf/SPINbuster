@@ -108,6 +108,7 @@ public sealed class LoadParsingSnapshotUseCase : IQueryHandler<LoadParsingSnapsh
           run.ParserContractVersion,
           run.ParserContractHash,
           run.State,
+          run.ExecutionStatus,
           run.FailureReason,
           run.CreatedAtUtc,
           run.StartedAtUtc,

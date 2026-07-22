@@ -283,6 +283,8 @@ public sealed class ParserRun : AuditableEntity
 
   public ParserRunState State { get; private set; }
 
+  public ParserExecutionStatus ExecutionStatus { get; private set; }
+
   public DateTimeOffset? StartedAtUtc { get; private set; }
 
   public DateTimeOffset? CompletedAtUtc { get; private set; }
@@ -307,6 +309,7 @@ public sealed class ParserRun : AuditableEntity
     string createdBy,
     DateTimeOffset createdAtUtc,
     ParserRunState state,
+    ParserExecutionStatus executionStatus,
     DateTimeOffset? startedAtUtc,
     DateTimeOffset? completedAtUtc,
     string? failureReason,
@@ -327,6 +330,7 @@ public sealed class ParserRun : AuditableEntity
       createdAtUtc)
     {
       State = state,
+      ExecutionStatus = executionStatus,
       StartedAtUtc = startedAtUtc,
       CompletedAtUtc = completedAtUtc,
       FailureReason = failureReason,
@@ -352,6 +356,11 @@ public sealed class ParserRun : AuditableEntity
     State = ParserRunState.Completed;
     CompletedAtUtc = DomainGuards.NotDefault(completedAtUtc, nameof(completedAtUtc));
     AppendAuditEvent(CreateAuditEvent("ParserRunCompleted", CreatedBy, completedAtUtc, "Parser run completed."));
+  }
+
+  public void SetExecutionStatus(ParserExecutionStatus status)
+  {
+    ExecutionStatus = status;
   }
 
   public void Fail(DateTimeOffset occurredAtUtc, string reason)

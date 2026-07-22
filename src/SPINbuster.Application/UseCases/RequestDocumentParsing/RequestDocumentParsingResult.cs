@@ -6,6 +6,7 @@ namespace SPINbuster.Application.UseCases.RequestDocumentParsing;
 public sealed record RequestDocumentParsingResult(
   ParserRunId ParserRunId,
   ParserRunState State,
+  ParserExecutionStatus ExecutionStatus,
   ParserRunFailureClassification FailureClassification,
   string? FailureDetails,
   IReadOnlyList<FragmentCandidateId> FragmentCandidateIds);

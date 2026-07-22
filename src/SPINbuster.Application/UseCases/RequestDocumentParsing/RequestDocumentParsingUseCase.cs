@@ -103,7 +103,7 @@ public sealed class RequestDocumentParsingUseCase : ICommandHandler<RequestDocum
       }
 
       var existingRun = await _parserRunRepository.GetBySourceAndParserAsync(
-        command.ImportedSourceId, descriptor.ParserKey, descriptor.ParserVersion, descriptor.ContractVersion, descriptor.ContractHash, cancellationToken);
+      command.ImportedSourceId, descriptor.ParserKey, descriptor.ParserVersion, descriptor.ContractVersion, descriptor.ContractHash, cancellationToken);
       if (existingRun is not null)
       {
         stopwatch.Stop();
@@ -119,6 +119,7 @@ public sealed class RequestDocumentParsingUseCase : ICommandHandler<RequestDocum
         return new RequestDocumentParsingResult(
           existingRun.Id,
           existingRun.State,
+          existingRun.ExecutionStatus,
           MapFailureClassification(existingRun.FailureReason),
           existingRun.FailureReason,
           replayCandidateIds);
@@ -302,6 +303,7 @@ public sealed class RequestDocumentParsingUseCase : ICommandHandler<RequestDocum
           }
 
           parserRun.Complete(_clock.UtcNow);
+          parserRun.SetExecutionStatus(parserResult.Status);
         }
 
         foreach (var candidate in createdCandidates)
@@ -445,6 +447,7 @@ public sealed class RequestDocumentParsingUseCase : ICommandHandler<RequestDocum
     return new RequestDocumentParsingResult(
       parserRun.Id,
       parserRun.State,
+      parserRun.ExecutionStatus,
       MapFailureClassification(parserRun.FailureReason),
       parserRun.FailureReason,
       createdCandidates.Select(c => c.Id).ToArray());

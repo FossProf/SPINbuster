@@ -111,6 +111,7 @@ public sealed class SqliteParserRunRepository : IParserRunRepository
   {
     var existing = await _dbContext.ParserRuns.SingleAsync(item => item.Id == parserRun.Id, cancellationToken);
     existing.State = parserRun.State;
+    existing.ExecutionStatus = parserRun.ExecutionStatus;
     existing.StartedAtUtc = parserRun.StartedAtUtc;
     existing.CompletedAtUtc = parserRun.CompletedAtUtc;
     existing.FailureReason = parserRun.FailureReason;

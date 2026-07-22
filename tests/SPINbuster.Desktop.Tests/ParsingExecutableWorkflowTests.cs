@@ -606,6 +606,60 @@ public sealed class ParsingExecutableWorkflowTests
     }
   }
 
+  [Fact]
+  public async Task StructuredTextExecutionStatusIsCompletedWithWarnings()
+  {
+    var environment = CreateEnvironmentPaths();
+
+    try
+    {
+      using var serviceProvider = CreateServiceProvider(environment);
+      var result = await ParsingExecutableWorkflowBootstrapper.RunAsync(serviceProvider);
+
+      Assert.Equal(ParserExecutionStatus.CompletedWithWarnings, result.StructuredTextParseResult.ExecutionStatus);
+    }
+    finally
+    {
+      DeleteEnvironmentIfPresent(environment);
+    }
+  }
+
+  [Fact]
+  public async Task PlainTextExecutionStatusIsCompleted()
+  {
+    var environment = CreateEnvironmentPaths();
+
+    try
+    {
+      using var serviceProvider = CreateServiceProvider(environment);
+      var result = await ParsingExecutableWorkflowBootstrapper.RunAsync(serviceProvider);
+
+      Assert.Equal(ParserExecutionStatus.Completed, result.FirstParseResult.ExecutionStatus);
+    }
+    finally
+    {
+      DeleteEnvironmentIfPresent(environment);
+    }
+  }
+
+  [Fact]
+  public async Task CompletedWithWarningsSurvivesIdempotentReplay()
+  {
+    var environment = CreateEnvironmentPaths();
+
+    try
+    {
+      using var serviceProvider = CreateServiceProvider(environment);
+      var result = await ParsingExecutableWorkflowBootstrapper.RunAsync(serviceProvider);
+
+      Assert.Equal(result.StructuredTextParseResult.ExecutionStatus, result.StructuredTextSnapshot.ParserRuns[0].ExecutionStatus);
+    }
+    finally
+    {
+      DeleteEnvironmentIfPresent(environment);
+    }
+  }
+
   private static ServiceProvider CreateServiceProvider(
     TestEnvironmentPaths environment,
     Action<IServiceCollection>? configureServices = null)

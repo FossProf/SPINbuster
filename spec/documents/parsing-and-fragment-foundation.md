@@ -1,6 +1,6 @@
 # Parsing and Fragment Foundation
 
-Status: Released (Extended with Diagnostics and Registry)
+Status: Released (Extended with Diagnostics, Registry, and Hardening)
 Baseline: `PARSING-AND-FRAGMENT-FOUNDATION-0.1` (extended by `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC`)
 Supersedes: `EDR-KE-010` (candidate-stage fragment identity resolved here)
 Extends: `EDR-DE-008` (parser diagnostics and registry)
@@ -23,7 +23,9 @@ It establishes:
 This foundation owns:
 
 - parser-run lifecycle (Created, Running, Completed, Failed, Cancelled)
+- parser execution status (Completed, CompletedWithWarnings, Failed) persisted with parser run
 - parser contract and version identity
+- canonical contract descriptor for deterministic hash computation
 - fragment-candidate identity derived from source + parser contract + normalized locator (not source revision; see design note below)
 - immutable locator value objects for whole-document, page, paragraph/line range, and structural path
 - fragment-candidate content binding (extracted text or bounded payload)
@@ -31,7 +33,12 @@ This foundation owns:
 - append-only audit events for parser-run and fragment-candidate lifecycle
 - duplicate candidate rejection within a single parser run
 - deterministic PlainTextDocument parser adapter producing WholeDocument, Paragraph, and LineRange locators
-- SQLite persistence for parser runs and fragment candidates
+- deterministic StructuredTextDocument parser adapter (Markdown-v1) producing WholeDocument, heading, clause, and pipe-delimited table fragments with overlap detection
+- strict UTF-8 decoding with throwOnInvalidBytes for both parsers
+- parser diagnostics model (ParserDiagnostic) with severity, code, message, and candidate reference
+- parser registry (DocumentParserRegistry) resolving parsers by key from DI
+- overlapping-fragment policy (OVERLAPPING_CONTENT diagnostic on structural fragment overlap)
+- SQLite persistence for parser runs, fragment candidates, and parser diagnostics
 - idempotent replay with 5-column unique index preventing accidental cross-version replay
 - terminal failure states (Failed, Cancelled) with descriptive reasons and audit trail
 - authority isolation: fragment candidates cannot become Knowledge, Report, or AI records directly

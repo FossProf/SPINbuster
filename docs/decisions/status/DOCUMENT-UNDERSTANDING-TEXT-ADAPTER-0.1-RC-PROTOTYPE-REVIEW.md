@@ -15,7 +15,7 @@ Next active package: TBD after review
 - Architecture tests: `24/24`
 - AI tests: `6/6`
 - Desktop tests: `45/45`
-- Total tests: `564/564`
+- Total tests: `564/564` (hardening pass — new tests pending)
 
 ## Checkpoints completed
 
@@ -77,6 +77,28 @@ Next active package: TBD after review
 - `GetByParserRunAndCandidateAsync` filters diagnostics by parser run and candidate reference value.
 - Diagnostics are isolated between parser runs (same source parsed by different parsers produces separate diagnostic sets).
 - Empty diagnostic sets are correctly returned for parser runs with no diagnostics.
+
+### Canonical contract descriptor
+
+- Both parsers compute `ContractHash` from a canonical descriptor containing every behavior-affecting rule.
+- StructuredTextDocumentParser descriptor includes: parser identity/version, supported media types, fragment mappings, content kind, regex patterns (heading, clause, table row, table separator), table extraction rules (min lines, separator requirement), clause termination behavior, overlap detection policy, and diagnostic codes.
+- PlainTextDocumentParser descriptor includes: parser identity/version, supported media types, fragment mappings, content kind, max content length, lines per group, paragraph split behavior, and strict UTF-8 flag.
+- Changing any rule in the descriptor changes the `ContractHash`.
+- Unchanged rule ordering produces the same hash (deterministic serialization).
+
+### Parser execution status durability
+
+- `ParserExecutionStatus` (Completed, CompletedWithWarnings, Failed) is persisted with `ParserRun` in the `parser_runs` table.
+- Forward EF migration `AddParserExecutionStatus` adds the column with default value 0 (Completed).
+- Execution status is included in `RequestDocumentParsingResult`, `ParserRunSnapshot`, and console output.
+- Idempotent replay preserves the original execution status from the persisted run.
+- Domain entity exposes `SetExecutionStatus()` method for Application layer to set after parsing.
+
+### Strict UTF-8 decoding
+
+- Both parsers use `UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true)`.
+- Invalid UTF-8 bytes cause a `DecoderFallbackException` caught by the parser, producing a terminal `Failed` status with `MalformedOutput` classification.
+- BOM bytes are accepted via `detectEncodingFromByteOrderMarks: true` in `StreamReader`.
 
 ### Authority isolation
 
