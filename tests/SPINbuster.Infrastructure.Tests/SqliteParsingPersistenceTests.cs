@@ -1127,6 +1127,73 @@ public sealed class SqliteParsingPersistenceTests : IDisposable
     Assert.Equal(ParserRunState.Created, storedRun.State);
   }
 
+  [Fact]
+  public async Task MigrationBackfillMapsAllFiveLifecycleStatesCorrectly()
+  {
+    var seeded = await SeedSourceAsync();
+    var states = new[] { ParserRunState.Created, ParserRunState.Running, ParserRunState.Completed, ParserRunState.Failed, ParserRunState.Cancelled };
+    var expectedStatuses = new ParserExecutionStatus?[] { null, null, ParserExecutionStatus.Completed, ParserExecutionStatus.Failed, ParserExecutionStatus.Failed };
+    var runIds = new ParserRunId[5];
+
+    await using (var dbContext = CreateDbContext())
+    {
+      var auditRecorder = new SqliteAuditRecorder();
+      var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
+
+      for (var i = 0; i < 5; i++)
+      {
+        var run = new ParserRun(
+          ParserRunId.New(),
+          seeded.ProjectId,
+          seeded.SourceId,
+          "test",
+          $"1.0.{i}",
+          "1.0",
+          $"hash-{i}",
+          seeded.ContentHash,
+          "SHA-256",
+          1,
+          "test",
+          seeded.CreatedAtUtc);
+
+        if (states[i] == ParserRunState.Running || states[i] == ParserRunState.Completed || states[i] == ParserRunState.Failed || states[i] == ParserRunState.Cancelled)
+        {
+          run.Start(seeded.CreatedAtUtc.AddMinutes(1));
+        }
+
+        if (states[i] == ParserRunState.Completed)
+        {
+          run.Complete(seeded.CreatedAtUtc.AddMinutes(2), ParserExecutionStatus.Completed);
+        }
+        else if (states[i] == ParserRunState.Failed)
+        {
+          run.Fail(seeded.CreatedAtUtc.AddMinutes(2), "test failure");
+        }
+        else if (states[i] == ParserRunState.Cancelled)
+        {
+          run.Cancel(seeded.CreatedAtUtc.AddMinutes(2), "test cancellation");
+        }
+
+        runIds[i] = run.Id;
+        await new SqliteParserRunRepository(dbContext).AddAsync(run);
+        StageAuditEvents(auditRecorder, run.AuditTrail);
+      }
+
+      await unitOfWork.CommitAsync();
+    }
+
+    await using var verificationContext = CreateDbContext();
+    var repo = new SqliteParserRunRepository(verificationContext);
+
+    for (var i = 0; i < 5; i++)
+    {
+      var reloaded = await repo.GetByIdAsync(runIds[i]);
+      Assert.NotNull(reloaded);
+      Assert.Equal(expectedStatuses[i], reloaded!.ExecutionStatus);
+      Assert.Equal(states[i], reloaded.State);
+    }
+  }
+
   public void Dispose()
   {
     try
