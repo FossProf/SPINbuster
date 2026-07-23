@@ -283,7 +283,7 @@ public sealed class ParserRun : AuditableEntity
 
   public ParserRunState State { get; private set; }
 
-  public ParserExecutionStatus ExecutionStatus { get; private set; }
+  public ParserExecutionStatus? ExecutionStatus { get; private set; }
 
   public DateTimeOffset? StartedAtUtc { get; private set; }
 
@@ -309,7 +309,7 @@ public sealed class ParserRun : AuditableEntity
     string createdBy,
     DateTimeOffset createdAtUtc,
     ParserRunState state,
-    ParserExecutionStatus executionStatus,
+    ParserExecutionStatus? executionStatus,
     DateTimeOffset? startedAtUtc,
     DateTimeOffset? completedAtUtc,
     string? failureReason,
@@ -349,18 +349,20 @@ public sealed class ParserRun : AuditableEntity
     AppendAuditEvent(CreateAuditEvent("ParserRunStarted", CreatedBy, startedAtUtc, "Parser run started."));
   }
 
-  public void Complete(DateTimeOffset completedAtUtc)
+  public void Complete(DateTimeOffset completedAtUtc, ParserExecutionStatus executionStatus)
   {
+    if (executionStatus is not ParserExecutionStatus.Completed and not ParserExecutionStatus.CompletedWithWarnings)
+    {
+      throw new DomainInvariantException(
+        $"{nameof(ParserRun)}.{nameof(Complete)} requires {nameof(ParserExecutionStatus)}.{nameof(ParserExecutionStatus.Completed)} or {nameof(ParserExecutionStatus.CompletedWithWarnings)}. Use {nameof(Fail)} or {nameof(Cancel)} for terminal failure status.");
+    }
+
     EnsureState(ParserRunState.Running, nameof(Complete));
 
     State = ParserRunState.Completed;
     CompletedAtUtc = DomainGuards.NotDefault(completedAtUtc, nameof(completedAtUtc));
-    AppendAuditEvent(CreateAuditEvent("ParserRunCompleted", CreatedBy, completedAtUtc, "Parser run completed."));
-  }
-
-  public void SetExecutionStatus(ParserExecutionStatus status)
-  {
-    ExecutionStatus = status;
+    ExecutionStatus = executionStatus;
+    AppendAuditEvent(CreateAuditEvent("ParserRunCompleted", CreatedBy, completedAtUtc, $"Parser run completed with status {executionStatus}."));
   }
 
   public void Fail(DateTimeOffset occurredAtUtc, string reason)
@@ -370,6 +372,7 @@ public sealed class ParserRun : AuditableEntity
     State = ParserRunState.Failed;
     CompletedAtUtc = DomainGuards.NotDefault(occurredAtUtc, nameof(occurredAtUtc));
     FailureReason = DomainGuards.NotNullOrWhiteSpace(reason, nameof(reason));
+    ExecutionStatus = ParserExecutionStatus.Failed;
     AppendAuditEvent(CreateAuditEvent("ParserRunFailed", CreatedBy, occurredAtUtc, $"Parser run failed: {FailureReason}."));
   }
 
@@ -380,6 +383,7 @@ public sealed class ParserRun : AuditableEntity
     State = ParserRunState.Cancelled;
     CompletedAtUtc = DomainGuards.NotDefault(occurredAtUtc, nameof(occurredAtUtc));
     FailureReason = DomainGuards.NotNullOrWhiteSpace(reason, nameof(reason));
+    ExecutionStatus = ParserExecutionStatus.Failed;
     AppendAuditEvent(CreateAuditEvent("ParserRunCancelled", CreatedBy, occurredAtUtc, $"Parser run cancelled: {FailureReason}."));
   }
 

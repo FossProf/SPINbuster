@@ -302,8 +302,7 @@ public sealed class RequestDocumentParsingUseCase : ICommandHandler<RequestDocum
             diagnosticCount++;
           }
 
-          parserRun.Complete(_clock.UtcNow);
-          parserRun.SetExecutionStatus(parserResult.Status);
+          parserRun.Complete(_clock.UtcNow, parserResult.Status);
         }
 
         foreach (var candidate in createdCandidates)

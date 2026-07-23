@@ -287,7 +287,7 @@ public sealed class ParserEngineTests
     Assert.Equal(ParserRunState.Running, run.State);
     Assert.NotNull(run.StartedAtUtc);
 
-    run.Complete(BaseTime.AddHours(2));
+    run.Complete(BaseTime.AddHours(2), ParserExecutionStatus.Completed);
     Assert.Equal(ParserRunState.Completed, run.State);
     Assert.NotNull(run.CompletedAtUtc);
   }
@@ -352,7 +352,7 @@ public sealed class ParserEngineTests
   {
     var run = CreateRun();
 
-    Assert.Throws<LifecycleTransitionException>(() => run.Complete(BaseTime.AddHours(1)));
+    Assert.Throws<LifecycleTransitionException>(() => run.Complete(BaseTime.AddHours(1), ParserExecutionStatus.Completed));
   }
 
   [Fact]
@@ -360,7 +360,7 @@ public sealed class ParserEngineTests
   {
     var run = CreateRun();
     run.Start(BaseTime.AddHours(1));
-    run.Complete(BaseTime.AddHours(2));
+    run.Complete(BaseTime.AddHours(2), ParserExecutionStatus.Completed);
 
     Assert.Throws<LifecycleTransitionException>(() => run.Fail(BaseTime.AddHours(3), "reason"));
   }
@@ -370,7 +370,7 @@ public sealed class ParserEngineTests
   {
     var run = CreateRun();
     run.Start(BaseTime.AddHours(1));
-    run.Complete(BaseTime.AddHours(2));
+    run.Complete(BaseTime.AddHours(2), ParserExecutionStatus.Completed);
 
     Assert.Throws<LifecycleTransitionException>(() => run.Cancel(BaseTime.AddHours(3), "reason"));
   }
@@ -412,7 +412,7 @@ public sealed class ParserEngineTests
   {
     var run = CreateRun();
     run.Start(BaseTime.AddHours(1));
-    run.Complete(BaseTime.AddHours(2));
+    run.Complete(BaseTime.AddHours(2), ParserExecutionStatus.Completed);
     var countBefore = run.AuditTrail.Count;
 
     Assert.Throws<LifecycleTransitionException>(() => run.Cancel(BaseTime.AddHours(3), "reason"));
@@ -427,7 +427,7 @@ public sealed class ParserEngineTests
   {
     var run = CreateRun();
     run.Start(BaseTime.AddHours(1));
-    run.Complete(BaseTime.AddHours(2));
+    run.Complete(BaseTime.AddHours(2), ParserExecutionStatus.Completed);
 
     Assert.Throws<LifecycleTransitionException>(() => run.Start(BaseTime.AddHours(3)));
   }
@@ -439,7 +439,7 @@ public sealed class ParserEngineTests
     run.Start(BaseTime.AddHours(1));
     run.Fail(BaseTime.AddHours(2), "error");
 
-    Assert.Throws<LifecycleTransitionException>(() => run.Complete(BaseTime.AddHours(3)));
+    Assert.Throws<LifecycleTransitionException>(() => run.Complete(BaseTime.AddHours(3), ParserExecutionStatus.Completed));
   }
 
   // --- Text/Payload Bounds ---
@@ -491,7 +491,7 @@ public sealed class ParserEngineTests
   {
     var run = CreateRun();
     run.Start(BaseTime.AddHours(1));
-    run.Complete(BaseTime.AddHours(2));
+    run.Complete(BaseTime.AddHours(2), ParserExecutionStatus.Completed);
 
     var types = run.AuditTrail.Select(e => e.EventType).ToArray();
     Assert.Equal(["ParserRunCreated", "ParserRunStarted", "ParserRunCompleted"], types);
@@ -600,10 +600,71 @@ public sealed class ParserEngineTests
   {
     var run = CreateRun();
     run.Start(BaseTime.AddHours(1));
-    run.Complete(BaseTime.AddHours(2));
+    run.Complete(BaseTime.AddHours(2), ParserExecutionStatus.Completed);
 
     Assert.Equal(3, run.AuditTrail.Count);
     Assert.Equal("ParserRunCompleted", run.AuditTrail[^1].EventType);
+  }
+
+  // --- Execution Status Lifecycle Consistency ---
+
+  [Fact]
+  public void NewRunHasNullExecutionStatus()
+  {
+    var run = CreateRun();
+    Assert.Null(run.ExecutionStatus);
+  }
+
+  [Fact]
+  public void RunningRunHasNullExecutionStatus()
+  {
+    var run = CreateRun();
+    run.Start(BaseTime.AddHours(1));
+    Assert.Null(run.ExecutionStatus);
+  }
+
+  [Fact]
+  public void FailSetsExecutionStatusToFailed()
+  {
+    var run = CreateRun();
+    run.Start(BaseTime.AddHours(1));
+    run.Fail(BaseTime.AddHours(2), "error");
+    Assert.Equal(ParserExecutionStatus.Failed, run.ExecutionStatus);
+  }
+
+  [Fact]
+  public void CancelSetsExecutionStatusToFailed()
+  {
+    var run = CreateRun();
+    run.Start(BaseTime.AddHours(1));
+    run.Cancel(BaseTime.AddHours(2), "cancelled");
+    Assert.Equal(ParserExecutionStatus.Failed, run.ExecutionStatus);
+  }
+
+  [Fact]
+  public void CompleteWithCompletedSetsExecutionStatus()
+  {
+    var run = CreateRun();
+    run.Start(BaseTime.AddHours(1));
+    run.Complete(BaseTime.AddHours(2), ParserExecutionStatus.Completed);
+    Assert.Equal(ParserExecutionStatus.Completed, run.ExecutionStatus);
+  }
+
+  [Fact]
+  public void CompleteWithCompletedWithWarningsSetsExecutionStatus()
+  {
+    var run = CreateRun();
+    run.Start(BaseTime.AddHours(1));
+    run.Complete(BaseTime.AddHours(2), ParserExecutionStatus.CompletedWithWarnings);
+    Assert.Equal(ParserExecutionStatus.CompletedWithWarnings, run.ExecutionStatus);
+  }
+
+  [Fact]
+  public void CompleteRejectsFailedExecutionStatus()
+  {
+    var run = CreateRun();
+    run.Start(BaseTime.AddHours(1));
+    Assert.Throws<DomainInvariantException>(() => run.Complete(BaseTime.AddHours(2), ParserExecutionStatus.Failed));
   }
 
   // --- Ordinal Uniqueness Detection ---

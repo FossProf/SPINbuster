@@ -14,8 +14,16 @@ namespace SPINbuster.Infrastructure.Persistence.Migrations
           name: "ExecutionStatus",
           table: "parser_runs",
           type: "INTEGER",
-          nullable: false,
-          defaultValue: 0);
+          nullable: true);
+
+      migrationBuilder.Sql(@"
+        UPDATE parser_runs
+        SET ExecutionStatus = CASE
+          WHEN State = 2 THEN 0
+          WHEN State = 1 THEN 1
+          WHEN State IN (3, 4) THEN 2
+          ELSE NULL
+        END");
     }
 
     /// <inheritdoc />

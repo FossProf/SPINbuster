@@ -185,7 +185,7 @@ internal sealed class ParserRunRecord
 
   public ParserRunState State { get; set; }
 
-  public ParserExecutionStatus ExecutionStatus { get; set; }
+  public ParserExecutionStatus? ExecutionStatus { get; set; }
 
   public DateTimeOffset? StartedAtUtc { get; set; }
 

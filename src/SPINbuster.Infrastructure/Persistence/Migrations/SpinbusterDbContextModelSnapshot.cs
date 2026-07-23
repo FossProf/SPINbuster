@@ -1189,7 +1189,7 @@ namespace SPINbuster.Infrastructure.Persistence.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("ExecutionStatus")
+                    b.Property<int?>("ExecutionStatus")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("FailureReason")

@@ -19,7 +19,7 @@ public sealed record ParserRunSnapshot(
   string ParserContractVersion,
   string ParserContractHash,
   ParserRunState State,
-  ParserExecutionStatus ExecutionStatus,
+  ParserExecutionStatus? ExecutionStatus,
   string? FailureReason,
   DateTimeOffset CreatedAtUtc,
   DateTimeOffset? StartedAtUtc,

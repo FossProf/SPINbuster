@@ -546,7 +546,7 @@ internal static class SpinbusterModelConfiguration
     parserRunBuilder.Property(record => record.CreatedBy).HasMaxLength(256).IsRequired();
     parserRunBuilder.Property(record => record.CreatedAtUtc).IsRequired();
     parserRunBuilder.Property(record => record.State).IsRequired();
-    parserRunBuilder.Property(record => record.ExecutionStatus).IsRequired();
+    parserRunBuilder.Property(record => record.ExecutionStatus);
     parserRunBuilder.Property(record => record.FailureReason).HasColumnType("TEXT");
     parserRunBuilder.HasIndex(record => record.ProjectId);
     parserRunBuilder.HasIndex(record => record.ImportedSourceId);
