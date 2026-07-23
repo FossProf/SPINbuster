@@ -42,6 +42,9 @@ using SPINbuster.Application.UseCases.VerifyKnowledgeRevision;
 using SPINbuster.Application.UseCases.AcceptFragmentCandidate;
 using SPINbuster.Application.UseCases.RejectFragmentCandidate;
 using SPINbuster.Application.UseCases.LoadFragmentReviewSnapshot;
+using SPINbuster.Application.UseCases.LoadPromotionDiagnostic;
+using SPINbuster.Application.UseCases.PromoteFragmentCandidate;
+using SPINbuster.Application.UseCases.ActivateProject;
 
 namespace SPINbuster.Application;
 
@@ -92,6 +95,9 @@ public static class ServiceCollectionExtensions
     services.AddScoped<ICommandHandler<AcceptFragmentCandidateCommand, AcceptFragmentCandidateResult>, AcceptFragmentCandidateUseCase>();
     services.AddScoped<ICommandHandler<RejectFragmentCandidateCommand, RejectFragmentCandidateResult>, RejectFragmentCandidateUseCase>();
     services.AddScoped<IQueryHandler<LoadFragmentReviewSnapshotQuery, LoadFragmentReviewSnapshotResult>, LoadFragmentReviewSnapshotUseCase>();
+    services.AddScoped<ICommandHandler<PromoteFragmentCandidateCommand, PromoteFragmentCandidateResult>, PromoteFragmentCandidateUseCase>();
+    services.AddScoped<ICommandHandler<ActivateProjectCommand, ActivateProjectResult>, ActivateProjectUseCase>();
+    services.AddScoped<IQueryHandler<LoadPromotionDiagnosticQuery, LoadPromotionDiagnosticResult>, LoadPromotionDiagnosticUseCase>();
     return services;
   }
 }

@@ -1,0 +1,41 @@
+using SPINbuster.Application.UseCases.AcceptFragmentCandidate;
+using SPINbuster.Application.UseCases.BeginDocumentImportSession;
+using SPINbuster.Application.UseCases.CompleteDocumentImportSession;
+using SPINbuster.Application.UseCases.CreateProject;
+using SPINbuster.Application.UseCases.ImportDocumentSource;
+using SPINbuster.Application.UseCases.LoadFragmentReviewSnapshot;
+using SPINbuster.Application.UseCases.LoadParsingSnapshot;
+using SPINbuster.Application.UseCases.LoadProjectKnowledgeSnapshot;
+using SPINbuster.Application.UseCases.LoadPromotionDiagnostic;
+using SPINbuster.Application.UseCases.PromoteFragmentCandidate;
+using SPINbuster.Application.UseCases.RejectFragmentCandidate;
+using SPINbuster.Application.UseCases.RequestDocumentParsing;
+using SPINbuster.Domain;
+
+namespace SPINbuster.Desktop;
+
+public sealed record KnowledgePromotionWorkflowResult(
+  CreateProjectResult CreatedProject,
+  BeginDocumentImportSessionResult ImportSession,
+  ImportDocumentSourceResult ImportedSourceA,
+  ImportDocumentSourceResult ImportedSourceB,
+  CompleteDocumentImportSessionResult CompletedImportSession,
+  RequestDocumentParsingResult FirstParseResult,
+  LoadParsingSnapshotResult FirstSnapshot,
+  RequestDocumentParsingResult ReplayParseResult,
+  LoadParsingSnapshotResult ReplaySnapshot,
+  AcceptFragmentCandidateResult AcceptedCandidateA,
+  RejectFragmentCandidateResult RejectedCandidateA,
+  LoadFragmentReviewSnapshotResult ReviewSnapshotAfterAccept,
+  LoadFragmentReviewSnapshotResult ReviewSnapshotAfterReject,
+  PromoteFragmentCandidateResult FirstPromotion,
+  PromoteFragmentCandidateResult IdempotentReplay,
+  LoadPromotionDiagnosticResult FirstDiagnostic,
+  LoadPromotionDiagnosticResult ReplayDiagnostic,
+  RequestDocumentParsingResult SourceBParseResult,
+  LoadParsingSnapshotResult SourceBSnapshot,
+  PromoteFragmentCandidateResult SupersedingPromotion,
+  PromoteFragmentCandidateResult SupersessionIdempotentReplay,
+  LoadProjectKnowledgeSnapshotResult KnowledgeSnapshot,
+  IReadOnlyList<PromoteFragmentCandidateResult> PromotionDiagnostics,
+  IReadOnlyList<DesktopWorkflowFailurePresentation> FailurePresentations);

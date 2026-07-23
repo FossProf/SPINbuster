@@ -105,4 +105,8 @@ internal static class StronglyTypedIdValueConverters
   public static readonly ValueConverter<ParserDiagnosticId, Guid> ParserDiagnosticId = new(
     value => value.Value,
     value => new ParserDiagnosticId(value));
+
+  public static readonly ValueConverter<PromotionDiagnosticId, Guid> PromotionDiagnosticId = new(
+    value => value.Value,
+    value => new PromotionDiagnosticId(value));
 }

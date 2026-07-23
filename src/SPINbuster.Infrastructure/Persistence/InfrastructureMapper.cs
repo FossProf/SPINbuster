@@ -949,4 +949,40 @@ internal static class InfrastructureMapper
       ReviewNotes = candidate.ReviewNotes,
     };
   }
+
+  public static PromotionDiagnostic ToDomain(PromotionDiagnosticRecord record)
+  {
+    return PromotionDiagnostic.Rehydrate(
+      record.Id,
+      record.FragmentCandidateId,
+      record.ParserRunId,
+      record.ProjectId,
+      record.PromotedAtUtc,
+      record.Status,
+      record.FailureReason,
+      record.KnowledgeDocumentId,
+      record.KnowledgeDocumentRevisionId,
+      record.KnowledgeCitationId,
+      record.SupersededExistingRevision,
+      record.SupersededRevisionId);
+  }
+
+  public static PromotionDiagnosticRecord ToRecord(PromotionDiagnostic promotionDiagnostic)
+  {
+    return new PromotionDiagnosticRecord
+    {
+      Id = promotionDiagnostic.Id,
+      FragmentCandidateId = promotionDiagnostic.FragmentCandidateId,
+      ParserRunId = promotionDiagnostic.ParserRunId,
+      ProjectId = promotionDiagnostic.ProjectId,
+      PromotedAtUtc = promotionDiagnostic.PromotedAtUtc,
+      Status = promotionDiagnostic.Status,
+      FailureReason = promotionDiagnostic.FailureReason,
+      KnowledgeDocumentId = promotionDiagnostic.KnowledgeDocumentId,
+      KnowledgeDocumentRevisionId = promotionDiagnostic.KnowledgeDocumentRevisionId,
+      KnowledgeCitationId = promotionDiagnostic.KnowledgeCitationId,
+      SupersededExistingRevision = promotionDiagnostic.SupersededExistingRevision,
+      SupersededRevisionId = promotionDiagnostic.SupersededRevisionId,
+    };
+  }
 }

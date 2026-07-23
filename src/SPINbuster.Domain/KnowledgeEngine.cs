@@ -293,6 +293,53 @@ public sealed class KnowledgeDocument : AuditableEntity
     return new KnowledgeRevisionSupersessionOutcome(successorRevision, supersededRevision);
   }
 
+  public KnowledgeDocumentRevisionId BeginSupersession(
+    KnowledgeDocumentRevisionId successorRevisionId,
+    string actor,
+    DateTimeOffset occurredAtUtc)
+  {
+    EnsureDocumentCanReceiveActiveRevision(nameof(BeginSupersession));
+
+    if (CurrentAuthoritativeRevisionId is null)
+    {
+      throw new DomainInvariantException("A knowledge revision cannot be superseded before an initial revision exists.");
+    }
+
+    var supersededRevision = _revisions.SingleOrDefault(revision => revision.Id == CurrentAuthoritativeRevisionId.Value)
+      ?? throw new DomainInvariantException("The current authoritative revision could not be located.");
+
+    supersededRevision.MarkSuperseded(successorRevisionId);
+
+    AppendAuditEvent(CreateAuditEvent(
+      "KnowledgeRevisionSuperseded",
+      actor,
+      occurredAtUtc,
+      $"Knowledge revision {supersededRevision.RevisionLabel} superseded by pending revision {successorRevisionId}."));
+
+    CurrentAuthoritativeRevisionId = null;
+    return supersededRevision.Id;
+  }
+
+  public void CompleteSupersession(
+    KnowledgeDocumentRevision successorRevision,
+    string actor,
+    DateTimeOffset occurredAtUtc)
+  {
+    EnsureDocumentCanReceiveActiveRevision(nameof(CompleteSupersession));
+    EnsureRevisionBelongsToDocument(successorRevision);
+    EnsureRevisionIdentityIsUnique(successorRevision);
+
+    successorRevision.PromoteToCurrentAuthoritative();
+    _revisions.Add(successorRevision);
+    CurrentAuthoritativeRevisionId = successorRevision.Id;
+
+    AppendAuditEvent(CreateAuditEvent(
+      "KnowledgeRevisionCreated",
+      actor,
+      occurredAtUtc,
+      $"Knowledge revision {successorRevision.RevisionLabel} created for document {Id}."));
+  }
+
   public KnowledgeDocumentRevision VerifyRevision(
     KnowledgeDocumentRevisionId revisionId,
     KnowledgeVerificationStatus verificationStatus,

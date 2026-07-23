@@ -66,6 +66,8 @@ public sealed class SpinbusterDbContext : DbContext
 
   internal DbSet<ParserDiagnosticRecord> ParserDiagnostics => Set<ParserDiagnosticRecord>();
 
+  internal DbSet<PromotionDiagnosticRecord> PromotionDiagnostics => Set<PromotionDiagnosticRecord>();
+
   protected override void OnModelCreating(ModelBuilder modelBuilder)
   {
     SpinbusterModelConfiguration.Configure(modelBuilder);

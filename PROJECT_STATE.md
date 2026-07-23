@@ -12,7 +12,7 @@
 
 ## Active Implementation Package
 
-- `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC`
+- `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC`
 - Status: `Release Candidate` (not released)
 
 ## Current Branch
@@ -21,11 +21,11 @@
 
 ## Last Completed Milestone
 
-- Document understanding text adapter RC validation complete
+- Knowledge promotion vertical slice RC validation complete
 
 ## Current Implementation Phase
 
-- Document Understanding — text adapter RC validated, pending release decision
+- Knowledge Promotion — vertical slice RC validated, pending release decision
 
 ## Current Milestone
 
@@ -33,14 +33,14 @@
 
 ## Test Status
 
-- Domain: `181/181`
+- Domain: `188/188`
 - Application: `184/184`
-- Documents: `63/63`
-- Infrastructure: `61/61`
+- Documents: `78/78`
+- Infrastructure: `82/82`
 - Architecture: `24/24`
 - AI: `6/6`
-- Desktop: `45/45`
-- Total: `564/564`
+- Desktop: `62/62`
+- Total: `624/624`
 
 ## Open ADRs
 
@@ -72,19 +72,20 @@
 ## Outstanding Technical Debt
 
 - `SPINbuster.Desktop` is still a temporary bootstrap host and has not been replaced with a real MAUI client.
-- Most test projects are still empty scaffolds outside of `SPINbuster.Architecture.Tests`.
 - Human-accepted AI proposals do not yet create authoritative report revisions.
 - Knowledge Engine command idempotency is still deferred and must be resolved before synchronization-oriented work.
 - The `MapFailureClassification` in `RequestDocumentParsingUseCase` loses original parser-specific classification; should be refined before production.
-- Document OCR, fragment promotion, assertion promotion, and broader retrieval remain deferred beyond the current foundation.
+- Document OCR, assertion promotion, and broader retrieval remain deferred beyond the current foundation.
 - Immutable-object reconciliation and deletion remain deferred; local filesystem inventory is diagnostic only.
 - The Windows Desktop apphost may still be blocked by local machine policy even when the managed DLL executes correctly.
 - Fragment candidate review concurrency relies on aggregate-level guards (`EnsureReviewNotDecided`). Before server or multi-user work, the database update itself should verify original state with a conditional SQL `WHERE ReviewState = Generated` to ensure true multi-process safety.
 - Pre-existing CA1848 warnings throughout Application use cases (LoggerMessage delegates) are acknowledged technical debt.
+- Knowledge promotion concurrency relies on idempotency by candidate ID and content hash. No optimistic concurrency token prevents two simultaneous promotions from both passing the idempotency check. Acceptable for single-user foundation; required before server or multi-user work.
+- SQLite filtered unique index workaround (`BeginSupersession`/`CompleteSupersession` two-phase commit) is a known EF Core + SQLite limitation. May be simplified if migrating to a database that supports deferred constraint checking.
 
 ## Immediate Next Task
 
-- `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC` validated as release candidate. Awaiting release decision.
+- `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` validated as release candidate. Awaiting release decision.
 
 ## Fast Context
 
@@ -92,7 +93,7 @@
 - Start every new AI session from `.ai/bootstrap.md`.
 - The latest governance baseline is `ARCHITECTURE-VISION-2.0`.
 - The latest software baseline is `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1`.
-- The active implementation package is `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC` (release candidate, not released).
+- The active implementation package is `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` (release candidate, not released).
 
 ## Current Capabilities
 
@@ -115,3 +116,11 @@
 - Parser execution status: Completed, CompletedWithWarnings, Failed (replaces boolean success)
 - Diagnostic persistence: parser_diagnostics table with full round-trip through SQLite
 - Desktop executable proof exercises structured text parsing with diagnostics display
+- Knowledge Promotion: human-reviewed fragment candidates can be promoted into authoritative KnowledgeDocument, KnowledgeDocumentRevision, KnowledgeCitation, and KnowledgeRelationship records
+- Promotion precondition checklist enforced deterministically (no AI participation in authority decisions)
+- Idempotent promotion replay by candidate ID and by content hash
+- Two-phase supersession (BeginSupersession/CompleteSupersession) handles SQLite filtered unique index
+- Promotion diagnostics are durable and queryable (Eligible/Promoted/Failed lifecycle)
+- Project lifecycle management: Draft -> Active (required for promotion eligibility)
+- Knowledge snapshot survives provider disposal and recreation
+- End-to-end executable proof: create project -> activate -> import -> parse -> review -> promote -> supersede -> verify snapshot

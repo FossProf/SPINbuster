@@ -42,6 +42,7 @@ public static class DesktopCompositionRoot
     services.AddScoped<LocalVerticalSliceWorkflowRunner>();
     services.AddScoped<DocumentEngineExecutableWorkflowRunner>();
     services.AddScoped<ParsingExecutableWorkflowRunner>();
+    services.AddScoped<KnowledgePromotionWorkflowRunner>();
   }
 
   public static DesktopWorkflowSettings LoadSettings(IConfiguration configuration)

@@ -34,19 +34,20 @@ Chronological released history:
 ## Current State
 
 - Latest released baseline: `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1`
-- Active release candidate: `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC` (validated, not released)
+- Active release candidate: `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` (validated, not released)
+- Previous release candidate: `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC` (validated, not released)
 - Next active package recommendation: TBD after RC release decision
 
 Why this package was next:
 
 - The fragment candidate review lifecycle was released with executable proof.
-- The next increment extended Desktop proof to exercise structural text extraction, parser diagnostics, and the parser registry.
-- This stayed focused on the executable proof without prematurely broadening into Knowledge promotion, OCR, or AI extraction.
+- The natural next capability is promoting human-reviewed candidates into authoritative knowledge records.
+- This stayed focused on the vertical slice: precondition validation, document matching, revision creation, supersession, citation, relationship, idempotency, diagnostics, and authority isolation.
 
 Why release is deferred:
 
-- The RC validates structured text parsing, diagnostics, and the parser registry, but the review found that diagnostic aggregation, export, and cross-run comparison are production concerns that may benefit from further iteration before release.
-- Knowledge promotion from reviewed candidates (`EDR-KE-011`) is the natural next capability phase and may influence how diagnostics interact with promotion workflows.
+- The RC validates the core promotion flow end-to-end, but the review found that 6 spec gaps remain: Supersedes relationship creation, HigherAuthorityExists conflict check, AmbiguousDocumentMatch detection, spec audit event naming, temporal ordering on supersession, and concurrent promotion guard.
+- These gaps are well-scoped and can be addressed as incremental improvements without architectural changes.
 
 ## Released Foundations
 
@@ -123,7 +124,7 @@ Promote reviewed document understanding into authoritative engineering knowledge
 
 Major packages:
 
-- Fragment-to-knowledge promotion workflows
+- Fragment-to-knowledge promotion workflows (RC: `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC`)
 - Engineering assertion promotion
 - Citation promotion from reviewed candidates
 - Knowledge conflict and contradiction handling
@@ -143,6 +144,12 @@ Exit criteria:
 Expected executable slice:
 
 - Review fragment candidates -> promote selected artifacts -> persist knowledge revisions and citations -> reload graph and audit history.
+
+RC status:
+
+- `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` validates the core vertical slice: precondition validation, document matching, revision creation, supersession (two-phase commit), citation, DerivedFrom relationship, idempotency, diagnostics, authority isolation.
+- 6 spec gaps remain for production: Supersedes relationship, HigherAuthorityExists, AmbiguousDocumentMatch, concurrent promotion guard, temporal ordering, spec audit events.
+- These gaps are well-scoped and can be addressed incrementally without architectural changes.
 
 ## Rule Engine
 

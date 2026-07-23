@@ -36,8 +36,8 @@ try
   }))
   {
     WorkflowLogger.WorkflowStarting(logger, operationId);
-    var result = await ParsingExecutableWorkflowBootstrapper.RunAsync(host.Services);
-    Console.Write(ParsingExecutableWorkflowConsoleFormatter.Format(result));
+    var result = await KnowledgePromotionWorkflowBootstrapper.RunAsync(host.Services);
+    Console.Write(KnowledgePromotionWorkflowConsoleFormatter.Format(result));
     WorkflowLogger.WorkflowCompleted(logger, operationId);
   }
 }

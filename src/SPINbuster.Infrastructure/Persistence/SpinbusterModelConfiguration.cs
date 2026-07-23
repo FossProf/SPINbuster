@@ -20,6 +20,7 @@ internal static class SpinbusterModelConfiguration
     ConfigureKnowledgeEngine(modelBuilder);
     ConfigureDocumentEngine(modelBuilder);
     ConfigureParserRuns(modelBuilder);
+    ConfigurePromotionDiagnostics(modelBuilder);
   }
 
   private static void ConfigureProjects(ModelBuilder modelBuilder)
@@ -602,5 +603,39 @@ internal static class SpinbusterModelConfiguration
     parserDiagnosticBuilder.HasIndex(record => record.ParserRunId);
     parserDiagnosticBuilder.HasIndex(record => new { record.ParserRunId, record.CandidateRefValue }).HasDatabaseName("IX_parser_diagnostics_ParserRunId_CandidateRefValue");
     parserDiagnosticBuilder.HasOne<ParserRunRecord>().WithMany().HasForeignKey(record => record.ParserRunId).OnDelete(DeleteBehavior.Restrict);
+  }
+
+  private static void ConfigurePromotionDiagnostics(ModelBuilder modelBuilder)
+  {
+    var builder = modelBuilder.Entity<PromotionDiagnosticRecord>();
+    builder.ToTable("promotion_diagnostics");
+    builder.HasKey(record => record.Id);
+    builder.Property(record => record.Id).HasConversion(StronglyTypedIdValueConverters.PromotionDiagnosticId).ValueGeneratedNever();
+    builder.Property(record => record.FragmentCandidateId).HasConversion(StronglyTypedIdValueConverters.FragmentCandidateId).IsRequired();
+    builder.Property(record => record.ParserRunId).HasConversion(StronglyTypedIdValueConverters.ParserRunId).IsRequired();
+    builder.Property(record => record.ProjectId).HasConversion(StronglyTypedIdValueConverters.ProjectId).IsRequired();
+    builder.Property(record => record.PromotedAtUtc).IsRequired();
+    builder.Property(record => record.Status).IsRequired();
+    builder.Property(record => record.FailureReason).HasColumnType("TEXT");
+    builder.Property(record => record.KnowledgeDocumentId).HasConversion(StronglyTypedIdValueConverters.KnowledgeDocumentId);
+    builder.Property(record => record.KnowledgeDocumentRevisionId).HasConversion(StronglyTypedIdValueConverters.KnowledgeDocumentRevisionId);
+    builder.Property(record => record.KnowledgeCitationId).HasConversion(StronglyTypedIdValueConverters.KnowledgeCitationId);
+    builder.Property(record => record.SupersededExistingRevision).IsRequired();
+    builder.Property(record => record.SupersededRevisionId).HasConversion(StronglyTypedIdValueConverters.KnowledgeDocumentRevisionId);
+    builder.HasIndex(record => record.ProjectId);
+    builder.HasIndex(record => record.FragmentCandidateId).IsUnique();
+    builder.HasIndex(record => record.ParserRunId);
+    builder.HasOne<ParserRunRecord>()
+      .WithMany()
+      .HasForeignKey(record => record.ParserRunId)
+      .OnDelete(DeleteBehavior.Restrict);
+    builder.HasOne<FragmentCandidateRecord>()
+      .WithMany()
+      .HasForeignKey(record => record.FragmentCandidateId)
+      .OnDelete(DeleteBehavior.Restrict);
+    builder.HasOne<ProjectRecord>()
+      .WithMany()
+      .HasForeignKey(record => record.ProjectId)
+      .OnDelete(DeleteBehavior.Restrict);
   }
 }

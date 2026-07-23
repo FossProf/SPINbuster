@@ -72,6 +72,20 @@ Next:
 
 - Await release decision for `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC` or begin `FRAGMENT-TO-KNOWLEDGE-PROMOTION-FOUNDATION-0.1-RC`
 
+## 2026-07-23
+
+Completed:
+
+- `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` Prompt 1: Domain & Application substrate — Created `PromotionDiagnostic` entity with `Eligible/Promoted/Failed` lifecycle, `PromotionDiagnosticStatus` enum, `PromotionDiagnosticId` strongly-typed ID, domain invariants (terminal state machine, max failure reason length 2000). Created `PromoteFragmentCandidateUseCase` with full precondition checklist (INV-PROMO-001 through 005), `KnowledgeDocument` matching by project/type/title, `AddInitialRevision` and `SupersedeCurrentRevision` paths, citation creation with duplicate check, `DerivedFrom` relationship creation, idempotency by candidate ID and content hash. Created `ActivateProjectUseCase` (Draft -> Active). Created `IPromotionDiagnosticRepository` with 6 methods. Created `LoadPromotionDiagnosticUseCase` query. Registered in `ServiceCollectionExtensions`. Added 24 domain tests for `PromotionDiagnostic`.
+- `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` Prompt 2: Infrastructure persistence — Created `PromotionDiagnosticRecord` EF entity with `FragmentCandidateId` unique index, FK constraints, nullable knowledge FK columns. Created `SqlitePromotionDiagnosticRepository` with `FindSuccessfulByContentHashAsync` cross-table JOIN. Created `SqliteKnowledgeDocumentRepository`, `SqliteKnowledgeRevisionRepository`, `SqliteKnowledgeCitationRepository`, `SqliteKnowledgeRelationshipRepository`. Created `PromotionDiagnosticSlice` migration (12th total). Added 6 Infrastructure persistence tests.
+- `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` Prompt 3: Repository DI wiring — Wired all 5 knowledge repositories and `PromotionDiagnostic` repository in `ServiceCollectionExtensions` and `DesktopCompositionRoot`. Added 6 Application tests for promotion use case.
+- `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` Prompt 4: Desktop executable proof — Created `KnowledgePromotionWorkflowRunner` (26-step orchestration: create project -> activate -> import -> parse -> review -> promote -> supersede -> verify snapshot -> failure scenarios). Created `KnowledgePromotionWorkflowBootstrapper`, `KnowledgePromotionWorkflowResult` (26 properties), `KnowledgePromotionWorkflowConsoleFormatter` (8 sections). Created `ActivateProject` use case (required because promotion requires Active lifecycle). Added 14 Desktop tests: promotion, idempotent replay, supersession, supersession replay, knowledge snapshot (2 revisions, 2 DerivedFrom relationships), authority isolation, diagnostics persistence, snapshot persistence, parsing integration, fragment review integration, expected failure scenarios, console formatter output, data preservation across runs.
+- `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` Prompt 5: RC validation and bug fixes — Root cause analysis and 8 fixes: (1) primary idempotency guard by candidate ID before content-hash JOIN, (2) defensive error handlers checking existing diagnostics before insert, (3) runner failure handling via result check instead of exception propagation, (4) project activation use case (Draft -> Active), (5) citation locator value for WholeDocument's empty normalized value, (6) UpdateAsync change tracker fix (`FindAsync` instead of `SingleAsync`), (7) revision label uniqueness (ordinal + GUID prefix), (8) two-phase commit for supersession (BeginSupersession/CompleteSupersession to handle SQLite filtered unique index). Full spec gap analysis. Prototype review document created. All 624 tests passing. Left as release candidate without release.
+
+Next:
+
+- Await release decision for `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` or begin spec gap remediation
+
 ## 2026-07-15
 
 Completed:

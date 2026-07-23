@@ -75,8 +75,11 @@ public sealed class SqliteKnowledgeDocumentRepository : IKnowledgeDocumentReposi
     KnowledgeDocument knowledgeDocument,
     CancellationToken cancellationToken = default)
   {
-    var existing = await _dbContext.KnowledgeDocuments
-      .SingleAsync(document => document.Id == knowledgeDocument.Id, cancellationToken);
+    var existing = await _dbContext.KnowledgeDocuments.FindAsync(
+      new object[] { knowledgeDocument.Id },
+      cancellationToken)
+      ?? throw new InvalidOperationException(
+        $"Knowledge document {knowledgeDocument.Id} not found in database or change tracker.");
 
     existing.CurrentAuthoritativeRevisionId = knowledgeDocument.CurrentAuthoritativeRevisionId;
     existing.Lifecycle = knowledgeDocument.Lifecycle;
