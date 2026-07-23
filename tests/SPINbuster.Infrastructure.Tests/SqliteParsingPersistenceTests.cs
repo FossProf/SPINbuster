@@ -1131,55 +1131,35 @@ public sealed class SqliteParsingPersistenceTests : IDisposable
   public async Task MigrationBackfillMapsAllFiveLifecycleStatesCorrectly()
   {
     var seeded = await SeedSourceAsync();
-    var states = new[] { ParserRunState.Created, ParserRunState.Running, ParserRunState.Completed, ParserRunState.Failed, ParserRunState.Cancelled };
-    var expectedStatuses = new ParserExecutionStatus?[] { null, null, ParserExecutionStatus.Completed, ParserExecutionStatus.Failed, ParserExecutionStatus.Failed };
+    var createdAt = seeded.CreatedAtUtc;
+
     var runIds = new ParserRunId[5];
+    var states = new[] { 0, 1, 2, 3, 4 };
+    var expectedStatuses = new ParserExecutionStatus?[] { null, null, ParserExecutionStatus.Completed, ParserExecutionStatus.Failed, ParserExecutionStatus.Failed };
+    var expectedStates = new[] { ParserRunState.Created, ParserRunState.Running, ParserRunState.Completed, ParserRunState.Failed, ParserRunState.Cancelled };
 
     await using (var dbContext = CreateDbContext())
     {
-      var auditRecorder = new SqliteAuditRecorder();
-      var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
+      var migrator = dbContext.GetService<IMigrator>();
+      await migrator.MigrateAsync("20260722093628_AddParserDiagnostics");
+    }
 
+    await using (var dbContext = CreateDbContext())
+    {
       for (var i = 0; i < 5; i++)
       {
-        var run = new ParserRun(
-          ParserRunId.New(),
-          seeded.ProjectId,
-          seeded.SourceId,
-          "test",
-          $"1.0.{i}",
-          "1.0",
-          $"hash-{i}",
-          seeded.ContentHash,
-          "SHA-256",
-          1,
-          "test",
-          seeded.CreatedAtUtc);
-
-        if (states[i] == ParserRunState.Running || states[i] == ParserRunState.Completed || states[i] == ParserRunState.Failed || states[i] == ParserRunState.Cancelled)
-        {
-          run.Start(seeded.CreatedAtUtc.AddMinutes(1));
-        }
-
-        if (states[i] == ParserRunState.Completed)
-        {
-          run.Complete(seeded.CreatedAtUtc.AddMinutes(2), ParserExecutionStatus.Completed);
-        }
-        else if (states[i] == ParserRunState.Failed)
-        {
-          run.Fail(seeded.CreatedAtUtc.AddMinutes(2), "test failure");
-        }
-        else if (states[i] == ParserRunState.Cancelled)
-        {
-          run.Cancel(seeded.CreatedAtUtc.AddMinutes(2), "test cancellation");
-        }
-
-        runIds[i] = run.Id;
-        await new SqliteParserRunRepository(dbContext).AddAsync(run);
-        StageAuditEvents(auditRecorder, run.AuditTrail);
+        var id = ParserRunId.New();
+        runIds[i] = id;
+        await dbContext.Database.ExecuteSqlRawAsync(
+          $"INSERT INTO parser_runs (Id, ProjectId, ImportedSourceId, ParserKey, ParserVersion, ParserContractVersion, ParserContractHash, SourceContentHash, SourceHashAlgorithm, SourceHashAlgorithmVersion, CreatedBy, CreatedAtUtc, State) VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11, @p12)",
+          id.Value, seeded.ProjectId.Value, seeded.SourceId.Value, "test", "1.0", "1.0", $"hash-{i}", seeded.ContentHash, "SHA-256", 1, "test", createdAt, states[i]);
       }
+    }
 
-      await unitOfWork.CommitAsync();
+    await using (var dbContext = CreateDbContext())
+    {
+      var migrator = dbContext.GetService<IMigrator>();
+      await migrator.MigrateAsync("20260722231502_AddParserExecutionStatus");
     }
 
     await using var verificationContext = CreateDbContext();
@@ -1190,7 +1170,7 @@ public sealed class SqliteParsingPersistenceTests : IDisposable
       var reloaded = await repo.GetByIdAsync(runIds[i]);
       Assert.NotNull(reloaded);
       Assert.Equal(expectedStatuses[i], reloaded!.ExecutionStatus);
-      Assert.Equal(states[i], reloaded.State);
+      Assert.Equal(expectedStates[i], reloaded.State);
     }
   }
 
