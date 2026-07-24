@@ -11,6 +11,8 @@ namespace SPINbuster.Application.UseCases.PromoteFragmentCandidate;
 public sealed class PromoteFragmentCandidateUseCase
   : ICommandHandler<PromoteFragmentCandidateCommand, PromoteFragmentCandidateResult>
 {
+  private const string PromotionContractVersion = PromotionIdentity.ContractVersion;
+
   private readonly IAuditRecorder _auditRecorder;
   private readonly IClock _clock;
   private readonly ICurrentUser _currentUser;
@@ -23,7 +25,9 @@ public sealed class PromoteFragmentCandidateUseCase
   private readonly ILogger<PromoteFragmentCandidateUseCase> _logger;
   private readonly IParserRunRepository _parserRunRepository;
   private readonly IProjectRepository _projectRepository;
+  private readonly IPromotionAttemptRepository _promotionAttemptRepository;
   private readonly IPromotionDiagnosticRepository _promotionDiagnosticRepository;
+  private readonly IPromotionRecordRepository _promotionRecordRepository;
   private readonly IUnitOfWork _unitOfWork;
 
   public PromoteFragmentCandidateUseCase(
@@ -36,6 +40,8 @@ public sealed class PromoteFragmentCandidateUseCase
     IKnowledgeCitationRepository knowledgeCitationRepository,
     IKnowledgeRelationshipRepository knowledgeRelationshipRepository,
     IPromotionDiagnosticRepository promotionDiagnosticRepository,
+    IPromotionRecordRepository promotionRecordRepository,
+    IPromotionAttemptRepository promotionAttemptRepository,
     IUnitOfWork unitOfWork,
     IClock clock,
     ICurrentUser currentUser,
@@ -51,6 +57,8 @@ public sealed class PromoteFragmentCandidateUseCase
     _knowledgeCitationRepository = knowledgeCitationRepository;
     _knowledgeRelationshipRepository = knowledgeRelationshipRepository;
     _promotionDiagnosticRepository = promotionDiagnosticRepository;
+    _promotionRecordRepository = promotionRecordRepository;
+    _promotionAttemptRepository = promotionAttemptRepository;
     _unitOfWork = unitOfWork;
     _clock = clock;
     _currentUser = currentUser;
@@ -83,9 +91,12 @@ public sealed class PromoteFragmentCandidateUseCase
         ProjectId.New(),
         _clock.UtcNow);
 
+      FragmentCandidate candidate = null!;
+      var recordId = PromotionRecordId.New();
+
       try
       {
-        var candidate = await _fragmentCandidateRepository.GetByIdAsync(command.FragmentCandidateId, cancellationToken)
+        candidate = await _fragmentCandidateRepository.GetByIdAsync(command.FragmentCandidateId, cancellationToken)
           ?? throw new ApplicationEntityNotFoundException(nameof(FragmentCandidate), candidateId);
 
         var parserRun = await _parserRunRepository.GetByIdAsync(candidate.ParserRunId, cancellationToken)
@@ -104,53 +115,26 @@ public sealed class PromoteFragmentCandidateUseCase
           project.Id,
           diagnostic.PromotedAtUtc);
 
-        ValidatePreconditions(candidate, parserRun, importedSource, project);
-
-        var existingDiagnostic = await _promotionDiagnosticRepository.GetByFragmentCandidateAsync(
-          command.FragmentCandidateId,
-          cancellationToken);
-
-        if (existingDiagnostic is not null)
-        {
-          stopwatch.Stop();
-          _logger.LogInformation(
-            "{UseCase} completed (idempotent replay by candidate) in {DurationMs}ms for fragment candidate {FragmentCandidateId}",
-            useCaseName, stopwatch.ElapsedMilliseconds, candidateId);
-
-          return new PromoteFragmentCandidateResult(
-            existingDiagnostic.Id,
-            existingDiagnostic.Status,
-            existingDiagnostic.KnowledgeDocumentId,
-            existingDiagnostic.KnowledgeDocumentRevisionId,
-            existingDiagnostic.KnowledgeCitationId,
-            existingDiagnostic.SupersededExistingRevision,
-            existingDiagnostic.SupersededRevisionId,
-            null);
-        }
-
-        var existingByContentHash = await _promotionDiagnosticRepository.FindSuccessfulByContentHashAsync(
+        var identity = new PromotionIdentity(
           candidate.ProjectId,
-          candidate.SourceContentHash,
-          candidate.Locator.NormalizedValue,
-          cancellationToken);
+          command.DocumentType,
+          command.CanonicalTitle,
+          command.ExternalReferenceNumber,
+          command.DisciplineOrCategory,
+          candidate.IdentityKey);
 
-        if (existingByContentHash is not null)
+        var identityReplay = await TryReplayByIdentityAsync(identity, cancellationToken);
+        if (identityReplay is not null)
         {
           stopwatch.Stop();
           _logger.LogInformation(
-            "{UseCase} completed (idempotent replay by content hash) in {DurationMs}ms for fragment candidate {FragmentCandidateId}",
+            "{UseCase} completed (replay by identity) in {DurationMs}ms for fragment candidate {FragmentCandidateId}",
             useCaseName, stopwatch.ElapsedMilliseconds, candidateId);
 
-          return new PromoteFragmentCandidateResult(
-            existingByContentHash.Id,
-            existingByContentHash.Status,
-            existingByContentHash.KnowledgeDocumentId,
-            existingByContentHash.KnowledgeDocumentRevisionId,
-            existingByContentHash.KnowledgeCitationId,
-            existingByContentHash.SupersededExistingRevision,
-            existingByContentHash.SupersededRevisionId,
-            null);
+          return identityReplay;
         }
+
+        ValidatePreconditions(candidate, parserRun, importedSource, project);
 
         var documentMetadataHash = ComputeMetadataHash(command.DocumentType, command.CanonicalTitle, command.ExternalReferenceNumber, command.DisciplineOrCategory);
         var knowledgeDocument = await FindOrCreateKnowledgeDocumentAsync(
@@ -271,7 +255,26 @@ public sealed class PromoteFragmentCandidateUseCase
           supersededExistingRevision,
           supersededRevisionId);
 
+        var promotionRecord = new PromotionRecord(
+          recordId,
+          identity,
+          knowledgeDocument.Id,
+          _clock.UtcNow);
+
+        var promotionAttempt = new PromotionAttempt(
+          PromotionAttemptId.New(),
+          recordId,
+          PromotionAttemptOutcome.Promoted,
+          diagnostic.Id,
+          command.FragmentCandidateId,
+          candidate.SourceContentHash,
+          _clock.UtcNow);
+
+        promotionRecord.UpdateLatestAttempt(promotionAttempt.Id);
+
         await _promotionDiagnosticRepository.AddAsync(diagnostic, cancellationToken);
+        await _promotionRecordRepository.AddAsync(promotionRecord, cancellationToken);
+        await _promotionAttemptRepository.AddAsync(promotionAttempt, cancellationToken);
         StageAuditEvents(knowledgeDocument.AuditTrail.Skip(auditEventsCommittedBeforeSupersession));
         await _unitOfWork.CommitAsync(cancellationToken);
 
@@ -325,7 +328,18 @@ public sealed class PromoteFragmentCandidateUseCase
 
         diagnostic.RecordFailure(exception.Message);
 
+        var failedAttempt = new PromotionAttempt(
+          PromotionAttemptId.New(),
+          recordId,
+          PromotionAttemptOutcome.PermanentInvariantViolation,
+          diagnostic.Id,
+          command.FragmentCandidateId,
+          candidate.SourceContentHash,
+          _clock.UtcNow,
+          exception.Message);
+
         await _promotionDiagnosticRepository.AddAsync(diagnostic, cancellationToken);
+        await _promotionAttemptRepository.AddAsync(failedAttempt, cancellationToken);
         await _unitOfWork.CommitAsync(cancellationToken);
 
         _logger.LogWarning(
@@ -369,7 +383,18 @@ public sealed class PromoteFragmentCandidateUseCase
 
         diagnostic.RecordFailure(exception.Message);
 
+        var failedAttempt = new PromotionAttempt(
+          PromotionAttemptId.New(),
+          recordId,
+          PromotionAttemptOutcome.RetryablePreconditionFailure,
+          diagnostic.Id,
+          command.FragmentCandidateId,
+          candidate.SourceContentHash,
+          _clock.UtcNow,
+          exception.Message);
+
         await _promotionDiagnosticRepository.AddAsync(diagnostic, cancellationToken);
+        await _promotionAttemptRepository.AddAsync(failedAttempt, cancellationToken);
         await _unitOfWork.CommitAsync(cancellationToken);
 
         _logger.LogWarning(
@@ -411,8 +436,10 @@ public sealed class PromoteFragmentCandidateUseCase
   {
     if (candidate.ReviewState != FragmentCandidateReviewState.HumanAccepted)
     {
-      throw new DomainInvariantException(
-        $"Fragment candidate {candidate.Id} must be HumanAccepted to promote. Current state: {candidate.ReviewState}.");
+      throw new LifecycleTransitionException(
+        nameof(FragmentCandidate),
+        candidate.ReviewState.ToString(),
+        "Promote");
     }
 
     if (parserRun.State != ParserRunState.Completed)
@@ -518,4 +545,48 @@ public sealed class PromoteFragmentCandidateUseCase
       _auditRecorder.Stage(auditEvent);
     }
   }
+
+  private async Task<PromoteFragmentCandidateResult?> TryReplayByIdentityAsync(
+    PromotionIdentity identity,
+    CancellationToken cancellationToken)
+  {
+    var existingRecord = await _promotionRecordRepository.FindByIdentityHashAsync(
+      identity.ProjectId,
+      identity.Hash,
+      cancellationToken);
+
+    if (existingRecord is null)
+    {
+      return null;
+    }
+
+    var successfulAttempt = await _promotionAttemptRepository.GetLatestSuccessfulByRecordIdAsync(
+      existingRecord.Id,
+      cancellationToken);
+
+    if (successfulAttempt is null)
+    {
+      return null;
+    }
+
+    var cachedDiagnostic = await _promotionDiagnosticRepository.GetByIdAsync(
+      successfulAttempt.DiagnosticId,
+      cancellationToken);
+
+    if (cachedDiagnostic is null)
+    {
+      return null;
+    }
+
+    return new PromoteFragmentCandidateResult(
+      cachedDiagnostic.Id,
+      cachedDiagnostic.Status,
+      cachedDiagnostic.KnowledgeDocumentId,
+      cachedDiagnostic.KnowledgeDocumentRevisionId,
+      cachedDiagnostic.KnowledgeCitationId,
+      cachedDiagnostic.SupersededExistingRevision,
+      cachedDiagnostic.SupersededRevisionId,
+      null);
+  }
+
 }

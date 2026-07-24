@@ -42,6 +42,8 @@ public static class ServiceCollectionExtensions
     services.AddScoped<IFragmentCandidateRepository, SqliteFragmentCandidateRepository>();
     services.AddScoped<IParserDiagnosticRepository, SqliteParserDiagnosticRepository>();
     services.AddScoped<IPromotionDiagnosticRepository, SqlitePromotionDiagnosticRepository>();
+    services.AddScoped<IPromotionRecordRepository, InMemoryPromotionRecordRepository>();
+    services.AddScoped<IPromotionAttemptRepository, InMemoryPromotionAttemptRepository>();
     return services;
   }
 }
