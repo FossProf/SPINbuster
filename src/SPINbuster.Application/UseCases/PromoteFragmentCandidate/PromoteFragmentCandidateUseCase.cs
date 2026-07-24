@@ -151,6 +151,8 @@ public sealed class PromoteFragmentCandidateUseCase
         var revisionLabel = $"v1-parsed-{candidate.Ordinal}-{candidate.Id.Value.ToString("N")[..8]}";
         var knowledgeSourceId = KnowledgeSourceId.New();
 
+        var auditCountBeforeDomainMutation = knowledgeDocument.AuditTrail.Count;
+
         var knowledgeRevision = new KnowledgeDocumentRevision(
           KnowledgeDocumentRevisionId.New(),
           knowledgeDocument.Id,
@@ -166,32 +168,16 @@ public sealed class PromoteFragmentCandidateUseCase
           null,
           _clock.UtcNow);
 
-        var auditEventsCommittedBeforeSupersession = 0;
+        KnowledgeDocumentRevision? supersededDomainRevision = null;
 
         if (supersededExistingRevision)
         {
-          var auditCountBeforeBegin = knowledgeDocument.AuditTrail.Count;
-
-          knowledgeDocument.BeginSupersession(
-            knowledgeRevision.Id,
-            _currentUser.UserId.Value,
-            _clock.UtcNow);
-
-          var supersededDomainRevision = knowledgeDocument.Revisions
-            .Single(revision => revision.Id == supersededRevisionId!.Value);
-          await _knowledgeRevisionRepository.UpdateAsync(supersededDomainRevision, cancellationToken);
-          await _knowledgeDocumentRepository.UpdateAsync(knowledgeDocument, cancellationToken);
-          auditEventsCommittedBeforeSupersession = knowledgeDocument.AuditTrail.Count;
-          StageAuditEvents(knowledgeDocument.AuditTrail.Skip(auditCountBeforeBegin));
-          await _unitOfWork.CommitAsync(cancellationToken);
-        }
-
-        if (supersededExistingRevision)
-        {
-          knowledgeDocument.CompleteSupersession(
+          var outcome = knowledgeDocument.SupersedeCurrentRevision(
             knowledgeRevision,
             _currentUser.UserId.Value,
             _clock.UtcNow);
+
+          supersededDomainRevision = outcome.SupersededRevision;
         }
         else
         {
@@ -245,6 +231,11 @@ public sealed class PromoteFragmentCandidateUseCase
         }
 
         await _knowledgeDocumentRepository.UpdateAsync(knowledgeDocument, cancellationToken);
+        if (supersededDomainRevision is not null)
+        {
+          await _knowledgeRevisionRepository.UpdateAsync(supersededDomainRevision, cancellationToken);
+        }
+
         await _knowledgeRevisionRepository.AddAsync(knowledgeRevision, cancellationToken);
         await _knowledgeCitationRepository.AddAsync(citation, cancellationToken);
 
@@ -275,7 +266,7 @@ public sealed class PromoteFragmentCandidateUseCase
         await _promotionDiagnosticRepository.AddAsync(diagnostic, cancellationToken);
         await _promotionRecordRepository.AddAsync(promotionRecord, cancellationToken);
         await _promotionAttemptRepository.AddAsync(promotionAttempt, cancellationToken);
-        StageAuditEvents(knowledgeDocument.AuditTrail.Skip(auditEventsCommittedBeforeSupersession));
+        StageAuditEvents(knowledgeDocument.AuditTrail.Skip(auditCountBeforeDomainMutation));
         await _unitOfWork.CommitAsync(cancellationToken);
 
         stopwatch.Stop();

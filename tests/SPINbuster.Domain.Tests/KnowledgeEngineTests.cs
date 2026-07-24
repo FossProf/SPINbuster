@@ -52,6 +52,29 @@ public sealed class KnowledgeEngineTests
   }
 
   [Fact]
+  public void KnowledgeRevisionSupportsChainOfThreeSupersessions()
+  {
+    var document = CreateDocument();
+    var revisionA = CreateRevision(documentId: document.Id, revisionLabel: "A");
+    document.AddInitialRevision(revisionA, "reviewer@example.invalid", Timestamp(1));
+
+    var revisionB = CreateRevision(documentId: document.Id, revisionLabel: "B", supersedesRevisionId: revisionA.Id);
+    var outcomeB = document.SupersedeCurrentRevision(revisionB, "reviewer@example.invalid", Timestamp(2));
+
+    Assert.Equal(KnowledgeRevisionLifecycle.Superseded, outcomeB.SupersededRevision.Lifecycle);
+    Assert.Equal(KnowledgeRevisionLifecycle.CurrentAuthoritative, outcomeB.SuccessorRevision.Lifecycle);
+    Assert.Equal(revisionB.Id, document.CurrentAuthoritativeRevisionId);
+
+    var revisionC = CreateRevision(documentId: document.Id, revisionLabel: "C", supersedesRevisionId: revisionB.Id);
+    var outcomeC = document.SupersedeCurrentRevision(revisionC, "reviewer@example.invalid", Timestamp(3));
+
+    Assert.Equal(KnowledgeRevisionLifecycle.Superseded, outcomeC.SupersededRevision.Lifecycle);
+    Assert.Equal(KnowledgeRevisionLifecycle.CurrentAuthoritative, outcomeC.SuccessorRevision.Lifecycle);
+    Assert.Equal(revisionC.Id, document.CurrentAuthoritativeRevisionId);
+    Assert.Equal(3, document.Revisions.Count);
+  }
+
+  [Fact]
   public void KnowledgeRevisionRejectsCrossDocumentSupersession()
   {
     var firstDocument = CreateDocument();

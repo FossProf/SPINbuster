@@ -13,7 +13,7 @@ public sealed class PromoteFragmentCandidateUseCaseTests
   public async Task SuccessfulPromotionRecordsRecordAndAttempt()
   {
     var fixture = CreateFixture();
-    var (candidateId, sourceContentHash) = await SeedReadyCandidateAsync(fixture);
+    var (candidateId, sourceContentHash, _) = await SeedReadyCandidateAsync(fixture);
 
     var result = await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
       candidateId,
@@ -45,7 +45,7 @@ public sealed class PromoteFragmentCandidateUseCaseTests
   public async Task ExactSuccessfulReplayReturnsCachedResultBeforeEligibilityChecks()
   {
     var fixture = CreateFixture();
-    var (candidateId, _) = await SeedReadyCandidateAsync(fixture);
+    var (candidateId, _, _) = await SeedReadyCandidateAsync(fixture);
 
     var firstResult = await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
       candidateId,
@@ -71,7 +71,7 @@ public sealed class PromoteFragmentCandidateUseCaseTests
   public async Task DifferentTargetMetadataProducesDifferentIdentityNoReplay()
   {
     var fixture = CreateFixture();
-    var (candidateId, _) = await SeedReadyCandidateAsync(fixture);
+    var (candidateId, _, _) = await SeedReadyCandidateAsync(fixture);
 
     var firstResult = await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
       candidateId,
@@ -180,7 +180,7 @@ public sealed class PromoteFragmentCandidateUseCaseTests
   public async Task FailedAttemptClassifiedAsPermanentInvariantViolationForLifecycleTransition()
   {
     var fixture = CreateFixture();
-    var (candidateId, _) = await SeedReadyCandidateAsync(
+    var (candidateId, _, _) = await SeedReadyCandidateAsync(
       fixture,
       reviewState: FragmentCandidateReviewState.Generated);
 
@@ -249,7 +249,7 @@ public sealed class PromoteFragmentCandidateUseCaseTests
   public async Task ReplayDoesNotMutateKnowledge()
   {
     var fixture = CreateFixture();
-    var (candidateId, _) = await SeedReadyCandidateAsync(fixture);
+    var (candidateId, _, _) = await SeedReadyCandidateAsync(fixture);
 
     var firstResult = await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
       candidateId,
@@ -274,6 +274,260 @@ public sealed class PromoteFragmentCandidateUseCaseTests
     Assert.Equal(citationsAfterFirst, fixture.KnowledgeCitationRepository.AddedCitations.Count);
   }
 
+  [Fact]
+  public async Task SupersedingPromotionUsesSingleAtomicCommit()
+  {
+    var fixture = CreateFixture();
+    var (candidateId, _, projectId) = await SeedReadyCandidateAsync(fixture);
+
+    await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
+      candidateId,
+      KnowledgeDocumentType.Specification,
+      "Concrete Spec",
+      "EXT-001",
+      "Civil"));
+
+    Assert.Equal(1, fixture.UnitOfWork.CommitCount);
+
+    var secondCandidateId = await SeedSecondCandidateInSameDocumentAsync(fixture, projectId);
+
+    await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
+      secondCandidateId,
+      KnowledgeDocumentType.Specification,
+      "Concrete Spec",
+      "EXT-001",
+      "Civil"));
+
+    Assert.Equal(2, fixture.UnitOfWork.CommitCount);
+  }
+
+  [Fact]
+  public async Task SupersedingPromotionUpdatesOldRevisionInSameCommit()
+  {
+    var fixture = CreateFixture();
+    var (candidateId, _, projectId) = await SeedReadyCandidateAsync(fixture);
+
+    await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
+      candidateId,
+      KnowledgeDocumentType.Specification,
+      "Concrete Spec",
+      "EXT-001",
+      "Civil"));
+
+    var secondCandidateId = await SeedSecondCandidateInSameDocumentAsync(fixture, projectId);
+
+    await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
+      secondCandidateId,
+      KnowledgeDocumentType.Specification,
+      "Concrete Spec",
+      "EXT-001",
+      "Civil"));
+
+    Assert.Single(fixture.KnowledgeRevisionRepository.UpdatedRevisions);
+    Assert.Equal(2, fixture.KnowledgeRevisionRepository.AddedRevisions.Count);
+  }
+
+  [Fact]
+  public async Task ChainOfThreePromotionsUsesOneCommitEach()
+  {
+    var fixture = CreateFixture();
+    var (firstCandidateId, _, projectId) = await SeedReadyCandidateAsync(fixture);
+
+    await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
+      firstCandidateId,
+      KnowledgeDocumentType.Specification,
+      "Concrete Spec",
+      "EXT-001",
+      "Civil"));
+
+    var secondCandidateId = await SeedSecondCandidateInSameDocumentAsync(fixture, projectId);
+    await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
+      secondCandidateId,
+      KnowledgeDocumentType.Specification,
+      "Concrete Spec",
+      "EXT-001",
+      "Civil"));
+
+    var thirdCandidateId = await SeedThirdCandidateInSameDocumentAsync(fixture, projectId);
+    await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
+      thirdCandidateId,
+      KnowledgeDocumentType.Specification,
+      "Concrete Spec",
+      "EXT-001",
+      "Civil"));
+
+    Assert.Equal(3, fixture.UnitOfWork.CommitCount);
+    Assert.Equal(3, fixture.KnowledgeRevisionRepository.AddedRevisions.Count);
+    Assert.Equal(2, fixture.KnowledgeRevisionRepository.UpdatedRevisions.Count);
+    Assert.Equal(3, fixture.KnowledgeCitationRepository.AddedCitations.Count);
+  }
+
+  [Fact]
+  public async Task CommitFailureDuringSupersessionDoesNotPersistPartialState()
+  {
+    var fixture = CreateFixture();
+    var (candidateId, _, projectId) = await SeedReadyCandidateAsync(fixture);
+
+    await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
+      candidateId,
+      KnowledgeDocumentType.Specification,
+      "Concrete Spec",
+      "EXT-001",
+      "Civil"));
+
+    Assert.Equal(1, fixture.UnitOfWork.CommitCount);
+
+    var secondCandidateId = await SeedSecondCandidateInSameDocumentAsync(fixture, projectId);
+    fixture.UnitOfWork.ThrowOnCommit = true;
+
+    await Assert.ThrowsAsync<InvalidOperationException>(() =>
+      CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
+        secondCandidateId,
+        KnowledgeDocumentType.Specification,
+        "Concrete Spec",
+        "EXT-001",
+        "Civil")));
+
+    Assert.Equal(1, fixture.UnitOfWork.CommitCount);
+  }
+
+  [Fact]
+  public async Task SupersessionAuditEventsStagedBeforeSingleCommit()
+  {
+    var fixture = CreateFixture();
+    var (candidateId, _, projectId) = await SeedReadyCandidateAsync(fixture);
+
+    await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
+      candidateId,
+      KnowledgeDocumentType.Specification,
+      "Concrete Spec",
+      "EXT-001",
+      "Civil"));
+
+    var secondCandidateId = await SeedSecondCandidateInSameDocumentAsync(fixture, projectId);
+    var stagedCountBefore = fixture.AuditRecorder.StagedEvents.Count;
+
+    await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
+      secondCandidateId,
+      KnowledgeDocumentType.Specification,
+      "Concrete Spec",
+      "EXT-001",
+      "Civil"));
+
+    Assert.True(fixture.AuditRecorder.StagedEvents.Count > stagedCountBefore);
+    Assert.Contains(fixture.AuditRecorder.StagedEvents, e => e.EventType == "KnowledgeRevisionSuperseded");
+    Assert.Contains(fixture.AuditRecorder.StagedEvents, e => e.EventType == "KnowledgeRevisionCreated");
+  }
+
+  [Fact]
+  public async Task DerivedFromRelationshipCreatedOnlyOncePerRevision()
+  {
+    var fixture = CreateFixture();
+    var (candidateId, _, projectId) = await SeedReadyCandidateAsync(fixture);
+
+    await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
+      candidateId,
+      KnowledgeDocumentType.Specification,
+      "Concrete Spec",
+      "EXT-001",
+      "Civil"));
+
+    var secondCandidateId = await SeedSecondCandidateInSameDocumentAsync(fixture, projectId);
+
+    await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
+      secondCandidateId,
+      KnowledgeDocumentType.Specification,
+      "Concrete Spec",
+      "EXT-001",
+      "Civil"));
+
+    Assert.Equal(2, fixture.KnowledgeRelationshipRepository.AddedRelationships.Count);
+  }
+
+  private static async Task<FragmentCandidateId> SeedSecondCandidateInSameDocumentAsync(
+    PromotionFixture fixture, ProjectId projectId)
+  {
+    var sourceId = ImportedSourceId.New();
+    await SeedSourceAsync(fixture, projectId, sourceId);
+
+    var parserRun = new ParserRun(
+      ParserRunId.New(),
+      projectId,
+      sourceId,
+      "test-parser",
+      "1.0.0",
+      "1.0.0",
+      "contract-hash",
+      "source-hash-v2",
+      "SHA-256",
+      2,
+      "system",
+      TestTime);
+    parserRun.Start(TestTime);
+    parserRun.Complete(TestTime, ParserExecutionStatus.Completed);
+    await fixture.ParserRunRepository.AddAsync(parserRun);
+
+    var candidate = new FragmentCandidate(
+      FragmentCandidateId.New(),
+      parserRun.Id,
+      projectId,
+      sourceId,
+      "source-hash-v2",
+      new FragmentLocator(FragmentLocatorType.WholeDocument, "*"),
+      2,
+      ContentKind.PlainText,
+      "Some different text",
+      ConfidenceBand.High,
+      "test-parser",
+      "1.0.0",
+      TestTime);
+    candidate.Accept("reviewer", TestTime, null);
+    await fixture.FragmentCandidateRepository.AddAsync(candidate);
+    return candidate.Id;
+  }
+
+  private static async Task<FragmentCandidateId> SeedThirdCandidateInSameDocumentAsync(
+    PromotionFixture fixture, ProjectId projectId)
+  {
+    var sourceId = ImportedSourceId.New();
+    await SeedSourceAsync(fixture, projectId, sourceId);
+
+    var parserRun = new ParserRun(
+      ParserRunId.New(),
+      projectId,
+      sourceId,
+      "test-parser",
+      "1.0.0",
+      "1.0.0",
+      "contract-hash",
+      "source-hash-v3",
+      "SHA-256",
+      3,
+      "system",
+      TestTime);
+    parserRun.Start(TestTime);
+    parserRun.Complete(TestTime, ParserExecutionStatus.Completed);
+    await fixture.ParserRunRepository.AddAsync(parserRun);
+
+    var candidate = new FragmentCandidate(
+      FragmentCandidateId.New(),
+      parserRun.Id,
+      projectId,
+      sourceId,
+      "source-hash-v3",
+      new FragmentLocator(FragmentLocatorType.WholeDocument, "*"),
+      3,
+      ContentKind.PlainText,
+      "Yet another text",
+      ConfidenceBand.High,
+      "test-parser",
+      "1.0.0",
+      TestTime);
+    candidate.Accept("reviewer", TestTime, null);
+    await fixture.FragmentCandidateRepository.AddAsync(candidate);
+    return candidate.Id;
+  }
+
   private static PromoteFragmentCandidateUseCase CreateUseCase(PromotionFixture fixture)
   {
     return new PromoteFragmentCandidateUseCase(
@@ -295,7 +549,7 @@ public sealed class PromoteFragmentCandidateUseCaseTests
       NullLogger<PromoteFragmentCandidateUseCase>.Instance);
   }
 
-  private static async Task<(FragmentCandidateId CandidateId, string SourceContentHash)> SeedReadyCandidateAsync(
+  private static async Task<(FragmentCandidateId CandidateId, string SourceContentHash, ProjectId ProjectId)> SeedReadyCandidateAsync(
     PromotionFixture fixture,
     ProjectLifecycle projectLifecycle = ProjectLifecycle.Active,
     FragmentCandidateReviewState reviewState = FragmentCandidateReviewState.HumanAccepted)
@@ -350,7 +604,7 @@ public sealed class PromoteFragmentCandidateUseCaseTests
     }
 
     await fixture.FragmentCandidateRepository.AddAsync(candidate);
-    return (candidate.Id, candidate.SourceContentHash);
+    return (candidate.Id, candidate.SourceContentHash, projectId);
   }
 
   private static async Task SeedSourceAsync(PromotionFixture fixture, ProjectId projectId, ImportedSourceId sourceId)
