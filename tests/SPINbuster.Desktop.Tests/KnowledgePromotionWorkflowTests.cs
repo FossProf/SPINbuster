@@ -7,6 +7,7 @@ using SPINbuster.Application.Contracts;
 using SPINbuster.Application.UseCases.LoadParsingSnapshot;
 using SPINbuster.Application.UseCases.LoadProjectKnowledgeSnapshot;
 using SPINbuster.Application.UseCases.LoadPromotionDiagnostic;
+using SPINbuster.Application.UseCases.LoadPromotionProvenance;
 using SPINbuster.Desktop;
 using SPINbuster.Domain;
 using SPINbuster.Documents;
@@ -368,6 +369,167 @@ public sealed class KnowledgePromotionWorkflowTests
       Assert.True(await CountAsync("knowledge_document_revisions") >= 2);
       Assert.Equal(0, await CountAsync("reports"));
       Assert.Equal(0, await CountAsync("ai_proposals"));
+    }
+    finally
+    {
+      DeleteEnvironmentIfPresent(environment);
+    }
+  }
+
+  [Fact]
+  public async Task PromotionProvenanceSurviveDisposeAndRecreateProvider()
+  {
+    var environment = CreateEnvironmentPaths();
+
+    try
+    {
+      KnowledgePromotionWorkflowResult firstResult;
+      using (var firstProvider = CreateServiceProvider(environment))
+      {
+        firstResult = await KnowledgePromotionWorkflowBootstrapper.RunAsync(firstProvider);
+      }
+
+      using var secondProvider = CreateServiceProvider(environment);
+      await KnowledgePromotionWorkflowBootstrapper.MigrateAsync(secondProvider);
+      await using var scope = secondProvider.CreateAsyncScope();
+      var loadProvenance = scope.ServiceProvider.GetRequiredService<IQueryHandler<LoadPromotionProvenanceQuery, LoadPromotionProvenanceResult>>();
+
+      var reloaded = await loadProvenance.HandleAsync(
+        new LoadPromotionProvenanceQuery { RevisionId = firstResult.FirstPromotion.KnowledgeDocumentRevisionId });
+
+      Assert.NotNull(reloaded);
+      Assert.Equal(firstResult.FirstPromotion.KnowledgeDocumentRevisionId, reloaded.PromotedRevisionId);
+      Assert.Equal(firstResult.AcceptedCandidateA.FragmentCandidateId, reloaded.FragmentCandidateId);
+      Assert.False(string.IsNullOrWhiteSpace(reloaded.ParserKey));
+      Assert.False(string.IsNullOrWhiteSpace(reloaded.PromotionIdentityHash));
+      Assert.Equal(firstResult.FirstPromotion.PromotionDiagnosticId, reloaded.DiagnosticId);
+    }
+    finally
+    {
+      DeleteEnvironmentIfPresent(environment);
+    }
+  }
+
+  [Fact]
+  public async Task ProvenanceUnchangedAfterIdempotentReplay()
+  {
+    var environment = CreateEnvironmentPaths();
+
+    try
+    {
+      using var serviceProvider = CreateServiceProvider(environment);
+      var result = await KnowledgePromotionWorkflowBootstrapper.RunAsync(serviceProvider);
+
+      await using var scope = serviceProvider.CreateAsyncScope();
+      var loadProvenance = scope.ServiceProvider.GetRequiredService<IQueryHandler<LoadPromotionProvenanceQuery, LoadPromotionProvenanceResult>>();
+
+      var firstProvenance = await loadProvenance.HandleAsync(
+        new LoadPromotionProvenanceQuery { RevisionId = result.FirstPromotion.KnowledgeDocumentRevisionId });
+
+      var replayProvenance = await loadProvenance.HandleAsync(
+        new LoadPromotionProvenanceQuery { RevisionId = result.IdempotentReplay.KnowledgeDocumentRevisionId });
+
+      Assert.Equal(firstProvenance.PromotedRevisionId, replayProvenance.PromotedRevisionId);
+      Assert.Equal(firstProvenance.FragmentCandidateId, replayProvenance.FragmentCandidateId);
+      Assert.Equal(firstProvenance.ParserRunId, replayProvenance.ParserRunId);
+      Assert.Equal(firstProvenance.ImportedSourceId, replayProvenance.ImportedSourceId);
+      Assert.Equal(firstProvenance.PromotionIdentityHash, replayProvenance.PromotionIdentityHash);
+      Assert.Equal(firstProvenance.PromotionAttemptId, replayProvenance.PromotionAttemptId);
+    }
+    finally
+    {
+      DeleteEnvironmentIfPresent(environment);
+    }
+  }
+
+  [Fact]
+  public async Task ConsoleFormatterProvenanceChainDisplaysIdsAndBoundedMetadataOnly()
+  {
+    var environment = CreateEnvironmentPaths();
+
+    try
+    {
+      using var serviceProvider = CreateServiceProvider(environment);
+      var result = await KnowledgePromotionWorkflowBootstrapper.RunAsync(serviceProvider);
+      var output = KnowledgePromotionWorkflowConsoleFormatter.Format(result);
+
+      Assert.Contains(result.FirstPromotion.KnowledgeDocumentRevisionId!.ToString()!, output, StringComparison.Ordinal);
+      Assert.Contains(result.FirstPromotion.KnowledgeCitationId!.ToString()!, output, StringComparison.Ordinal);
+      Assert.Contains(result.FirstPromotion.KnowledgeDocumentId!.ToString()!, output, StringComparison.Ordinal);
+      Assert.Contains("Provenance", output, StringComparison.Ordinal);
+      Assert.Contains("Promoted", output, StringComparison.Ordinal);
+      Assert.Contains("CurrentAuthoritative", output, StringComparison.Ordinal);
+      Assert.Contains("Superseded", output, StringComparison.Ordinal);
+      Assert.Contains("Specification", output, StringComparison.Ordinal);
+      Assert.Contains("DerivedFrom", output, StringComparison.Ordinal);
+
+      Assert.DoesNotContain(environment.StorageRootPath, output, StringComparison.OrdinalIgnoreCase);
+      Assert.DoesNotContain(environment.DatabasePath, output, StringComparison.OrdinalIgnoreCase);
+      Assert.DoesNotContain("C:\\", output, StringComparison.OrdinalIgnoreCase);
+    }
+    finally
+    {
+      DeleteEnvironmentIfPresent(environment);
+    }
+  }
+
+  [Fact]
+  public async Task ProvenanceChainIncludesAllRequiredNodes()
+  {
+    var environment = CreateEnvironmentPaths();
+
+    try
+    {
+      using var serviceProvider = CreateServiceProvider(environment);
+      var result = await KnowledgePromotionWorkflowBootstrapper.RunAsync(serviceProvider);
+
+      await using var scope = serviceProvider.CreateAsyncScope();
+      var loadProvenance = scope.ServiceProvider.GetRequiredService<IQueryHandler<LoadPromotionProvenanceQuery, LoadPromotionProvenanceResult>>();
+
+      var provenance = await loadProvenance.HandleAsync(
+        new LoadPromotionProvenanceQuery { RevisionId = result.FirstPromotion.KnowledgeDocumentRevisionId });
+
+      Assert.NotEqual(default, provenance.Id);
+      Assert.Equal(result.AcceptedCandidateA.FragmentCandidateId, provenance.FragmentCandidateId);
+      Assert.False(string.IsNullOrWhiteSpace(provenance.ParserKey));
+      Assert.NotEqual(default, provenance.ImportedSourceId);
+      Assert.Equal(FragmentCandidateReviewState.HumanAccepted, provenance.ReviewState);
+      Assert.False(string.IsNullOrWhiteSpace(provenance.PromotionIdentityHash));
+      Assert.NotEqual(default, provenance.PromotionAttemptId);
+      Assert.Equal(result.FirstPromotion.KnowledgeDocumentRevisionId, provenance.PromotedRevisionId);
+      Assert.Equal(result.FirstPromotion.PromotionDiagnosticId, provenance.DiagnosticId);
+      Assert.False(string.IsNullOrWhiteSpace(provenance.ParserVersion));
+      Assert.False(string.IsNullOrWhiteSpace(provenance.ParserContractVersion));
+      Assert.False(string.IsNullOrWhiteSpace(provenance.ImportedSourceContentHash));
+
+      var output = KnowledgePromotionWorkflowConsoleFormatter.Format(result);
+      Assert.Contains("Provenance", output, StringComparison.Ordinal);
+      Assert.Contains("Accepted Candidate:", output, StringComparison.Ordinal);
+      Assert.Contains("HumanAccepted", output, StringComparison.Ordinal);
+      Assert.Contains("Promoted", output, StringComparison.Ordinal);
+      Assert.Contains("DerivedFrom", output, StringComparison.Ordinal);
+    }
+    finally
+    {
+      DeleteEnvironmentIfPresent(environment);
+    }
+  }
+
+  [Fact]
+  public async Task ProvenanceMetadataDoesNotExposeRawContent()
+  {
+    var environment = CreateEnvironmentPaths();
+
+    try
+    {
+      using var serviceProvider = CreateServiceProvider(environment);
+      var result = await KnowledgePromotionWorkflowBootstrapper.RunAsync(serviceProvider);
+      var output = KnowledgePromotionWorkflowConsoleFormatter.Format(result);
+
+      Assert.DoesNotContain("Clarifies the curing sequence", output, StringComparison.Ordinal);
+      Assert.DoesNotContain("Provide curing protection", output, StringComparison.Ordinal);
+      Assert.DoesNotContain("RFI-027 clarifies", output, StringComparison.Ordinal);
+      Assert.DoesNotContain("Revised curing requirements", output, StringComparison.Ordinal);
     }
     finally
     {

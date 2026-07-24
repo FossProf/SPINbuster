@@ -27,6 +27,7 @@ public sealed class PromoteFragmentCandidateUseCase
   private readonly IProjectRepository _projectRepository;
   private readonly IPromotionAttemptRepository _promotionAttemptRepository;
   private readonly IPromotionDiagnosticRepository _promotionDiagnosticRepository;
+  private readonly IPromotionProvenanceRepository _promotionProvenanceRepository;
   private readonly IPromotionRecordRepository _promotionRecordRepository;
   private readonly IUnitOfWork _unitOfWork;
 
@@ -42,6 +43,7 @@ public sealed class PromoteFragmentCandidateUseCase
     IPromotionDiagnosticRepository promotionDiagnosticRepository,
     IPromotionRecordRepository promotionRecordRepository,
     IPromotionAttemptRepository promotionAttemptRepository,
+    IPromotionProvenanceRepository promotionProvenanceRepository,
     IUnitOfWork unitOfWork,
     IClock clock,
     ICurrentUser currentUser,
@@ -59,6 +61,7 @@ public sealed class PromoteFragmentCandidateUseCase
     _promotionDiagnosticRepository = promotionDiagnosticRepository;
     _promotionRecordRepository = promotionRecordRepository;
     _promotionAttemptRepository = promotionAttemptRepository;
+    _promotionProvenanceRepository = promotionProvenanceRepository;
     _unitOfWork = unitOfWork;
     _clock = clock;
     _currentUser = currentUser;
@@ -206,7 +209,7 @@ public sealed class PromoteFragmentCandidateUseCase
         }
 
         var derivedFromSource = KnowledgeSubjectReference.ForRevision(candidate.ProjectId, knowledgeRevision.Id);
-        var derivedFromTarget = KnowledgeSubjectReference.ForDocument(candidate.ProjectId, knowledgeDocument.Id);
+        var derivedFromTarget = KnowledgeSubjectReference.ForImportedSource(candidate.ProjectId, candidate.ImportedSourceId);
         var existingDerivedFrom = await _knowledgeRelationshipRepository.FindByEndpointsAsync(
           candidate.ProjectId,
           derivedFromSource,
@@ -263,9 +266,32 @@ public sealed class PromoteFragmentCandidateUseCase
 
         promotionRecord.UpdateLatestAttempt(promotionAttempt.Id);
 
+        var provenance = new PromotionProvenance(
+          PromotionProvenanceId.New(),
+          candidate.ProjectId,
+          knowledgeRevision.Id,
+          diagnostic.Id,
+          candidate.Id,
+          candidate.SourceContentHash,
+          candidate.ReviewState,
+          candidate.ReviewedBy,
+          candidate.ReviewedAtUtc,
+          parserRun.Id,
+          parserRun.ParserKey,
+          parserRun.ParserVersion,
+          parserRun.ParserContractVersion,
+          parserRun.ParserContractHash,
+          importedSource.Id,
+          importedSource.ContentHash,
+          identity.Hash,
+          promotionAttempt.Id,
+          _currentUser.UserId.Value,
+          _clock.UtcNow);
+
         await _promotionDiagnosticRepository.AddAsync(diagnostic, cancellationToken);
         await _promotionRecordRepository.AddAsync(promotionRecord, cancellationToken);
         await _promotionAttemptRepository.AddAsync(promotionAttempt, cancellationToken);
+        await _promotionProvenanceRepository.AddAsync(provenance, cancellationToken);
         StageAuditEvents(knowledgeDocument.AuditTrail.Skip(auditCountBeforeDomainMutation));
         await _unitOfWork.CommitAsync(cancellationToken);
 

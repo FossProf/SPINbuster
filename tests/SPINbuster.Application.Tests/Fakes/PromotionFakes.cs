@@ -153,3 +153,35 @@ internal sealed class FakePromotionDiagnosticRepository : IPromotionDiagnosticRe
     return Task.CompletedTask;
   }
 }
+
+internal sealed class FakePromotionProvenanceRepository : IPromotionProvenanceRepository
+{
+  private readonly Dictionary<PromotionProvenanceId, PromotionProvenance> _provenances = [];
+
+  public List<PromotionProvenance> AddedProvenances { get; } = [];
+
+  public Task<PromotionProvenance?> GetByRevisionIdAsync(
+    KnowledgeDocumentRevisionId revisionId,
+    CancellationToken cancellationToken = default)
+  {
+    return Task.FromResult(
+      _provenances.Values.FirstOrDefault(p => p.PromotedRevisionId == revisionId));
+  }
+
+  public Task<PromotionProvenance?> GetByFragmentCandidateIdAsync(
+    FragmentCandidateId fragmentCandidateId,
+    CancellationToken cancellationToken = default)
+  {
+    return Task.FromResult(
+      _provenances.Values.FirstOrDefault(p => p.FragmentCandidateId == fragmentCandidateId));
+  }
+
+  public Task AddAsync(
+    PromotionProvenance provenance,
+    CancellationToken cancellationToken = default)
+  {
+    _provenances[provenance.Id] = provenance;
+    AddedProvenances.Add(provenance);
+    return Task.CompletedTask;
+  }
+}

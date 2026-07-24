@@ -542,12 +542,14 @@ internal static class InfrastructureMapper
         record.ProjectId,
         record.SourceKind,
         record.SourceDocumentId,
-        record.SourceRevisionId),
+        record.SourceRevisionId,
+        record.SourceImportedSourceId),
       ToSubjectReference(
         record.ProjectId,
         record.TargetKind,
         record.TargetDocumentId,
-        record.TargetRevisionId),
+        record.TargetRevisionId,
+        record.TargetImportedSourceId),
       record.RelationshipType,
       record.EvidenceOrRationale,
       record.CreatedBy,
@@ -566,10 +568,12 @@ internal static class InfrastructureMapper
       SourceKey = relationship.Source.ToStableKey(),
       SourceDocumentId = relationship.Source.DocumentId,
       SourceRevisionId = relationship.Source.RevisionId,
+      SourceImportedSourceId = relationship.Source.ImportedSourceId,
       TargetKind = relationship.Target.SubjectKind,
       TargetKey = relationship.Target.ToStableKey(),
       TargetDocumentId = relationship.Target.DocumentId,
       TargetRevisionId = relationship.Target.RevisionId,
+      TargetImportedSourceId = relationship.Target.ImportedSourceId,
       RelationshipType = relationship.RelationshipType,
       EvidenceOrRationale = relationship.EvidenceOrRationale,
       CreatedBy = relationship.CreatedBy,
@@ -839,14 +843,17 @@ internal static class InfrastructureMapper
     ProjectId projectId,
     KnowledgeSubjectKind subjectKind,
     KnowledgeDocumentId? documentId,
-    KnowledgeDocumentRevisionId? revisionId)
+    KnowledgeDocumentRevisionId? revisionId,
+    ImportedSourceId? importedSourceId = null)
   {
     return subjectKind switch
     {
       KnowledgeSubjectKind.Document when documentId is not null => KnowledgeSubjectReference.ForDocument(projectId, documentId.Value),
       KnowledgeSubjectKind.Revision when revisionId is not null => KnowledgeSubjectReference.ForRevision(projectId, revisionId.Value),
+      KnowledgeSubjectKind.ImportedSource when importedSourceId is not null => KnowledgeSubjectReference.ForImportedSource(projectId, importedSourceId.Value),
       KnowledgeSubjectKind.Document => throw new InvalidOperationException("Knowledge relationship document subjects must include a document ID."),
       KnowledgeSubjectKind.Revision => throw new InvalidOperationException("Knowledge relationship revision subjects must include a revision ID."),
+      KnowledgeSubjectKind.ImportedSource => throw new InvalidOperationException("Knowledge relationship imported source subjects must include an imported source ID."),
       _ => throw new InvalidOperationException($"Unsupported knowledge subject kind {subjectKind}."),
     };
   }
@@ -983,6 +990,59 @@ internal static class InfrastructureMapper
       KnowledgeCitationId = promotionDiagnostic.KnowledgeCitationId,
       SupersededExistingRevision = promotionDiagnostic.SupersededExistingRevision,
       SupersededRevisionId = promotionDiagnostic.SupersededRevisionId,
+    };
+  }
+
+  public static PromotionProvenance ToDomain(PromotionProvenanceRecord record)
+  {
+    return PromotionProvenance.Rehydrate(
+      record.Id,
+      record.ProjectId,
+      record.PromotedRevisionId,
+      record.DiagnosticId,
+      record.FragmentCandidateId,
+      record.FragmentSourceContentHash,
+      record.ReviewState,
+      record.ReviewedBy,
+      record.ReviewedAtUtc,
+      record.ParserRunId,
+      record.ParserKey,
+      record.ParserVersion,
+      record.ParserContractVersion,
+      record.ParserContractHash,
+      record.ImportedSourceId,
+      record.ImportedSourceContentHash,
+      record.PromotionIdentityHash,
+      record.PromotionAttemptId,
+      record.PromotedBy,
+      record.PromotedAtUtc);
+  }
+
+  public static PromotionProvenanceRecord ToRecord(PromotionProvenance provenance)
+  {
+    return new PromotionProvenanceRecord
+    {
+      Id = provenance.Id,
+      ProjectId = provenance.ProjectId,
+      PromotedRevisionId = provenance.PromotedRevisionId,
+      DiagnosticId = provenance.DiagnosticId,
+      FragmentCandidateId = provenance.FragmentCandidateId,
+      FragmentSourceContentHash = provenance.FragmentSourceContentHash,
+      ReviewState = provenance.ReviewState,
+      ReviewedBy = provenance.ReviewedBy,
+      ReviewedAtUtc = provenance.ReviewedAtUtc,
+      ParserRunId = provenance.ParserRunId,
+      ParserKey = provenance.ParserKey,
+      ParserVersion = provenance.ParserVersion,
+      ParserContractVersion = provenance.ParserContractVersion,
+      ParserContractHash = provenance.ParserContractHash,
+      ImportedSourceId = provenance.ImportedSourceId,
+      ImportedSourceContentHash = provenance.ImportedSourceContentHash,
+      PromotionIdentityHash = provenance.PromotionIdentityHash,
+      PromotionAttemptId = provenance.PromotionAttemptId,
+      PromotedBy = provenance.PromotedBy,
+      PromotedAtUtc = provenance.PromotedAtUtc,
+      PromotedAtUtcTicks = provenance.PromotedAtUtc.UtcDateTime.Ticks,
     };
   }
 }

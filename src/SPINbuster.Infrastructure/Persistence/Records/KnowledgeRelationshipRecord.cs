@@ -16,6 +16,8 @@ internal sealed class KnowledgeRelationshipRecord
 
   public KnowledgeDocumentRevisionId? SourceRevisionId { get; set; }
 
+  public ImportedSourceId? SourceImportedSourceId { get; set; }
+
   public KnowledgeSubjectKind TargetKind { get; set; }
 
   public string TargetKey { get; set; } = string.Empty;
@@ -23,6 +25,8 @@ internal sealed class KnowledgeRelationshipRecord
   public KnowledgeDocumentId? TargetDocumentId { get; set; }
 
   public KnowledgeDocumentRevisionId? TargetRevisionId { get; set; }
+
+  public ImportedSourceId? TargetImportedSourceId { get; set; }
 
   public KnowledgeRelationshipType RelationshipType { get; set; }
 

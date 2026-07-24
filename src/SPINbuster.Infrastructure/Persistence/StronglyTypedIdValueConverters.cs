@@ -109,4 +109,16 @@ internal static class StronglyTypedIdValueConverters
   public static readonly ValueConverter<PromotionDiagnosticId, Guid> PromotionDiagnosticId = new(
     value => value.Value,
     value => new PromotionDiagnosticId(value));
+
+  public static readonly ValueConverter<PromotionProvenanceId, Guid> PromotionProvenanceId = new(
+    value => value.Value,
+    value => new PromotionProvenanceId(value));
+
+  public static readonly ValueConverter<PromotionAttemptId, Guid> PromotionAttemptId = new(
+    value => value.Value,
+    value => new PromotionAttemptId(value));
+
+  public static readonly ValueConverter<PromotionRecordId, Guid> PromotionRecordId = new(
+    value => value.Value,
+    value => new PromotionRecordId(value));
 }

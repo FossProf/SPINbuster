@@ -236,6 +236,156 @@ public readonly record struct PromotionDiagnosticId
   public override string ToString() => Value.ToString("D");
 }
 
+public readonly record struct PromotionProvenanceId
+{
+  public PromotionProvenanceId(Guid value)
+  {
+    Value = DomainGuards.NotEmpty(value, nameof(value));
+  }
+
+  public Guid Value { get; }
+
+  public static PromotionProvenanceId New() => new(Guid.NewGuid());
+
+  public override string ToString() => Value.ToString("D");
+}
+
+public sealed class PromotionProvenance
+{
+  public PromotionProvenance(
+    PromotionProvenanceId id,
+    ProjectId projectId,
+    KnowledgeDocumentRevisionId promotedRevisionId,
+    PromotionDiagnosticId diagnosticId,
+    FragmentCandidateId fragmentCandidateId,
+    string fragmentSourceContentHash,
+    FragmentCandidateReviewState reviewState,
+    string? reviewedBy,
+    DateTimeOffset? reviewedAtUtc,
+    ParserRunId parserRunId,
+    string parserKey,
+    string parserVersion,
+    string parserContractVersion,
+    string parserContractHash,
+    ImportedSourceId importedSourceId,
+    string importedSourceContentHash,
+    string promotionIdentityHash,
+    PromotionAttemptId promotionAttemptId,
+    string promotedBy,
+    DateTimeOffset promotedAtUtc)
+  {
+    Id = id;
+    ProjectId = projectId;
+    PromotedRevisionId = promotedRevisionId;
+    DiagnosticId = diagnosticId;
+    FragmentCandidateId = fragmentCandidateId;
+    FragmentSourceContentHash = DomainGuards.NotNullOrWhiteSpace(fragmentSourceContentHash, nameof(fragmentSourceContentHash));
+    ReviewState = reviewState;
+    ReviewedBy = reviewedBy;
+    ReviewedAtUtc = reviewedAtUtc;
+    ParserRunId = parserRunId;
+    ParserKey = DomainGuards.NotNullOrWhiteSpace(parserKey, nameof(parserKey));
+    ParserVersion = DomainGuards.NotNullOrWhiteSpace(parserVersion, nameof(parserVersion));
+    ParserContractVersion = DomainGuards.NotNullOrWhiteSpace(parserContractVersion, nameof(parserContractVersion));
+    ParserContractHash = DomainGuards.NotNullOrWhiteSpace(parserContractHash, nameof(parserContractHash));
+    ImportedSourceId = importedSourceId;
+    ImportedSourceContentHash = DomainGuards.NotNullOrWhiteSpace(importedSourceContentHash, nameof(importedSourceContentHash));
+    PromotionIdentityHash = DomainGuards.NotNullOrWhiteSpace(promotionIdentityHash, nameof(promotionIdentityHash));
+    PromotionAttemptId = promotionAttemptId;
+    PromotedBy = DomainGuards.NotNullOrWhiteSpace(promotedBy, nameof(promotedBy));
+    PromotedAtUtc = DomainGuards.NotDefault(promotedAtUtc, nameof(promotedAtUtc));
+  }
+
+  private PromotionProvenance()
+  {
+  }
+
+  public PromotionProvenanceId Id { get; private set; }
+
+  public ProjectId ProjectId { get; private set; }
+
+  public KnowledgeDocumentRevisionId PromotedRevisionId { get; private set; }
+
+  public PromotionDiagnosticId DiagnosticId { get; private set; }
+
+  public FragmentCandidateId FragmentCandidateId { get; private set; }
+
+  public string FragmentSourceContentHash { get; private set; } = string.Empty;
+
+  public FragmentCandidateReviewState ReviewState { get; private set; }
+
+  public string? ReviewedBy { get; private set; }
+
+  public DateTimeOffset? ReviewedAtUtc { get; private set; }
+
+  public ParserRunId ParserRunId { get; private set; }
+
+  public string ParserKey { get; private set; } = string.Empty;
+
+  public string ParserVersion { get; private set; } = string.Empty;
+
+  public string ParserContractVersion { get; private set; } = string.Empty;
+
+  public string ParserContractHash { get; private set; } = string.Empty;
+
+  public ImportedSourceId ImportedSourceId { get; private set; }
+
+  public string ImportedSourceContentHash { get; private set; } = string.Empty;
+
+  public string PromotionIdentityHash { get; private set; } = string.Empty;
+
+  public PromotionAttemptId PromotionAttemptId { get; private set; }
+
+  public string PromotedBy { get; private set; } = string.Empty;
+
+  public DateTimeOffset PromotedAtUtc { get; private set; }
+
+  public static PromotionProvenance Rehydrate(
+    PromotionProvenanceId id,
+    ProjectId projectId,
+    KnowledgeDocumentRevisionId promotedRevisionId,
+    PromotionDiagnosticId diagnosticId,
+    FragmentCandidateId fragmentCandidateId,
+    string fragmentSourceContentHash,
+    FragmentCandidateReviewState reviewState,
+    string? reviewedBy,
+    DateTimeOffset? reviewedAtUtc,
+    ParserRunId parserRunId,
+    string parserKey,
+    string parserVersion,
+    string parserContractVersion,
+    string parserContractHash,
+    ImportedSourceId importedSourceId,
+    string importedSourceContentHash,
+    string promotionIdentityHash,
+    PromotionAttemptId promotionAttemptId,
+    string promotedBy,
+    DateTimeOffset promotedAtUtc)
+  {
+    return new PromotionProvenance(
+      id,
+      projectId,
+      promotedRevisionId,
+      diagnosticId,
+      fragmentCandidateId,
+      fragmentSourceContentHash,
+      reviewState,
+      reviewedBy,
+      reviewedAtUtc,
+      parserRunId,
+      parserKey,
+      parserVersion,
+      parserContractVersion,
+      parserContractHash,
+      importedSourceId,
+      importedSourceContentHash,
+      promotionIdentityHash,
+      promotionAttemptId,
+      promotedBy,
+      promotedAtUtc);
+  }
+}
+
 public sealed class PromotionDiagnostic
 {
   private const int MaxFailureReasonLength = 2_000;

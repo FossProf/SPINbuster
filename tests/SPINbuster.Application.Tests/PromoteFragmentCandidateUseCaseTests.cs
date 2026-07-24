@@ -444,6 +444,49 @@ public sealed class PromoteFragmentCandidateUseCaseTests
     Assert.Equal(2, fixture.KnowledgeRelationshipRepository.AddedRelationships.Count);
   }
 
+  [Fact]
+  public async Task PromotionSuccessPersistsProvenanceInSameUoWCommit()
+  {
+    var fixture = CreateFixture();
+    var (candidateId, sourceContentHash, projectId) = await SeedReadyCandidateAsync(fixture);
+
+    var result = await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
+      candidateId,
+      KnowledgeDocumentType.Specification,
+      "Concrete Spec",
+      "EXT-001",
+      "Civil"));
+
+    Assert.Equal(PromotionDiagnosticStatus.Promoted, result.Status);
+    Assert.Single(fixture.PromotionProvenanceRepository.AddedProvenances);
+
+    var provenance = fixture.PromotionProvenanceRepository.AddedProvenances[0];
+    Assert.Equal(projectId, provenance.ProjectId);
+    Assert.Equal(result.KnowledgeDocumentRevisionId, provenance.PromotedRevisionId);
+    Assert.Equal(result.PromotionDiagnosticId, provenance.DiagnosticId);
+    Assert.Equal(candidateId, provenance.FragmentCandidateId);
+    Assert.Equal(sourceContentHash, provenance.FragmentSourceContentHash);
+    Assert.Equal(fixture.CurrentUser.UserId.Value, provenance.PromotedBy);
+  }
+
+  [Fact]
+  public async Task CommitFailureReportsNoPromotionSuccessAndLeavesNoPartialProvenance()
+  {
+    var fixture = CreateFixture();
+    var (candidateId, _, _) = await SeedReadyCandidateAsync(fixture);
+    fixture.UnitOfWork.ThrowOnCommit = true;
+
+    await Assert.ThrowsAsync<InvalidOperationException>(() =>
+      CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
+        candidateId,
+        KnowledgeDocumentType.Specification,
+        "Concrete Spec",
+        "EXT-001",
+        "Civil")));
+
+    Assert.Equal(0, fixture.UnitOfWork.CommitCount);
+  }
+
   private static async Task<FragmentCandidateId> SeedSecondCandidateInSameDocumentAsync(
     PromotionFixture fixture, ProjectId projectId)
   {
@@ -542,6 +585,7 @@ public sealed class PromoteFragmentCandidateUseCaseTests
       fixture.PromotionDiagnosticRepository,
       fixture.PromotionRecordRepository,
       fixture.PromotionAttemptRepository,
+      fixture.PromotionProvenanceRepository,
       fixture.UnitOfWork,
       fixture.Clock,
       fixture.CurrentUser,
@@ -646,6 +690,7 @@ public sealed class PromoteFragmentCandidateUseCaseTests
       new FakePromotionDiagnosticRepository(),
       new FakePromotionRecordRepository(),
       new FakePromotionAttemptRepository(),
+      new FakePromotionProvenanceRepository(),
       new FakeUnitOfWork(),
       new FakeClock(TestTime),
       new FakeCurrentUser("promoter@example.invalid"),
@@ -664,6 +709,7 @@ public sealed class PromoteFragmentCandidateUseCaseTests
     FakePromotionDiagnosticRepository PromotionDiagnosticRepository,
     FakePromotionRecordRepository PromotionRecordRepository,
     FakePromotionAttemptRepository PromotionAttemptRepository,
+    FakePromotionProvenanceRepository PromotionProvenanceRepository,
     FakeUnitOfWork UnitOfWork,
     FakeClock Clock,
     FakeCurrentUser CurrentUser,

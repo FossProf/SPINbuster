@@ -68,6 +68,8 @@ public sealed class SpinbusterDbContext : DbContext
 
   internal DbSet<PromotionDiagnosticRecord> PromotionDiagnostics => Set<PromotionDiagnosticRecord>();
 
+  internal DbSet<PromotionProvenanceRecord> PromotionProvenances => Set<PromotionProvenanceRecord>();
+
   protected override void OnModelCreating(ModelBuilder modelBuilder)
   {
     SpinbusterModelConfiguration.Configure(modelBuilder);

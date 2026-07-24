@@ -85,6 +85,7 @@ public enum KnowledgeSubjectKind
 {
   Document = 0,
   Revision = 1,
+  ImportedSource = 2,
 }
 
 public readonly record struct KnowledgeSubjectReference
@@ -93,12 +94,14 @@ public readonly record struct KnowledgeSubjectReference
     ProjectId projectId,
     KnowledgeSubjectKind subjectKind,
     KnowledgeDocumentId? documentId,
-    KnowledgeDocumentRevisionId? revisionId)
+    KnowledgeDocumentRevisionId? revisionId,
+    ImportedSourceId? importedSourceId)
   {
     ProjectId = projectId;
     SubjectKind = subjectKind;
     DocumentId = documentId;
     RevisionId = revisionId;
+    ImportedSourceId = importedSourceId;
   }
 
   public ProjectId ProjectId { get; }
@@ -109,11 +112,16 @@ public readonly record struct KnowledgeSubjectReference
 
   public KnowledgeDocumentRevisionId? RevisionId { get; }
 
+  public ImportedSourceId? ImportedSourceId { get; }
+
   public static KnowledgeSubjectReference ForDocument(ProjectId projectId, KnowledgeDocumentId documentId)
-    => new(projectId, KnowledgeSubjectKind.Document, documentId, null);
+    => new(projectId, KnowledgeSubjectKind.Document, documentId, null, null);
 
   public static KnowledgeSubjectReference ForRevision(ProjectId projectId, KnowledgeDocumentRevisionId revisionId)
-    => new(projectId, KnowledgeSubjectKind.Revision, null, revisionId);
+    => new(projectId, KnowledgeSubjectKind.Revision, null, revisionId, null);
+
+  public static KnowledgeSubjectReference ForImportedSource(ProjectId projectId, ImportedSourceId importedSourceId)
+    => new(projectId, KnowledgeSubjectKind.ImportedSource, null, null, importedSourceId);
 
   public string ToStableKey()
   {
@@ -121,6 +129,7 @@ public readonly record struct KnowledgeSubjectReference
     {
       KnowledgeSubjectKind.Document => $"Document:{DocumentId}",
       KnowledgeSubjectKind.Revision => $"Revision:{RevisionId}",
+      KnowledgeSubjectKind.ImportedSource => $"ImportedSource:{ImportedSourceId}",
       _ => throw new DomainInvariantException($"Unsupported {nameof(KnowledgeSubjectKind)} value {SubjectKind}."),
     };
   }

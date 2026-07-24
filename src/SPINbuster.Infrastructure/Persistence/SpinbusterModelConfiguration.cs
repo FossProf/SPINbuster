@@ -21,6 +21,7 @@ internal static class SpinbusterModelConfiguration
     ConfigureDocumentEngine(modelBuilder);
     ConfigureParserRuns(modelBuilder);
     ConfigurePromotionDiagnostics(modelBuilder);
+    ConfigurePromotionProvenances(modelBuilder);
   }
 
   private static void ConfigureProjects(ModelBuilder modelBuilder)
@@ -383,6 +384,8 @@ internal static class SpinbusterModelConfiguration
     relationshipBuilder.Property(record => record.TargetKey).HasMaxLength(128).IsRequired();
     relationshipBuilder.Property(record => record.TargetDocumentId).HasConversion(StronglyTypedIdValueConverters.KnowledgeDocumentId);
     relationshipBuilder.Property(record => record.TargetRevisionId).HasConversion(StronglyTypedIdValueConverters.KnowledgeDocumentRevisionId);
+    relationshipBuilder.Property(record => record.SourceImportedSourceId).HasConversion(StronglyTypedIdValueConverters.ImportedSourceId);
+    relationshipBuilder.Property(record => record.TargetImportedSourceId).HasConversion(StronglyTypedIdValueConverters.ImportedSourceId);
     relationshipBuilder.Property(record => record.RelationshipType).IsRequired();
     relationshipBuilder.Property(record => record.EvidenceOrRationale).HasColumnType("TEXT").IsRequired();
     relationshipBuilder.Property(record => record.CreatedBy).HasMaxLength(256).IsRequired();
@@ -632,6 +635,54 @@ internal static class SpinbusterModelConfiguration
     builder.HasOne<FragmentCandidateRecord>()
       .WithMany()
       .HasForeignKey(record => record.FragmentCandidateId)
+      .OnDelete(DeleteBehavior.Restrict);
+    builder.HasOne<ProjectRecord>()
+      .WithMany()
+      .HasForeignKey(record => record.ProjectId)
+      .OnDelete(DeleteBehavior.Restrict);
+  }
+
+  private static void ConfigurePromotionProvenances(ModelBuilder modelBuilder)
+  {
+    var builder = modelBuilder.Entity<PromotionProvenanceRecord>();
+    builder.ToTable("promotion_provenances");
+    builder.HasKey(record => record.Id);
+    builder.Property(record => record.Id).HasConversion(StronglyTypedIdValueConverters.PromotionProvenanceId).ValueGeneratedNever();
+    builder.Property(record => record.ProjectId).HasConversion(StronglyTypedIdValueConverters.ProjectId).IsRequired();
+    builder.Property(record => record.PromotedRevisionId).HasConversion(StronglyTypedIdValueConverters.KnowledgeDocumentRevisionId).IsRequired();
+    builder.Property(record => record.DiagnosticId).HasConversion(StronglyTypedIdValueConverters.PromotionDiagnosticId).IsRequired();
+    builder.Property(record => record.FragmentCandidateId).HasConversion(StronglyTypedIdValueConverters.FragmentCandidateId).IsRequired();
+    builder.Property(record => record.FragmentSourceContentHash).HasColumnType("TEXT").IsRequired();
+    builder.Property(record => record.ReviewState).IsRequired();
+    builder.Property(record => record.ReviewedBy).HasColumnType("TEXT");
+    builder.Property(record => record.ReviewedAtUtc);
+    builder.Property(record => record.ParserRunId).HasConversion(StronglyTypedIdValueConverters.ParserRunId).IsRequired();
+    builder.Property(record => record.ParserKey).HasColumnType("TEXT").IsRequired();
+    builder.Property(record => record.ParserVersion).HasColumnType("TEXT").IsRequired();
+    builder.Property(record => record.ParserContractVersion).HasColumnType("TEXT").IsRequired();
+    builder.Property(record => record.ParserContractHash).HasColumnType("TEXT").IsRequired();
+    builder.Property(record => record.ImportedSourceId).HasConversion(StronglyTypedIdValueConverters.ImportedSourceId).IsRequired();
+    builder.Property(record => record.ImportedSourceContentHash).HasColumnType("TEXT").IsRequired();
+    builder.Property(record => record.PromotionIdentityHash).HasColumnType("TEXT").IsRequired();
+    builder.Property(record => record.PromotionAttemptId).HasConversion(StronglyTypedIdValueConverters.PromotionAttemptId).IsRequired();
+    builder.Property(record => record.PromotedBy).HasColumnType("TEXT").IsRequired();
+    builder.Property(record => record.PromotedAtUtc).IsRequired();
+    builder.Property(record => record.PromotedAtUtcTicks).IsRequired();
+    builder.HasIndex(record => record.ProjectId);
+    builder.HasIndex(record => record.PromotedRevisionId).IsUnique();
+    builder.HasIndex(record => record.FragmentCandidateId).IsUnique();
+    builder.HasIndex(record => record.DiagnosticId).IsUnique();
+    builder.HasOne<KnowledgeDocumentRevisionRecord>()
+      .WithMany()
+      .HasForeignKey(record => record.PromotedRevisionId)
+      .OnDelete(DeleteBehavior.Restrict);
+    builder.HasOne<FragmentCandidateRecord>()
+      .WithMany()
+      .HasForeignKey(record => record.FragmentCandidateId)
+      .OnDelete(DeleteBehavior.Restrict);
+    builder.HasOne<PromotionDiagnosticRecord>()
+      .WithMany()
+      .HasForeignKey(record => record.DiagnosticId)
       .OnDelete(DeleteBehavior.Restrict);
     builder.HasOne<ProjectRecord>()
       .WithMany()
