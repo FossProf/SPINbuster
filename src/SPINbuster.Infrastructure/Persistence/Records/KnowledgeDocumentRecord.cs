@@ -24,6 +24,8 @@ internal sealed class KnowledgeDocumentRecord
 
   public int ConcurrencyToken { get; set; }
 
+  public string CanonicalIdentityHash { get; set; } = string.Empty;
+
   public string CreatedBy { get; set; } = string.Empty;
 
   public DateTimeOffset CreatedAtUtc { get; set; }

@@ -20,4 +20,9 @@ public sealed class SqliteAuditRecorder : IAuditRecorder
     _stagedAuditEvents.Clear();
     return stagedAuditEvents;
   }
+
+  internal void Clear()
+  {
+    _stagedAuditEvents.Clear();
+  }
 }

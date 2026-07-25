@@ -73,7 +73,6 @@ public sealed class SqliteKnowledgeDocumentRepository : IKnowledgeDocumentReposi
 
   public async Task UpdateAsync(
     KnowledgeDocument knowledgeDocument,
-    int expectedConcurrencyToken,
     CancellationToken cancellationToken = default)
   {
     var existing = await _dbContext.KnowledgeDocuments.FindAsync(
@@ -81,12 +80,6 @@ public sealed class SqliteKnowledgeDocumentRepository : IKnowledgeDocumentReposi
       cancellationToken)
       ?? throw new ConcurrencyConflictException(
         $"Knowledge document {knowledgeDocument.Id} not found in database.");
-
-    if (existing.ConcurrencyToken != expectedConcurrencyToken)
-    {
-      throw new ConcurrencyConflictException(
-        $"Knowledge document {knowledgeDocument.Id} was modified by another process. Expected token {expectedConcurrencyToken}, found {existing.ConcurrencyToken}.");
-    }
 
     existing.CurrentAuthoritativeRevisionId = knowledgeDocument.CurrentAuthoritativeRevisionId;
     existing.Lifecycle = knowledgeDocument.Lifecycle;

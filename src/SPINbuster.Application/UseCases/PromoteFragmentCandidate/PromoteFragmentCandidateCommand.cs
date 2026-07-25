@@ -8,4 +8,5 @@ public sealed record PromoteFragmentCandidateCommand(
   KnowledgeDocumentType DocumentType,
   string CanonicalTitle,
   string? ExternalReferenceNumber,
-  string? DisciplineOrCategory) : ICommand<PromoteFragmentCandidateResult>;
+  string? DisciplineOrCategory,
+  KnowledgeSourceAuthorityLevel SourceAuthorityLevel = KnowledgeSourceAuthorityLevel.Informational) : ICommand<PromoteFragmentCandidateResult>;

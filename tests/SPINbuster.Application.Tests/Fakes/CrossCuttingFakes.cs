@@ -102,4 +102,8 @@ internal sealed class FakeUnitOfWork : IUnitOfWork
     CommitCount++;
     return Task.CompletedTask;
   }
+
+  public void DiscardChanges()
+  {
+  }
 }

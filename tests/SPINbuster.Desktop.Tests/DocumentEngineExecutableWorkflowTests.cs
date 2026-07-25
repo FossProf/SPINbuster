@@ -914,6 +914,10 @@ public sealed class DocumentEngineExecutableWorkflowTests
 
       await _inner.CommitAsync(cancellationToken);
     }
+
+    public void DiscardChanges()
+    {
+    }
   }
 
   private sealed record SeededDocumentProject(

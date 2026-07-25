@@ -428,7 +428,7 @@ public sealed class SqlitePromotionProvenancePersistenceTests : IDisposable
     Assert.Equal(1, tableExists);
 
     var appliedMigrations = (await dbContext.Database.GetAppliedMigrationsAsync()).ToArray();
-    Assert.Equal(14, appliedMigrations.Length);
+    Assert.Equal(15, appliedMigrations.Length);
   }
 
   [Fact]

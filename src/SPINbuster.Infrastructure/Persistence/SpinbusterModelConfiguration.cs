@@ -321,11 +321,13 @@ internal static class SpinbusterModelConfiguration
     documentBuilder.Property(record => record.DisciplineOrCategory).HasMaxLength(256);
     documentBuilder.Property(record => record.CurrentAuthoritativeRevisionId).HasConversion(StronglyTypedIdValueConverters.KnowledgeDocumentRevisionId);
     documentBuilder.Property(record => record.Lifecycle).IsRequired();
-    documentBuilder.Property(record => record.ConcurrencyToken).IsRequired().HasDefaultValue(0);
+    documentBuilder.Property(record => record.ConcurrencyToken).IsRequired().HasDefaultValue(0).IsConcurrencyToken();
+    documentBuilder.Property(record => record.CanonicalIdentityHash).HasMaxLength(128).IsRequired();
     documentBuilder.Property(record => record.CreatedBy).HasMaxLength(256).IsRequired();
     documentBuilder.Property(record => record.CreatedAtUtc).IsRequired();
     documentBuilder.HasIndex(record => record.ProjectId);
     documentBuilder.HasIndex(record => new { record.ProjectId, record.DocumentType });
+    documentBuilder.HasIndex(record => new { record.ProjectId, record.CanonicalIdentityHash }).IsUnique();
     documentBuilder.HasIndex(record => record.CurrentAuthoritativeRevisionId).IsUnique();
     documentBuilder.HasMany(record => record.Revisions)
       .WithOne()

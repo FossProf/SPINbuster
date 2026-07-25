@@ -482,6 +482,7 @@ internal static class InfrastructureMapper
       CurrentAuthoritativeRevisionId = knowledgeDocument.CurrentAuthoritativeRevisionId,
       Lifecycle = knowledgeDocument.Lifecycle,
       ConcurrencyToken = knowledgeDocument.ConcurrencyToken,
+      CanonicalIdentityHash = knowledgeDocument.Identity.Hash,
       CreatedBy = knowledgeDocument.CreatedBy,
       CreatedAtUtc = knowledgeDocument.CreatedAtUtc,
     };

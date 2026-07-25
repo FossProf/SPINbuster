@@ -15,7 +15,7 @@ public sealed class SqliteConcurrencyGuardTests : IDisposable
     $"{Guid.NewGuid():N}.sqlite");
 
   [Fact]
-  public async Task UpdateSucceedsWhenTokenMatches()
+  public async Task UpdateSucceedsWhenNoConcurrentModification()
   {
     var documentId = await SeedTestDataAsync();
 
@@ -26,7 +26,7 @@ public sealed class SqliteConcurrencyGuardTests : IDisposable
       Assert.NotNull(domainDocument);
       Assert.Equal(0, domainDocument.ConcurrencyToken);
 
-      await repository.UpdateAsync(domainDocument, 0);
+      await repository.UpdateAsync(domainDocument);
       await dbContext.SaveChangesAsync();
     }
 
@@ -40,29 +40,29 @@ public sealed class SqliteConcurrencyGuardTests : IDisposable
   }
 
   [Fact]
-  public async Task UpdateThrowsWhenTokenMismatched()
+  public async Task ConcurrentUpdateThrowsDbUpdateConcurrencyException()
   {
     var documentId = await SeedTestDataAsync();
 
-    await using (var dbContext = CreateDbContext())
+    await using (var contextB = CreateDbContext())
     {
-      var repository = new SqliteKnowledgeDocumentRepository(dbContext);
-      var domainDocument = await repository.GetByIdAsync(documentId);
-      Assert.NotNull(domainDocument);
+      var trackedRecord = await contextB.KnowledgeDocuments.FindAsync(documentId);
+      Assert.NotNull(trackedRecord);
+      Assert.Equal(0, trackedRecord.ConcurrencyToken);
 
-      await repository.UpdateAsync(domainDocument, 0);
-      await dbContext.SaveChangesAsync();
-    }
+      await using (var contextA = CreateDbContext())
+      {
+        var repository = new SqliteKnowledgeDocumentRepository(contextA);
+        var doc = await repository.GetByIdAsync(documentId);
+        Assert.NotNull(doc);
+        await repository.UpdateAsync(doc);
+        await contextA.SaveChangesAsync();
+      }
 
-    await using (var staleContext = CreateDbContext())
-    {
-      var repository = new SqliteKnowledgeDocumentRepository(staleContext);
-      var staleDocument = await repository.GetByIdAsync(documentId);
-      Assert.NotNull(staleDocument);
-      Assert.Equal(1, staleDocument.ConcurrencyToken);
+      trackedRecord.Lifecycle = KnowledgeDocumentLifecycle.Archived;
 
-      await Assert.ThrowsAsync<ConcurrencyConflictException>(
-        () => repository.UpdateAsync(staleDocument, 0));
+      await Assert.ThrowsAsync<DbUpdateConcurrencyException>(
+        () => contextB.SaveChangesAsync());
     }
   }
 
@@ -78,7 +78,7 @@ public sealed class SqliteConcurrencyGuardTests : IDisposable
       Assert.NotNull(doc);
       Assert.Equal(0, doc.ConcurrencyToken);
 
-      await repository.UpdateAsync(doc, 0);
+      await repository.UpdateAsync(doc);
       await dbContext.SaveChangesAsync();
     }
 
@@ -92,7 +92,7 @@ public sealed class SqliteConcurrencyGuardTests : IDisposable
   }
 
   [Fact]
-  public async Task ConcurrentUpdatesSecondFails()
+  public async Task DoubleUpdateOnSameContextIncrementsTokenTwice()
   {
     var documentId = await SeedTestDataAsync();
 
@@ -101,19 +101,37 @@ public sealed class SqliteConcurrencyGuardTests : IDisposable
       var repository = new SqliteKnowledgeDocumentRepository(dbContext);
       var doc = await repository.GetByIdAsync(documentId);
       Assert.NotNull(doc);
+      Assert.Equal(0, doc.ConcurrencyToken);
 
-      await repository.UpdateAsync(doc, 0);
+      await repository.UpdateAsync(doc);
       await dbContext.SaveChangesAsync();
     }
 
-    await using (var staleContext = CreateDbContext())
+    await using (var verifyContext = CreateDbContext())
     {
-      var repository = new SqliteKnowledgeDocumentRepository(staleContext);
-      var staleDoc = await repository.GetByIdAsync(documentId);
-      Assert.NotNull(staleDoc);
+      var repository = new SqliteKnowledgeDocumentRepository(verifyContext);
+      var doc = await repository.GetByIdAsync(documentId);
+      Assert.NotNull(doc);
+      Assert.Equal(1, doc.ConcurrencyToken);
+    }
 
-      await Assert.ThrowsAsync<ConcurrencyConflictException>(
-        () => repository.UpdateAsync(staleDoc, 99));
+    await using (var secondUpdateContext = CreateDbContext())
+    {
+      var repository = new SqliteKnowledgeDocumentRepository(secondUpdateContext);
+      var doc = await repository.GetByIdAsync(documentId);
+      Assert.NotNull(doc);
+      Assert.Equal(1, doc.ConcurrencyToken);
+
+      await repository.UpdateAsync(doc);
+      await secondUpdateContext.SaveChangesAsync();
+    }
+
+    await using (var finalVerifyContext = CreateDbContext())
+    {
+      var repository = new SqliteKnowledgeDocumentRepository(finalVerifyContext);
+      var doc = await repository.GetByIdAsync(documentId);
+      Assert.NotNull(doc);
+      Assert.Equal(2, doc.ConcurrencyToken);
     }
   }
 
@@ -135,6 +153,7 @@ public sealed class SqliteConcurrencyGuardTests : IDisposable
       CanonicalTitle = "Test Document",
       Lifecycle = KnowledgeDocumentLifecycle.Active,
       ConcurrencyToken = 0,
+      CanonicalIdentityHash = "test-hash",
       CreatedBy = "system",
       CreatedAtUtc = DateTimeOffset.UtcNow,
     };

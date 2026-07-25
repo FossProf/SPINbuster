@@ -54,6 +54,20 @@ public sealed class SqliteUnitOfWork : IUnitOfWork
       await transaction.CommitAsync(cancellationToken);
       _logger.LogDebug("Transaction committed with {AuditEventCount} audit events", stagedAuditEvents.Count);
     }
+    catch (DbUpdateConcurrencyException exception)
+    {
+      await transaction.RollbackAsync(cancellationToken);
+      DiscardChanges();
+      _logger.LogWarning(exception, "Concurrency conflict detected during commit; changes discarded");
+      throw new ConcurrencyConflictException(
+        $"Concurrency conflict during commit: {exception.Message}", exception);
+    }
+    catch (DbUpdateException exception)
+    {
+      await transaction.RollbackAsync(cancellationToken);
+      _logger.LogWarning(exception, "Database update failed; transaction rolled back");
+      throw;
+    }
     catch
     {
       await transaction.RollbackAsync(cancellationToken);
@@ -99,5 +113,15 @@ public sealed class SqliteUnitOfWork : IUnitOfWork
     {
       handler.Restore(entry, reference);
     }
+  }
+
+  public void DiscardChanges()
+  {
+    foreach (var entry in _dbContext.ChangeTracker.Entries().ToList())
+    {
+      entry.State = EntityState.Detached;
+    }
+
+    _auditRecorder.Clear();
   }
 }

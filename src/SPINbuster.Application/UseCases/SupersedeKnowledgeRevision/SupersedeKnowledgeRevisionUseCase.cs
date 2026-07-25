@@ -61,7 +61,7 @@ public sealed class SupersedeKnowledgeRevisionUseCase
       _currentUser.UserId.Value,
       _clock.UtcNow);
 
-    await _knowledgeDocumentRepository.UpdateAsync(knowledgeDocument, knowledgeDocument.ConcurrencyToken, cancellationToken);
+    await _knowledgeDocumentRepository.UpdateAsync(knowledgeDocument, cancellationToken);
     await _knowledgeRevisionRepository.UpdateAsync(outcome.SupersededRevision, cancellationToken);
     await _knowledgeRevisionRepository.AddAsync(outcome.SuccessorRevision, cancellationToken);
     StageAuditEvents(AuditTrailSlice.GetNewEvents(knowledgeDocument, initialAuditCount));

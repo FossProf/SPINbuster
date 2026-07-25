@@ -94,7 +94,7 @@ public sealed class SqliteKnowledgeEnginePersistenceTests : IDisposable
       var revisionRepository = new SqliteKnowledgeRevisionRepository(dbContext);
       var citationRepository = new SqliteKnowledgeCitationRepository(dbContext);
 
-      await documentRepository.UpdateAsync(seededDocument.Document, seededDocument.Document.ConcurrencyToken);
+      await documentRepository.UpdateAsync(seededDocument.Document);
       await revisionRepository.AddAsync(initialRevision);
       await citationRepository.AddAsync(new KnowledgeCitation(
         KnowledgeCitationId.New(),
@@ -134,7 +134,7 @@ public sealed class SqliteKnowledgeEnginePersistenceTests : IDisposable
       var revisionRepository = new SqliteKnowledgeRevisionRepository(updateContext);
       var citationRepository = new SqliteKnowledgeCitationRepository(updateContext);
 
-      await documentRepository.UpdateAsync(detachedDocument, detachedDocument.ConcurrencyToken);
+      await documentRepository.UpdateAsync(detachedDocument);
       await revisionRepository.UpdateAsync(supersession.SupersededRevision);
       await revisionRepository.AddAsync(supersession.SuccessorRevision);
       await citationRepository.AddAsync(new KnowledgeCitation(
@@ -191,7 +191,7 @@ public sealed class SqliteKnowledgeEnginePersistenceTests : IDisposable
     {
       var auditRecorder = new SqliteAuditRecorder();
       var unitOfWork = new SqliteUnitOfWork(seedContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
-      await new SqliteKnowledgeDocumentRepository(seedContext).UpdateAsync(seededDocument.Document, seededDocument.Document.ConcurrencyToken);
+      await new SqliteKnowledgeDocumentRepository(seedContext).UpdateAsync(seededDocument.Document);
       await new SqliteKnowledgeRevisionRepository(seedContext).AddAsync(initialRevision);
       StageAuditEvents(auditRecorder, seededDocument.Document.AuditTrail.Skip(seededDocument.InitialAuditCount));
       await unitOfWork.CommitAsync();
@@ -332,7 +332,7 @@ public sealed class SqliteKnowledgeEnginePersistenceTests : IDisposable
       var auditRecorder = new SqliteAuditRecorder();
       var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
 
-      await new SqliteKnowledgeDocumentRepository(dbContext).UpdateAsync(seededDocument.Document, seededDocument.Document.ConcurrencyToken);
+      await new SqliteKnowledgeDocumentRepository(dbContext).UpdateAsync(seededDocument.Document);
       await new SqliteKnowledgeRevisionRepository(dbContext).AddAsync(revision);
       StageAuditEvents(auditRecorder, seededDocument.Document.AuditTrail.Skip(seededDocument.InitialAuditCount));
       await unitOfWork.CommitAsync();
@@ -384,7 +384,7 @@ public sealed class SqliteKnowledgeEnginePersistenceTests : IDisposable
       var auditRecorder = new SqliteAuditRecorder();
       var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
 
-      await new SqliteKnowledgeDocumentRepository(dbContext).UpdateAsync(seededDocument.Document, seededDocument.Document.ConcurrencyToken);
+      await new SqliteKnowledgeDocumentRepository(dbContext).UpdateAsync(seededDocument.Document);
       await new SqliteKnowledgeRevisionRepository(dbContext).AddAsync(revision);
       auditRecorder.Stage(new AuditEvent(
         duplicateAuditId,
@@ -427,7 +427,7 @@ public sealed class SqliteKnowledgeEnginePersistenceTests : IDisposable
     {
       var auditRecorder = new SqliteAuditRecorder();
       var unitOfWork = new SqliteUnitOfWork(seedContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
-      await new SqliteKnowledgeDocumentRepository(seedContext).UpdateAsync(seededDocument.Document, seededDocument.Document.ConcurrencyToken);
+      await new SqliteKnowledgeDocumentRepository(seedContext).UpdateAsync(seededDocument.Document);
       await new SqliteKnowledgeRevisionRepository(seedContext).AddAsync(firstRevision);
       StageAuditEvents(auditRecorder, seededDocument.Document.AuditTrail.Skip(seededDocument.InitialAuditCount));
       await unitOfWork.CommitAsync();
@@ -478,10 +478,10 @@ public sealed class SqliteKnowledgeEnginePersistenceTests : IDisposable
 
     var appliedMigrations = (await dbContext.Database.GetAppliedMigrationsAsync()).ToArray();
 
-    Assert.Equal(14, appliedMigrations.Length);
+    Assert.Equal(15, appliedMigrations.Length);
     Assert.Contains(appliedMigrations, migration => migration.EndsWith("KnowledgeEnginePersistenceRc2", StringComparison.Ordinal));
     Assert.Contains(appliedMigrations, migration => migration.EndsWith("KnowledgeEnginePersistenceSnapshotAlignment", StringComparison.Ordinal));
-    Assert.Equal(14L, await QueryCountAsync(dbContext, "SELECT COUNT(*) FROM __EFMigrationsHistory"));
+    Assert.Equal(15L, await QueryCountAsync(dbContext, "SELECT COUNT(*) FROM __EFMigrationsHistory"));
   }
 
   [Fact]
@@ -501,7 +501,7 @@ public sealed class SqliteKnowledgeEnginePersistenceTests : IDisposable
     await migratedContext.Database.MigrateAsync();
 
     var appliedMigrations = (await migratedContext.Database.GetAppliedMigrationsAsync()).ToArray();
-    Assert.Equal(14, appliedMigrations.Length);
+    Assert.Equal(15, appliedMigrations.Length);
 
     var storedProject = await new SqliteProjectRepository(migratedContext).GetByIdAsync(seededState.ProjectId);
     var storedInspectionSession = await new SqliteInspectionSessionRepository(migratedContext).GetByIdAsync(seededState.InspectionSessionId);
@@ -670,7 +670,7 @@ public sealed class SqliteKnowledgeEnginePersistenceTests : IDisposable
     {
       var auditRecorder = new SqliteAuditRecorder();
       var unitOfWork = new SqliteUnitOfWork(updateContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
-      await new SqliteKnowledgeDocumentRepository(updateContext).UpdateAsync(knowledgeDocument, knowledgeDocument.ConcurrencyToken);
+      await new SqliteKnowledgeDocumentRepository(updateContext).UpdateAsync(knowledgeDocument);
       await new SqliteKnowledgeRevisionRepository(updateContext).UpdateAsync(revisionA);
       await new SqliteKnowledgeRevisionRepository(updateContext).AddAsync(revisionB);
       StageAuditEvents(auditRecorder, knowledgeDocument.AuditTrail.Skip(auditCountAfterInitialRevision));

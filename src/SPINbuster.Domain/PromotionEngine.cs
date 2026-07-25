@@ -97,9 +97,9 @@ public sealed record PromotionIdentity
     {
       ProjectId.Value.ToString("D"),
       DocumentType.ToString(),
-      CanonicalTitle,
-      ExternalReferenceNumber ?? string.Empty,
-      DisciplineOrCategory ?? string.Empty,
+      CanonicalTitle.ToUpperInvariant(),
+      ExternalReferenceNumber?.ToUpperInvariant() ?? string.Empty,
+      DisciplineOrCategory?.ToUpperInvariant() ?? string.Empty,
       FragmentIdentityKey,
       ContractVersion,
     };
@@ -514,6 +514,11 @@ public sealed class ConcurrencyConflictException : DomainInvariantException
 {
   public ConcurrencyConflictException(string message)
     : base(message)
+  {
+  }
+
+  public ConcurrencyConflictException(string message, Exception innerException)
+    : base(message, innerException)
   {
   }
 }

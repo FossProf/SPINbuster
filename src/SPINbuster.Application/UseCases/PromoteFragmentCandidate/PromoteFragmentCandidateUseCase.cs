@@ -150,8 +150,27 @@ public sealed class PromoteFragmentCandidateUseCase
 
         if (documentResolution.IsAmbiguous)
         {
+          var ambiguousMessage = $"Ambiguous document match: {documentResolution.MatchedDocuments.Count} documents match type '{command.DocumentType}' with title '{command.CanonicalTitle}' in project {candidate.ProjectId}.";
+
+          var existingAmbiguousDiagnostic = await _promotionDiagnosticRepository.GetByFragmentCandidateAsync(
+            command.FragmentCandidateId, cancellationToken);
+
+          if (existingAmbiguousDiagnostic is not null)
+          {
+            return new PromoteFragmentCandidateResult(
+              existingAmbiguousDiagnostic.Id,
+              existingAmbiguousDiagnostic.Status,
+              existingAmbiguousDiagnostic.KnowledgeDocumentId,
+              existingAmbiguousDiagnostic.KnowledgeDocumentRevisionId,
+              existingAmbiguousDiagnostic.KnowledgeCitationId,
+              existingAmbiguousDiagnostic.SupersededExistingRevision,
+              existingAmbiguousDiagnostic.SupersededRevisionId,
+              ambiguousMessage,
+              PromotionConflictType.AmbiguousDocumentMatch);
+          }
+
           diagnostic.RecordFailure(
-            $"Ambiguous document match: {documentResolution.MatchedDocuments.Count} documents match type '{command.DocumentType}' with title '{command.CanonicalTitle}' in project {candidate.ProjectId}.",
+            ambiguousMessage,
             PromotionConflictType.AmbiguousDocumentMatch);
 
           var ambiguousAttempt = new PromotionAttempt(
@@ -196,7 +215,7 @@ public sealed class PromoteFragmentCandidateUseCase
           revisionLabel,
           null,
           _clock.UtcNow,
-          KnowledgeSourceAuthorityLevel.Informational,
+          command.SourceAuthorityLevel,
           candidate.SourceContentHash,
           documentMetadataHash,
           supersededRevisionId,
@@ -214,9 +233,27 @@ public sealed class PromoteFragmentCandidateUseCase
             ?? throw new DomainInvariantException(
               $"Current authoritative revision {knowledgeDocument.CurrentAuthoritativeRevisionId} not found on document {knowledgeDocument.Id}.");
 
-          if (existingRevision.SourceAuthority > knowledgeRevision.SourceAuthority)
+          if (existingRevision.SourceAuthority >= knowledgeRevision.SourceAuthority)
           {
-            var authorityMessage = $"Existing revision {existingRevision.Id} has higher source authority ({existingRevision.SourceAuthority}) than the promoted revision ({knowledgeRevision.SourceAuthority}).";
+            var authorityMessage = $"Existing revision {existingRevision.Id} has equal or higher source authority ({existingRevision.SourceAuthority}) than the promoted revision ({knowledgeRevision.SourceAuthority}).";
+
+            var existingAuthorityDiagnostic = await _promotionDiagnosticRepository.GetByFragmentCandidateAsync(
+              command.FragmentCandidateId, cancellationToken);
+
+            if (existingAuthorityDiagnostic is not null)
+            {
+              return new PromoteFragmentCandidateResult(
+                existingAuthorityDiagnostic.Id,
+                existingAuthorityDiagnostic.Status,
+                existingAuthorityDiagnostic.KnowledgeDocumentId,
+                existingAuthorityDiagnostic.KnowledgeDocumentRevisionId,
+                existingAuthorityDiagnostic.KnowledgeCitationId,
+                existingAuthorityDiagnostic.SupersededExistingRevision,
+                existingAuthorityDiagnostic.SupersededRevisionId,
+                authorityMessage,
+                PromotionConflictType.HigherAuthorityExists);
+            }
+
             diagnostic.RecordFailure(authorityMessage, PromotionConflictType.HigherAuthorityExists);
 
             var authorityAttempt = new PromotionAttempt(
@@ -248,6 +285,24 @@ public sealed class PromoteFragmentCandidateUseCase
           if (knowledgeRevision.ReceivedAtUtc < existingRevision.ReceivedAtUtc)
           {
             var temporalMessage = $"New revision ReceivedAtUtc ({knowledgeRevision.ReceivedAtUtc:O}) is earlier than existing revision ReceivedAtUtc ({existingRevision.ReceivedAtUtc:O}).";
+
+            var existingTemporalDiagnostic = await _promotionDiagnosticRepository.GetByFragmentCandidateAsync(
+              command.FragmentCandidateId, cancellationToken);
+
+            if (existingTemporalDiagnostic is not null)
+            {
+              return new PromoteFragmentCandidateResult(
+                existingTemporalDiagnostic.Id,
+                existingTemporalDiagnostic.Status,
+                existingTemporalDiagnostic.KnowledgeDocumentId,
+                existingTemporalDiagnostic.KnowledgeDocumentRevisionId,
+                existingTemporalDiagnostic.KnowledgeCitationId,
+                existingTemporalDiagnostic.SupersededExistingRevision,
+                existingTemporalDiagnostic.SupersededRevisionId,
+                temporalMessage,
+                PromotionConflictType.TemporalOrderViolation);
+            }
+
             diagnostic.RecordFailure(temporalMessage, PromotionConflictType.TemporalOrderViolation);
 
             var temporalAttempt = new PromotionAttempt(
@@ -334,7 +389,7 @@ public sealed class PromoteFragmentCandidateUseCase
           StageAuditEvents(derivedFromRelationship.AuditTrail);
         }
 
-        await _knowledgeDocumentRepository.UpdateAsync(knowledgeDocument, knowledgeDocument.ConcurrencyToken, cancellationToken);
+        await _knowledgeDocumentRepository.UpdateAsync(knowledgeDocument, cancellationToken);
         if (supersededDomainRevision is not null)
         {
           await _knowledgeRevisionRepository.UpdateAsync(supersededDomainRevision, cancellationToken);
@@ -639,12 +694,13 @@ public sealed class PromoteFragmentCandidateUseCase
     string? disciplineOrCategory,
     CancellationToken cancellationToken)
   {
+    var identity = new KnowledgeDocumentIdentity(
+      projectId, documentType, canonicalTitle, externalReferenceNumber, disciplineOrCategory);
+
     var existingDocuments = await _knowledgeDocumentRepository.GetByProjectAsync(projectId, cancellationToken);
 
     var candidates = existingDocuments
-      .Where(doc =>
-        doc.DocumentType == documentType
-        && string.Equals(doc.CanonicalTitle, canonicalTitle, StringComparison.OrdinalIgnoreCase))
+      .Where(doc => doc.Identity == identity)
       .ToList();
 
     if (candidates.Count > 1)

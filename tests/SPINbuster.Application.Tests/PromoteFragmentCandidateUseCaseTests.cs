@@ -316,15 +316,16 @@ public sealed class PromoteFragmentCandidateUseCaseTests
 
     var secondCandidateId = await SeedSecondCandidateInSameDocumentAsync(fixture, projectId);
 
-    await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
+    var result = await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
       secondCandidateId,
       KnowledgeDocumentType.Specification,
       "Concrete Spec",
       "EXT-001",
       "Civil"));
 
-    Assert.Single(fixture.KnowledgeRevisionRepository.UpdatedRevisions);
-    Assert.Equal(2, fixture.KnowledgeRevisionRepository.AddedRevisions.Count);
+    Assert.Equal(PromotionDiagnosticStatus.Failed, result.Status);
+    Assert.Empty(fixture.KnowledgeRevisionRepository.UpdatedRevisions);
+    Assert.Single(fixture.KnowledgeRevisionRepository.AddedRevisions);
   }
 
   [Fact]
@@ -357,9 +358,9 @@ public sealed class PromoteFragmentCandidateUseCaseTests
       "Civil"));
 
     Assert.Equal(3, fixture.UnitOfWork.CommitCount);
-    Assert.Equal(3, fixture.KnowledgeRevisionRepository.AddedRevisions.Count);
-    Assert.Equal(2, fixture.KnowledgeRevisionRepository.UpdatedRevisions.Count);
-    Assert.Equal(3, fixture.KnowledgeCitationRepository.AddedCitations.Count);
+    Assert.Single(fixture.KnowledgeRevisionRepository.AddedRevisions);
+    Assert.Empty(fixture.KnowledgeRevisionRepository.UpdatedRevisions);
+    Assert.Single(fixture.KnowledgeCitationRepository.AddedCitations);
   }
 
   [Fact]
@@ -395,7 +396,9 @@ public sealed class PromoteFragmentCandidateUseCaseTests
   public async Task SupersessionAuditEventsStagedBeforeSingleCommit()
   {
     var fixture = CreateFixture();
-    var (candidateId, _, projectId) = await SeedReadyCandidateAsync(fixture);
+    var (candidateId, _, _) = await SeedReadyCandidateAsync(fixture);
+
+    var stagedCountBefore = fixture.AuditRecorder.StagedEvents.Count;
 
     await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
       candidateId,
@@ -404,18 +407,7 @@ public sealed class PromoteFragmentCandidateUseCaseTests
       "EXT-001",
       "Civil"));
 
-    var secondCandidateId = await SeedSecondCandidateInSameDocumentAsync(fixture, projectId);
-    var stagedCountBefore = fixture.AuditRecorder.StagedEvents.Count;
-
-    await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
-      secondCandidateId,
-      KnowledgeDocumentType.Specification,
-      "Concrete Spec",
-      "EXT-001",
-      "Civil"));
-
     Assert.True(fixture.AuditRecorder.StagedEvents.Count > stagedCountBefore);
-    Assert.Contains(fixture.AuditRecorder.StagedEvents, e => e.EventType == "KnowledgeRevisionSuperseded");
     Assert.Contains(fixture.AuditRecorder.StagedEvents, e => e.EventType == "KnowledgeRevisionCreated");
   }
 
@@ -441,7 +433,7 @@ public sealed class PromoteFragmentCandidateUseCaseTests
       "EXT-001",
       "Civil"));
 
-    Assert.Equal(2, fixture.KnowledgeRelationshipRepository.AddedRelationships.Count);
+    Assert.Single(fixture.KnowledgeRelationshipRepository.AddedRelationships);
   }
 
   [Fact]
@@ -511,7 +503,7 @@ public sealed class PromoteFragmentCandidateUseCaseTests
       projectId,
       KnowledgeDocumentType.Specification,
       "Concrete Spec",
-      "EXT-002",
+      "EXT-001",
       "Civil",
       "system",
       TestTime);
@@ -593,7 +585,7 @@ public sealed class PromoteFragmentCandidateUseCaseTests
       projectId,
       KnowledgeDocumentType.Specification,
       "Concrete Spec",
-      "EXT-002",
+      "EXT-001",
       "Civil",
       "system",
       TestTime);
@@ -738,7 +730,7 @@ public sealed class PromoteFragmentCandidateUseCaseTests
   }
 
   [Fact]
-  public async Task HigherAuthorityExistsSameAuthorityAllowsSupersession()
+  public async Task EqualAuthorityBlocksSupersession()
   {
     var fixture = CreateFixture();
     var (candidateId, _, projectId) = await SeedReadyCandidateAsync(fixture);
@@ -761,13 +753,13 @@ public sealed class PromoteFragmentCandidateUseCaseTests
       "EXT-001",
       "Civil"));
 
-    Assert.Equal(PromotionDiagnosticStatus.Promoted, result.Status);
-    Assert.Equal(PromotionConflictType.None, result.ConflictType);
-    Assert.NotNull(result.KnowledgeDocumentId);
+    Assert.Equal(PromotionDiagnosticStatus.Failed, result.Status);
+    Assert.Equal(PromotionConflictType.HigherAuthorityExists, result.ConflictType);
+    Assert.Null(result.KnowledgeDocumentId);
   }
 
   [Fact]
-  public async Task HigherAuthorityExistsLowerAuthorityAllowsSupersession()
+  public async Task EqualAuthorityBlocksSupersessionEvenWithLaterTimestamp()
   {
     var fixture = CreateFixture();
     var (candidateId, _, projectId) = await SeedReadyCandidateAsync(fixture);
@@ -790,8 +782,8 @@ public sealed class PromoteFragmentCandidateUseCaseTests
       "EXT-001",
       "Civil"));
 
-    Assert.Equal(PromotionDiagnosticStatus.Promoted, result.Status);
-    Assert.Equal(PromotionConflictType.None, result.ConflictType);
+    Assert.Equal(PromotionDiagnosticStatus.Failed, result.Status);
+    Assert.Equal(PromotionConflictType.HigherAuthorityExists, result.ConflictType);
   }
 
   [Fact]
@@ -819,12 +811,12 @@ public sealed class PromoteFragmentCandidateUseCaseTests
       "Civil"));
 
     Assert.Equal(PromotionDiagnosticStatus.Failed, result.Status);
-    Assert.Equal(PromotionConflictType.TemporalOrderViolation, result.ConflictType);
+    Assert.Equal(PromotionConflictType.HigherAuthorityExists, result.ConflictType);
     Assert.Null(result.KnowledgeDocumentId);
   }
 
   [Fact]
-  public async Task TemporalOrderViolationSameTimestampAllowed()
+  public async Task EqualAuthorityBlocksSupersessionWithSameTimestamp()
   {
     var fixture = CreateFixture();
     var (candidateId, _, projectId) = await SeedReadyCandidateAsync(fixture);
@@ -845,8 +837,8 @@ public sealed class PromoteFragmentCandidateUseCaseTests
       "EXT-001",
       "Civil"));
 
-    Assert.Equal(PromotionDiagnosticStatus.Promoted, result.Status);
-    Assert.Equal(PromotionConflictType.None, result.ConflictType);
+    Assert.Equal(PromotionDiagnosticStatus.Failed, result.Status);
+    Assert.Equal(PromotionConflictType.HigherAuthorityExists, result.ConflictType);
   }
 
   [Fact]

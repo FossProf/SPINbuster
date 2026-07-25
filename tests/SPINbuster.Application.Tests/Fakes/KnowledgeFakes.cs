@@ -45,7 +45,6 @@ internal sealed class FakeKnowledgeDocumentRepository : IKnowledgeDocumentReposi
 
   public Task UpdateAsync(
     KnowledgeDocument knowledgeDocument,
-    int expectedConcurrencyToken,
     CancellationToken cancellationToken = default)
   {
     LastCancellationToken = cancellationToken;
@@ -53,7 +52,7 @@ internal sealed class FakeKnowledgeDocumentRepository : IKnowledgeDocumentReposi
     if (SimulateConcurrencyConflict)
     {
       throw new ConcurrencyConflictException(
-        $"Knowledge document {knowledgeDocument.Id} was modified by another process. Expected token {expectedConcurrencyToken}.");
+        $"Knowledge document {knowledgeDocument.Id} was modified by another process.");
     }
 
     _documents[knowledgeDocument.Id] = knowledgeDocument;

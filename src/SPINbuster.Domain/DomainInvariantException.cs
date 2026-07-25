@@ -6,4 +6,9 @@ public class DomainInvariantException : InvalidOperationException
     : base(message)
   {
   }
+
+  public DomainInvariantException(string message, Exception innerException)
+    : base(message, innerException)
+  {
+  }
 }

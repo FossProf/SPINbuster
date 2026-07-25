@@ -352,5 +352,9 @@ public sealed class LocalVerticalSliceWorkflowTests
     {
       throw new InvalidOperationException("Forced commit failure.");
     }
+
+    public void DiscardChanges()
+    {
+    }
   }
 }

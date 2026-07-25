@@ -221,7 +221,8 @@ public sealed class KnowledgePromotionWorkflowRunner
         runScope.DocumentType,
         runScope.CanonicalTitle,
         runScope.ExternalReference,
-        runScope.Discipline),
+        runScope.Discipline,
+        KnowledgeSourceAuthorityLevel.FieldObserved),
       cancellationToken);
 
     var supersessionIdempotentReplay = await _promoteFragmentCandidate.HandleAsync(
@@ -230,7 +231,8 @@ public sealed class KnowledgePromotionWorkflowRunner
         runScope.DocumentType,
         runScope.CanonicalTitle,
         runScope.ExternalReference,
-        runScope.Discipline),
+        runScope.Discipline,
+        KnowledgeSourceAuthorityLevel.FieldObserved),
       cancellationToken);
 
     var knowledgeSnapshot = await _loadProjectKnowledgeSnapshot.HandleAsync(

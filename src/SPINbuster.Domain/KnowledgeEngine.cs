@@ -88,6 +88,64 @@ public enum KnowledgeSubjectKind
   ImportedSource = 2,
 }
 
+public readonly record struct KnowledgeDocumentIdentity : IEquatable<KnowledgeDocumentIdentity>
+{
+  private const string Separator = "|";
+
+  public KnowledgeDocumentIdentity(
+    ProjectId projectId,
+    KnowledgeDocumentType documentType,
+    string canonicalTitle,
+    string? externalReferenceNumber,
+    string? disciplineOrCategory)
+  {
+    ProjectId = projectId;
+    DocumentType = documentType;
+    CanonicalTitle = NormalizeRequired(canonicalTitle);
+    ExternalReferenceNumber = NormalizeOptional(externalReferenceNumber);
+    DisciplineOrCategory = NormalizeOptional(disciplineOrCategory);
+    Hash = ComputeHash();
+  }
+
+  public ProjectId ProjectId { get; }
+
+  public KnowledgeDocumentType DocumentType { get; }
+
+  public string CanonicalTitle { get; }
+
+  public string? ExternalReferenceNumber { get; }
+
+  public string? DisciplineOrCategory { get; }
+
+  public string Hash { get; }
+
+  public bool Equals(KnowledgeDocumentIdentity other) => Hash == other.Hash;
+
+  public override int GetHashCode() => Hash.GetHashCode(StringComparison.Ordinal);
+
+  private string ComputeHash()
+  {
+    var parts = new[]
+    {
+      ProjectId.Value.ToString("D"),
+      DocumentType.ToString(),
+      CanonicalTitle.ToUpperInvariant(),
+      ExternalReferenceNumber?.ToUpperInvariant() ?? string.Empty,
+      DisciplineOrCategory?.ToUpperInvariant() ?? string.Empty,
+    };
+
+    var combined = string.Join(Separator, parts);
+    var bytes = System.Text.Encoding.UTF8.GetBytes(combined);
+    return Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes));
+  }
+
+  private static string NormalizeRequired(string value) =>
+    DomainGuards.NotNullOrWhiteSpace(value, nameof(value)).Trim();
+
+  private static string? NormalizeOptional(string? value) =>
+    string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+}
+
 public readonly record struct KnowledgeSubjectReference
 {
   private KnowledgeSubjectReference(
@@ -191,6 +249,9 @@ public sealed class KnowledgeDocument : AuditableEntity
   public DateTimeOffset CreatedAtUtc { get; }
 
   public IReadOnlyList<KnowledgeDocumentRevision> Revisions => _revisions.AsReadOnly();
+
+  public KnowledgeDocumentIdentity Identity => new(
+    ProjectId, DocumentType, CanonicalTitle, ExternalReferenceNumber, DisciplineOrCategory);
 
   protected override string SubjectType => AuditSubjectType;
 
