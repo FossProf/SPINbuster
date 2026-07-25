@@ -537,6 +537,63 @@ public sealed class KnowledgePromotionWorkflowTests
     }
   }
 
+  [Fact]
+  public async Task FirstPromotionConflictTypeIsNone()
+  {
+    var environment = CreateEnvironmentPaths();
+
+    try
+    {
+      using var serviceProvider = CreateServiceProvider(environment);
+      var result = await KnowledgePromotionWorkflowBootstrapper.RunAsync(serviceProvider);
+
+      Assert.Equal(PromotionConflictType.None, result.FirstPromotion.ConflictType);
+      Assert.Equal(PromotionDiagnosticStatus.Promoted, result.FirstPromotion.Status);
+    }
+    finally
+    {
+      DeleteEnvironmentIfPresent(environment);
+    }
+  }
+
+  [Fact]
+  public async Task SupersedingPromotionConflictTypeIsNone()
+  {
+    var environment = CreateEnvironmentPaths();
+
+    try
+    {
+      using var serviceProvider = CreateServiceProvider(environment);
+      var result = await KnowledgePromotionWorkflowBootstrapper.RunAsync(serviceProvider);
+
+      Assert.Equal(PromotionConflictType.None, result.SupersedingPromotion.ConflictType);
+      Assert.Equal(PromotionDiagnosticStatus.Promoted, result.SupersedingPromotion.Status);
+    }
+    finally
+    {
+      DeleteEnvironmentIfPresent(environment);
+    }
+  }
+
+  [Fact]
+  public async Task IdempotentReplayConflictTypeIsNone()
+  {
+    var environment = CreateEnvironmentPaths();
+
+    try
+    {
+      using var serviceProvider = CreateServiceProvider(environment);
+      var result = await KnowledgePromotionWorkflowBootstrapper.RunAsync(serviceProvider);
+
+      Assert.Equal(PromotionConflictType.None, result.IdempotentReplay.ConflictType);
+      Assert.Equal(PromotionDiagnosticStatus.Promoted, result.IdempotentReplay.Status);
+    }
+    finally
+    {
+      DeleteEnvironmentIfPresent(environment);
+    }
+  }
+
   private static ServiceProvider CreateServiceProvider(
     TestEnvironmentPaths environment,
     Action<IServiceCollection>? configureServices = null)

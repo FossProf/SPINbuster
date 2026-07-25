@@ -465,7 +465,8 @@ internal static class InfrastructureMapper
         .ThenBy(revision => revision.Id)
         .Select(ToDomain)
         .ToArray(),
-      auditTrail);
+      auditTrail,
+      record.ConcurrencyToken);
   }
 
   public static KnowledgeDocumentRecord ToRecord(KnowledgeDocument knowledgeDocument)
@@ -480,6 +481,7 @@ internal static class InfrastructureMapper
       DisciplineOrCategory = knowledgeDocument.DisciplineOrCategory,
       CurrentAuthoritativeRevisionId = knowledgeDocument.CurrentAuthoritativeRevisionId,
       Lifecycle = knowledgeDocument.Lifecycle,
+      ConcurrencyToken = knowledgeDocument.ConcurrencyToken,
       CreatedBy = knowledgeDocument.CreatedBy,
       CreatedAtUtc = knowledgeDocument.CreatedAtUtc,
     };

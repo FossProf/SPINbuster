@@ -487,6 +487,423 @@ public sealed class PromoteFragmentCandidateUseCaseTests
     Assert.Equal(0, fixture.UnitOfWork.CommitCount);
   }
 
+  [Fact]
+  public async Task AmbiguousDocumentMatchReturnsFailedWithConflictType()
+  {
+    var fixture = CreateFixture();
+    var projectId = ProjectId.New();
+    var project = new Project(projectId, "Test", "system", TestTime);
+    project.Activate("system", TestTime);
+    await fixture.ProjectRepository.AddAsync(project);
+
+    var documentA = new KnowledgeDocument(
+      KnowledgeDocumentId.New(),
+      projectId,
+      KnowledgeDocumentType.Specification,
+      "Concrete Spec",
+      "EXT-001",
+      "Civil",
+      "system",
+      TestTime);
+
+    var documentB = new KnowledgeDocument(
+      KnowledgeDocumentId.New(),
+      projectId,
+      KnowledgeDocumentType.Specification,
+      "Concrete Spec",
+      "EXT-002",
+      "Civil",
+      "system",
+      TestTime);
+
+    await fixture.KnowledgeDocumentRepository.AddAsync(documentA);
+    await fixture.KnowledgeDocumentRepository.AddAsync(documentB);
+
+    var sourceId = ImportedSourceId.New();
+    await SeedSourceAsync(fixture, projectId, sourceId);
+
+    var parserRun = new ParserRun(
+      ParserRunId.New(),
+      projectId,
+      sourceId,
+      "test-parser",
+      "1.0.0",
+      "1.0.0",
+      "contract-hash",
+      "source-hash",
+      "SHA-256",
+      1,
+      "system",
+      TestTime);
+    parserRun.Start(TestTime);
+    parserRun.Complete(TestTime, ParserExecutionStatus.Completed);
+    await fixture.ParserRunRepository.AddAsync(parserRun);
+
+    var candidate = new FragmentCandidate(
+      FragmentCandidateId.New(),
+      parserRun.Id,
+      projectId,
+      sourceId,
+      "source-hash",
+      new FragmentLocator(FragmentLocatorType.WholeDocument, "*"),
+      1,
+      ContentKind.PlainText,
+      "Some text",
+      ConfidenceBand.High,
+      "test-parser",
+      "1.0.0",
+      TestTime);
+    candidate.Accept("reviewer", TestTime, null);
+    await fixture.FragmentCandidateRepository.AddAsync(candidate);
+
+    var result = await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
+      candidate.Id,
+      KnowledgeDocumentType.Specification,
+      "Concrete Spec",
+      "EXT-001",
+      "Civil"));
+
+    Assert.Equal(PromotionDiagnosticStatus.Failed, result.Status);
+    Assert.Equal(PromotionConflictType.AmbiguousDocumentMatch, result.ConflictType);
+    Assert.Null(result.KnowledgeDocumentId);
+    Assert.Null(result.KnowledgeDocumentRevisionId);
+  }
+
+  [Fact]
+  public async Task AmbiguousDocumentMatchCreatesNoRecords()
+  {
+    var fixture = CreateFixture();
+    var projectId = ProjectId.New();
+    var project = new Project(projectId, "Test", "system", TestTime);
+    project.Activate("system", TestTime);
+    await fixture.ProjectRepository.AddAsync(project);
+
+    var documentA = new KnowledgeDocument(
+      KnowledgeDocumentId.New(),
+      projectId,
+      KnowledgeDocumentType.Specification,
+      "Concrete Spec",
+      "EXT-001",
+      "Civil",
+      "system",
+      TestTime);
+
+    var documentB = new KnowledgeDocument(
+      KnowledgeDocumentId.New(),
+      projectId,
+      KnowledgeDocumentType.Specification,
+      "Concrete Spec",
+      "EXT-002",
+      "Civil",
+      "system",
+      TestTime);
+
+    await fixture.KnowledgeDocumentRepository.AddAsync(documentA);
+    await fixture.KnowledgeDocumentRepository.AddAsync(documentB);
+
+    var sourceId = ImportedSourceId.New();
+    await SeedSourceAsync(fixture, projectId, sourceId);
+
+    var parserRun = new ParserRun(
+      ParserRunId.New(),
+      projectId,
+      sourceId,
+      "test-parser",
+      "1.0.0",
+      "1.0.0",
+      "contract-hash",
+      "source-hash",
+      "SHA-256",
+      1,
+      "system",
+      TestTime);
+    parserRun.Start(TestTime);
+    parserRun.Complete(TestTime, ParserExecutionStatus.Completed);
+    await fixture.ParserRunRepository.AddAsync(parserRun);
+
+    var candidate = new FragmentCandidate(
+      FragmentCandidateId.New(),
+      parserRun.Id,
+      projectId,
+      sourceId,
+      "source-hash",
+      new FragmentLocator(FragmentLocatorType.WholeDocument, "*"),
+      1,
+      ContentKind.PlainText,
+      "Some text",
+      ConfidenceBand.High,
+      "test-parser",
+      "1.0.0",
+      TestTime);
+    candidate.Accept("reviewer", TestTime, null);
+    await fixture.FragmentCandidateRepository.AddAsync(candidate);
+
+    var revisionsBefore = fixture.KnowledgeRevisionRepository.AddedRevisions.Count;
+
+    await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
+      candidate.Id,
+      KnowledgeDocumentType.Specification,
+      "Concrete Spec",
+      "EXT-001",
+      "Civil"));
+
+    Assert.Equal(revisionsBefore, fixture.KnowledgeRevisionRepository.AddedRevisions.Count);
+  }
+
+  [Fact]
+  public async Task HigherAuthorityExistsReturnsFailedWithConflictType()
+  {
+    var fixture = CreateFixture();
+    var projectId = ProjectId.New();
+    var project = new Project(projectId, "Test", "system", TestTime);
+    project.Activate("system", TestTime);
+    await fixture.ProjectRepository.AddAsync(project);
+
+    var sourceId = ImportedSourceId.New();
+    await SeedSourceAsync(fixture, projectId, sourceId);
+
+    var parserRun = new ParserRun(
+      ParserRunId.New(),
+      projectId,
+      sourceId,
+      "test-parser",
+      "1.0.0",
+      "1.0.0",
+      "contract-hash",
+      "source-hash",
+      "SHA-256",
+      1,
+      "system",
+      TestTime);
+    parserRun.Start(TestTime);
+    parserRun.Complete(TestTime, ParserExecutionStatus.Completed);
+    await fixture.ParserRunRepository.AddAsync(parserRun);
+
+    var candidate = new FragmentCandidate(
+      FragmentCandidateId.New(),
+      parserRun.Id,
+      projectId,
+      sourceId,
+      "source-hash",
+      new FragmentLocator(FragmentLocatorType.WholeDocument, "*"),
+      1,
+      ContentKind.PlainText,
+      "Some text",
+      ConfidenceBand.High,
+      "test-parser",
+      "1.0.0",
+      TestTime);
+    candidate.Accept("reviewer", TestTime, null);
+    await fixture.FragmentCandidateRepository.AddAsync(candidate);
+
+    var document = new KnowledgeDocument(
+      KnowledgeDocumentId.New(),
+      projectId,
+      KnowledgeDocumentType.Specification,
+      "Concrete Spec",
+      "EXT-001",
+      "Civil",
+      "system",
+      TestTime);
+
+    var existingRevision = new KnowledgeDocumentRevision(
+      KnowledgeDocumentRevisionId.New(),
+      document.Id,
+      KnowledgeSourceId.New(),
+      "v1-initial",
+      null,
+      TestTime,
+      KnowledgeSourceAuthorityLevel.EngineerIssued,
+      "content-hash",
+      "metadata-hash",
+      null,
+      null,
+      null,
+      TestTime);
+
+    document.AddInitialRevision(existingRevision, "system", TestTime);
+    await fixture.KnowledgeDocumentRepository.AddAsync(document);
+    await fixture.KnowledgeRevisionRepository.AddAsync(existingRevision);
+
+    var result = await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
+      candidate.Id,
+      KnowledgeDocumentType.Specification,
+      "Concrete Spec",
+      "EXT-001",
+      "Civil"));
+
+    Assert.Equal(PromotionDiagnosticStatus.Failed, result.Status);
+    Assert.Equal(PromotionConflictType.HigherAuthorityExists, result.ConflictType);
+    Assert.Null(result.KnowledgeDocumentId);
+  }
+
+  [Fact]
+  public async Task HigherAuthorityExistsSameAuthorityAllowsSupersession()
+  {
+    var fixture = CreateFixture();
+    var (candidateId, _, projectId) = await SeedReadyCandidateAsync(fixture);
+
+    await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
+      candidateId,
+      KnowledgeDocumentType.Specification,
+      "Concrete Spec",
+      "EXT-001",
+      "Civil"));
+
+    var secondCandidateId = await SeedSecondCandidateInSameDocumentAsync(fixture, projectId);
+
+    fixture.Clock.UtcNow = TestTime.AddMinutes(5);
+
+    var result = await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
+      secondCandidateId,
+      KnowledgeDocumentType.Specification,
+      "Concrete Spec",
+      "EXT-001",
+      "Civil"));
+
+    Assert.Equal(PromotionDiagnosticStatus.Promoted, result.Status);
+    Assert.Equal(PromotionConflictType.None, result.ConflictType);
+    Assert.NotNull(result.KnowledgeDocumentId);
+  }
+
+  [Fact]
+  public async Task HigherAuthorityExistsLowerAuthorityAllowsSupersession()
+  {
+    var fixture = CreateFixture();
+    var (candidateId, _, projectId) = await SeedReadyCandidateAsync(fixture);
+
+    await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
+      candidateId,
+      KnowledgeDocumentType.Specification,
+      "Concrete Spec",
+      "EXT-001",
+      "Civil"));
+
+    var secondCandidateId = await SeedSecondCandidateInSameDocumentAsync(fixture, projectId);
+
+    fixture.Clock.UtcNow = TestTime.AddMinutes(5);
+
+    var result = await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
+      secondCandidateId,
+      KnowledgeDocumentType.Specification,
+      "Concrete Spec",
+      "EXT-001",
+      "Civil"));
+
+    Assert.Equal(PromotionDiagnosticStatus.Promoted, result.Status);
+    Assert.Equal(PromotionConflictType.None, result.ConflictType);
+  }
+
+  [Fact]
+  public async Task TemporalOrderViolationReturnsFailed()
+  {
+    var fixture = CreateFixture();
+    var (candidateId, _, projectId) = await SeedReadyCandidateAsync(fixture);
+
+    await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
+      candidateId,
+      KnowledgeDocumentType.Specification,
+      "Concrete Spec",
+      "EXT-001",
+      "Civil"));
+
+    var secondCandidateId = await SeedSecondCandidateInSameDocumentAsync(fixture, projectId);
+
+    fixture.Clock.UtcNow = TestTime.AddMinutes(-10);
+
+    var result = await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
+      secondCandidateId,
+      KnowledgeDocumentType.Specification,
+      "Concrete Spec",
+      "EXT-001",
+      "Civil"));
+
+    Assert.Equal(PromotionDiagnosticStatus.Failed, result.Status);
+    Assert.Equal(PromotionConflictType.TemporalOrderViolation, result.ConflictType);
+    Assert.Null(result.KnowledgeDocumentId);
+  }
+
+  [Fact]
+  public async Task TemporalOrderViolationSameTimestampAllowed()
+  {
+    var fixture = CreateFixture();
+    var (candidateId, _, projectId) = await SeedReadyCandidateAsync(fixture);
+
+    await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
+      candidateId,
+      KnowledgeDocumentType.Specification,
+      "Concrete Spec",
+      "EXT-001",
+      "Civil"));
+
+    var secondCandidateId = await SeedSecondCandidateInSameDocumentAsync(fixture, projectId);
+
+    var result = await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
+      secondCandidateId,
+      KnowledgeDocumentType.Specification,
+      "Concrete Spec",
+      "EXT-001",
+      "Civil"));
+
+    Assert.Equal(PromotionDiagnosticStatus.Promoted, result.Status);
+    Assert.Equal(PromotionConflictType.None, result.ConflictType);
+  }
+
+  [Fact]
+  public async Task SingleMatchFoundReturnsExistingDocument()
+  {
+    var fixture = CreateFixture();
+    var (candidateId, _, _) = await SeedReadyCandidateAsync(fixture);
+
+    var result = await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
+      candidateId,
+      KnowledgeDocumentType.Specification,
+      "Concrete Spec",
+      "EXT-001",
+      "Civil"));
+
+    Assert.Equal(PromotionDiagnosticStatus.Promoted, result.Status);
+    Assert.NotNull(result.KnowledgeDocumentId);
+    Assert.Single(fixture.KnowledgeDocumentRepository.AddedDocuments);
+  }
+
+  [Fact]
+  public async Task ZeroMatchesCreatesNewDocument()
+  {
+    var fixture = CreateFixture();
+    var (candidateId, _, _) = await SeedReadyCandidateAsync(fixture);
+
+    var result = await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
+      candidateId,
+      KnowledgeDocumentType.Specification,
+      "Concrete Spec",
+      "EXT-001",
+      "Civil"));
+
+    Assert.Equal(PromotionDiagnosticStatus.Promoted, result.Status);
+    Assert.NotNull(result.KnowledgeDocumentId);
+    Assert.Single(fixture.KnowledgeDocumentRepository.AddedDocuments);
+  }
+
+  [Fact]
+  public async Task ConcurrencyConflictReturnsFailedWithConflictType()
+  {
+    var fixture = CreateFixture();
+    var (candidateId, _, _) = await SeedReadyCandidateAsync(fixture);
+    fixture.KnowledgeDocumentRepository.SimulateConcurrencyConflict = true;
+
+    var result = await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
+      candidateId,
+      KnowledgeDocumentType.Specification,
+      "Concrete Spec",
+      "EXT-001",
+      "Civil"));
+
+    Assert.Equal(PromotionDiagnosticStatus.Failed, result.Status);
+    Assert.Equal(PromotionConflictType.ConcurrentPromotion, result.ConflictType);
+    Assert.Null(result.KnowledgeDocumentId);
+  }
+
   private static async Task<FragmentCandidateId> SeedSecondCandidateInSameDocumentAsync(
     PromotionFixture fixture, ProjectId projectId)
   {

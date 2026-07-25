@@ -347,6 +347,88 @@ public sealed class PromotionProvenanceTests
     }
   }
 
+  [Fact]
+  public void DiagnosticConflictTypeDefaultsToNone()
+  {
+    var diagnostic = new PromotionDiagnostic(
+      PromotionDiagnosticId.New(),
+      FragmentCandidateId.New(),
+      ParserRunId.New(),
+      ProjectId.New(),
+      BaseTime);
+
+    Assert.Equal(PromotionConflictType.None, diagnostic.ConflictType);
+  }
+
+  [Fact]
+  public void RecordFailureWithAmbiguousDocumentMatchSetsConflictType()
+  {
+    var diagnostic = new PromotionDiagnostic(
+      PromotionDiagnosticId.New(),
+      FragmentCandidateId.New(),
+      ParserRunId.New(),
+      ProjectId.New(),
+      BaseTime);
+
+    diagnostic.RecordFailure("Ambiguous match", PromotionConflictType.AmbiguousDocumentMatch);
+
+    Assert.Equal(PromotionConflictType.AmbiguousDocumentMatch, diagnostic.ConflictType);
+    Assert.Equal(PromotionDiagnosticStatus.Failed, diagnostic.Status);
+  }
+
+  [Fact]
+  public void RecordFailureWithHigherAuthoritySetsConflictType()
+  {
+    var diagnostic = new PromotionDiagnostic(
+      PromotionDiagnosticId.New(),
+      FragmentCandidateId.New(),
+      ParserRunId.New(),
+      ProjectId.New(),
+      BaseTime);
+
+    diagnostic.RecordFailure("Higher authority exists", PromotionConflictType.HigherAuthorityExists);
+
+    Assert.Equal(PromotionConflictType.HigherAuthorityExists, diagnostic.ConflictType);
+  }
+
+  [Fact]
+  public void RecordFailureWithTemporalOrderViolationSetsConflictType()
+  {
+    var diagnostic = new PromotionDiagnostic(
+      PromotionDiagnosticId.New(),
+      FragmentCandidateId.New(),
+      ParserRunId.New(),
+      ProjectId.New(),
+      BaseTime);
+
+    diagnostic.RecordFailure("Temporal order violated", PromotionConflictType.TemporalOrderViolation);
+
+    Assert.Equal(PromotionConflictType.TemporalOrderViolation, diagnostic.ConflictType);
+  }
+
+  [Fact]
+  public void RecordFailureWithoutConflictTypeDefaultsToNone()
+  {
+    var diagnostic = new PromotionDiagnostic(
+      PromotionDiagnosticId.New(),
+      FragmentCandidateId.New(),
+      ParserRunId.New(),
+      ProjectId.New(),
+      BaseTime);
+
+    diagnostic.RecordFailure("Generic failure");
+
+    Assert.Equal(PromotionConflictType.None, diagnostic.ConflictType);
+  }
+
+  [Fact]
+  public void ConcurrencyConflictExceptionInheritsFromDomainInvariantException()
+  {
+    var exception = new ConcurrencyConflictException("test message");
+    Assert.IsAssignableFrom<DomainInvariantException>(exception);
+    Assert.Equal("test message", exception.Message);
+  }
+
   private static PromotionProvenance CreateProvenance(
     string fragmentSourceContentHash = "fragment-hash",
     string parserKey = "pdf-parser",

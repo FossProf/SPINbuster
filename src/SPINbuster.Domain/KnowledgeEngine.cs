@@ -184,6 +184,8 @@ public sealed class KnowledgeDocument : AuditableEntity
 
   public KnowledgeDocumentLifecycle Lifecycle { get; private set; }
 
+  public int ConcurrencyToken { get; internal set; }
+
   public string CreatedBy { get; }
 
   public DateTimeOffset CreatedAtUtc { get; }
@@ -206,7 +208,8 @@ public sealed class KnowledgeDocument : AuditableEntity
     string createdBy,
     DateTimeOffset createdAtUtc,
     IEnumerable<KnowledgeDocumentRevision> revisions,
-    IEnumerable<AuditEvent> auditTrail)
+    IEnumerable<AuditEvent> auditTrail,
+    int concurrencyToken = 0)
   {
     var document = new KnowledgeDocument(
       id,
@@ -220,6 +223,7 @@ public sealed class KnowledgeDocument : AuditableEntity
     {
       CurrentAuthoritativeRevisionId = currentAuthoritativeRevisionId,
       Lifecycle = lifecycle,
+      ConcurrencyToken = concurrencyToken,
     };
 
     document._revisions.Clear();

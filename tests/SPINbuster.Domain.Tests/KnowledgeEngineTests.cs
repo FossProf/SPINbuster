@@ -226,6 +226,58 @@ public sealed class KnowledgeEngineTests
         Timestamp(2)));
   }
 
+  [Fact]
+  public void ConcurrencyTokenStartsAtZero()
+  {
+    var document = CreateDocument();
+    Assert.Equal(0, document.ConcurrencyToken);
+  }
+
+  [Fact]
+  public void ConcurrencyTokenCanBeSetViaRehydrate()
+  {
+    var document = CreateDocument();
+
+    var rehydrated = KnowledgeDocument.Rehydrate(
+      document.Id,
+      document.ProjectId,
+      document.DocumentType,
+      document.CanonicalTitle,
+      document.ExternalReferenceNumber,
+      document.DisciplineOrCategory,
+      document.CurrentAuthoritativeRevisionId,
+      document.Lifecycle,
+      document.CreatedBy,
+      document.CreatedAtUtc,
+      [],
+      [],
+      concurrencyToken: 5);
+
+    Assert.Equal(5, rehydrated.ConcurrencyToken);
+  }
+
+  [Fact]
+  public void ConcurrencyTokenDefaultsToZeroOnRehydrate()
+  {
+    var document = CreateDocument();
+
+    var rehydrated = KnowledgeDocument.Rehydrate(
+      document.Id,
+      document.ProjectId,
+      document.DocumentType,
+      document.CanonicalTitle,
+      document.ExternalReferenceNumber,
+      document.DisciplineOrCategory,
+      document.CurrentAuthoritativeRevisionId,
+      document.Lifecycle,
+      document.CreatedBy,
+      document.CreatedAtUtc,
+      [],
+      []);
+
+    Assert.Equal(0, rehydrated.ConcurrencyToken);
+  }
+
   private static KnowledgeDocument CreateDocument()
   {
     return new KnowledgeDocument(

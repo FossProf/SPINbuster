@@ -348,6 +348,7 @@ public sealed class KnowledgePromotionWorkflowRunner
     }
     catch (Exception exception) when (
       exception is DomainInvariantException
+      || exception is ConcurrencyConflictException
       || exception is LifecycleTransitionException
       || exception is InvalidOperationException
       || exception is ApplicationEntityNotFoundException)

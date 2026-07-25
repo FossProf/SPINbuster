@@ -22,6 +22,8 @@ internal sealed class KnowledgeDocumentRecord
 
   public KnowledgeDocumentLifecycle Lifecycle { get; set; }
 
+  public int ConcurrencyToken { get; set; }
+
   public string CreatedBy { get; set; } = string.Empty;
 
   public DateTimeOffset CreatedAtUtc { get; set; }

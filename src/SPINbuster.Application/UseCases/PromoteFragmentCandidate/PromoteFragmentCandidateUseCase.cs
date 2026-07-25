@@ -140,7 +140,7 @@ public sealed class PromoteFragmentCandidateUseCase
         ValidatePreconditions(candidate, parserRun, importedSource, project);
 
         var documentMetadataHash = ComputeMetadataHash(command.DocumentType, command.CanonicalTitle, command.ExternalReferenceNumber, command.DisciplineOrCategory);
-        var knowledgeDocument = await FindOrCreateKnowledgeDocumentAsync(
+        var documentResolution = await ResolveDocument(
           candidate.ProjectId,
           command.DocumentType,
           command.CanonicalTitle,
@@ -148,6 +148,39 @@ public sealed class PromoteFragmentCandidateUseCase
           command.DisciplineOrCategory,
           cancellationToken);
 
+        if (documentResolution.IsAmbiguous)
+        {
+          diagnostic.RecordFailure(
+            $"Ambiguous document match: {documentResolution.MatchedDocuments.Count} documents match type '{command.DocumentType}' with title '{command.CanonicalTitle}' in project {candidate.ProjectId}.",
+            PromotionConflictType.AmbiguousDocumentMatch);
+
+          var ambiguousAttempt = new PromotionAttempt(
+            PromotionAttemptId.New(),
+            recordId,
+            PromotionAttemptOutcome.PermanentInvariantViolation,
+            diagnostic.Id,
+            command.FragmentCandidateId,
+            candidate.SourceContentHash,
+            _clock.UtcNow,
+            diagnostic.FailureReason);
+
+          await _promotionDiagnosticRepository.AddAsync(diagnostic, cancellationToken);
+          await _promotionAttemptRepository.AddAsync(ambiguousAttempt, cancellationToken);
+          await _unitOfWork.CommitAsync(cancellationToken);
+
+          return new PromoteFragmentCandidateResult(
+            diagnostic.Id,
+            PromotionDiagnosticStatus.Failed,
+            null,
+            null,
+            null,
+            false,
+            null,
+            diagnostic.FailureReason,
+            PromotionConflictType.AmbiguousDocumentMatch);
+        }
+
+        var knowledgeDocument = documentResolution.Document!;
         var supersededRevisionId = knowledgeDocument.CurrentAuthoritativeRevisionId;
         var supersededExistingRevision = supersededRevisionId is not null;
 
@@ -175,6 +208,74 @@ public sealed class PromoteFragmentCandidateUseCase
 
         if (supersededExistingRevision)
         {
+          var existingRevision = await _knowledgeRevisionRepository.GetByIdAsync(
+            knowledgeDocument.CurrentAuthoritativeRevisionId!.Value,
+            cancellationToken)
+            ?? throw new DomainInvariantException(
+              $"Current authoritative revision {knowledgeDocument.CurrentAuthoritativeRevisionId} not found on document {knowledgeDocument.Id}.");
+
+          if (existingRevision.SourceAuthority > knowledgeRevision.SourceAuthority)
+          {
+            var authorityMessage = $"Existing revision {existingRevision.Id} has higher source authority ({existingRevision.SourceAuthority}) than the promoted revision ({knowledgeRevision.SourceAuthority}).";
+            diagnostic.RecordFailure(authorityMessage, PromotionConflictType.HigherAuthorityExists);
+
+            var authorityAttempt = new PromotionAttempt(
+              PromotionAttemptId.New(),
+              recordId,
+              PromotionAttemptOutcome.PermanentInvariantViolation,
+              diagnostic.Id,
+              command.FragmentCandidateId,
+              candidate.SourceContentHash,
+              _clock.UtcNow,
+              authorityMessage);
+
+            await _promotionDiagnosticRepository.AddAsync(diagnostic, cancellationToken);
+            await _promotionAttemptRepository.AddAsync(authorityAttempt, cancellationToken);
+            await _unitOfWork.CommitAsync(cancellationToken);
+
+            return new PromoteFragmentCandidateResult(
+              diagnostic.Id,
+              PromotionDiagnosticStatus.Failed,
+              null,
+              null,
+              null,
+              false,
+              null,
+              authorityMessage,
+              PromotionConflictType.HigherAuthorityExists);
+          }
+
+          if (knowledgeRevision.ReceivedAtUtc < existingRevision.ReceivedAtUtc)
+          {
+            var temporalMessage = $"New revision ReceivedAtUtc ({knowledgeRevision.ReceivedAtUtc:O}) is earlier than existing revision ReceivedAtUtc ({existingRevision.ReceivedAtUtc:O}).";
+            diagnostic.RecordFailure(temporalMessage, PromotionConflictType.TemporalOrderViolation);
+
+            var temporalAttempt = new PromotionAttempt(
+              PromotionAttemptId.New(),
+              recordId,
+              PromotionAttemptOutcome.PermanentInvariantViolation,
+              diagnostic.Id,
+              command.FragmentCandidateId,
+              candidate.SourceContentHash,
+              _clock.UtcNow,
+              temporalMessage);
+
+            await _promotionDiagnosticRepository.AddAsync(diagnostic, cancellationToken);
+            await _promotionAttemptRepository.AddAsync(temporalAttempt, cancellationToken);
+            await _unitOfWork.CommitAsync(cancellationToken);
+
+            return new PromoteFragmentCandidateResult(
+              diagnostic.Id,
+              PromotionDiagnosticStatus.Failed,
+              null,
+              null,
+              null,
+              false,
+              null,
+              temporalMessage,
+              PromotionConflictType.TemporalOrderViolation);
+          }
+
           var outcome = knowledgeDocument.SupersedeCurrentRevision(
             knowledgeRevision,
             _currentUser.UserId.Value,
@@ -233,7 +334,7 @@ public sealed class PromoteFragmentCandidateUseCase
           StageAuditEvents(derivedFromRelationship.AuditTrail);
         }
 
-        await _knowledgeDocumentRepository.UpdateAsync(knowledgeDocument, cancellationToken);
+        await _knowledgeDocumentRepository.UpdateAsync(knowledgeDocument, knowledgeDocument.ConcurrencyToken, cancellationToken);
         if (supersededDomainRevision is not null)
         {
           await _knowledgeRevisionRepository.UpdateAsync(supersededDomainRevision, cancellationToken);
@@ -308,7 +409,8 @@ public sealed class PromoteFragmentCandidateUseCase
           diagnostic.KnowledgeCitationId,
           diagnostic.SupersededExistingRevision,
           diagnostic.SupersededRevisionId,
-          null);
+          null,
+          PromotionConflictType.None);
       }
       catch (OperationCanceledException)
       {
@@ -340,7 +442,8 @@ public sealed class PromoteFragmentCandidateUseCase
             existingDiagnostic.KnowledgeCitationId,
             existingDiagnostic.SupersededExistingRevision,
             existingDiagnostic.SupersededRevisionId,
-            exception.Message);
+            exception.Message,
+            PromotionConflictType.None);
         }
 
         diagnostic.RecordFailure(exception.Message);
@@ -371,7 +474,43 @@ public sealed class PromoteFragmentCandidateUseCase
           null,
           false,
           null,
+          exception.Message,
+          PromotionConflictType.None);
+      }
+      catch (ConcurrencyConflictException exception)
+      {
+        stopwatch.Stop();
+
+        diagnostic.RecordFailure(exception.Message, PromotionConflictType.ConcurrentPromotion);
+
+        var conflictAttempt = new PromotionAttempt(
+          PromotionAttemptId.New(),
+          recordId,
+          PromotionAttemptOutcome.ConcurrencyConflict,
+          diagnostic.Id,
+          command.FragmentCandidateId,
+          candidate.SourceContentHash,
+          _clock.UtcNow,
           exception.Message);
+
+        await _promotionDiagnosticRepository.AddAsync(diagnostic, cancellationToken);
+        await _promotionAttemptRepository.AddAsync(conflictAttempt, cancellationToken);
+        await _unitOfWork.CommitAsync(cancellationToken);
+
+        _logger.LogWarning(
+          "{UseCase} failed (concurrency) in {DurationMs}ms for fragment candidate {FragmentCandidateId}: {Reason}",
+          useCaseName, stopwatch.ElapsedMilliseconds, candidateId, exception.Message);
+
+        return new PromoteFragmentCandidateResult(
+          diagnostic.Id,
+          PromotionDiagnosticStatus.Failed,
+          null,
+          null,
+          null,
+          false,
+          null,
+          exception.Message,
+          PromotionConflictType.ConcurrentPromotion);
       }
       catch (DomainInvariantException exception)
       {
@@ -395,7 +534,8 @@ public sealed class PromoteFragmentCandidateUseCase
             existingDiagnostic.KnowledgeCitationId,
             existingDiagnostic.SupersededExistingRevision,
             existingDiagnostic.SupersededRevisionId,
-            exception.Message);
+            exception.Message,
+            PromotionConflictType.None);
         }
 
         diagnostic.RecordFailure(exception.Message);
@@ -426,7 +566,8 @@ public sealed class PromoteFragmentCandidateUseCase
           null,
           false,
           null,
-          exception.Message);
+          exception.Message,
+          PromotionConflictType.None);
       }
       catch (ApplicationEntityNotFoundException)
       {
@@ -490,7 +631,7 @@ public sealed class PromoteFragmentCandidateUseCase
     }
   }
 
-  private async Task<KnowledgeDocument> FindOrCreateKnowledgeDocumentAsync(
+  private async Task<DocumentResolution> ResolveDocument(
     ProjectId projectId,
     KnowledgeDocumentType documentType,
     string canonicalTitle,
@@ -500,13 +641,20 @@ public sealed class PromoteFragmentCandidateUseCase
   {
     var existingDocuments = await _knowledgeDocumentRepository.GetByProjectAsync(projectId, cancellationToken);
 
-    var match = existingDocuments.FirstOrDefault(doc =>
-      doc.DocumentType == documentType
-      && string.Equals(doc.CanonicalTitle, canonicalTitle, StringComparison.OrdinalIgnoreCase));
+    var candidates = existingDocuments
+      .Where(doc =>
+        doc.DocumentType == documentType
+        && string.Equals(doc.CanonicalTitle, canonicalTitle, StringComparison.OrdinalIgnoreCase))
+      .ToList();
 
-    if (match is not null)
+    if (candidates.Count > 1)
     {
-      return match;
+      return new DocumentResolution(null, candidates, IsAmbiguous: true);
+    }
+
+    if (candidates.Count == 1)
+    {
+      return new DocumentResolution(candidates[0], candidates, IsAmbiguous: false);
     }
 
     var newDocument = new KnowledgeDocument(
@@ -520,8 +668,13 @@ public sealed class PromoteFragmentCandidateUseCase
       _clock.UtcNow);
 
     await _knowledgeDocumentRepository.AddAsync(newDocument, cancellationToken);
-    return newDocument;
+    return new DocumentResolution(newDocument, [], IsAmbiguous: false);
   }
+
+  private sealed record DocumentResolution(
+    KnowledgeDocument? Document,
+    IReadOnlyList<KnowledgeDocument> MatchedDocuments,
+    bool IsAmbiguous);
 
   private static KnowledgeCitationLocationType MapLocatorType(FragmentLocatorType locatorType)
   {
@@ -603,7 +756,8 @@ public sealed class PromoteFragmentCandidateUseCase
       cachedDiagnostic.KnowledgeCitationId,
       cachedDiagnostic.SupersededExistingRevision,
       cachedDiagnostic.SupersededRevisionId,
-      null);
+      null,
+      PromotionConflictType.None);
   }
 
 }

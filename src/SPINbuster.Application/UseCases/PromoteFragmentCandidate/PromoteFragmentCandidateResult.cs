@@ -10,4 +10,5 @@ public sealed record PromoteFragmentCandidateResult(
   KnowledgeCitationId? KnowledgeCitationId,
   bool SupersededExistingRevision,
   KnowledgeDocumentRevisionId? SupersededRevisionId,
-  string? FailureReason);
+  string? FailureReason,
+  PromotionConflictType ConflictType = PromotionConflictType.None);

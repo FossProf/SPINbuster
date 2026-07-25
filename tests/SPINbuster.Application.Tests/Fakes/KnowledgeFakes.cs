@@ -13,6 +13,8 @@ internal sealed class FakeKnowledgeDocumentRepository : IKnowledgeDocumentReposi
 
   public CancellationToken LastCancellationToken { get; private set; }
 
+  public bool SimulateConcurrencyConflict { get; set; }
+
   public Task<KnowledgeDocument?> GetByIdAsync(
     KnowledgeDocumentId knowledgeDocumentId,
     CancellationToken cancellationToken = default)
@@ -43,9 +45,17 @@ internal sealed class FakeKnowledgeDocumentRepository : IKnowledgeDocumentReposi
 
   public Task UpdateAsync(
     KnowledgeDocument knowledgeDocument,
+    int expectedConcurrencyToken,
     CancellationToken cancellationToken = default)
   {
     LastCancellationToken = cancellationToken;
+
+    if (SimulateConcurrencyConflict)
+    {
+      throw new ConcurrencyConflictException(
+        $"Knowledge document {knowledgeDocument.Id} was modified by another process. Expected token {expectedConcurrencyToken}.");
+    }
+
     _documents[knowledgeDocument.Id] = knowledgeDocument;
     UpdatedDocuments.Add(knowledgeDocument);
     return Task.CompletedTask;

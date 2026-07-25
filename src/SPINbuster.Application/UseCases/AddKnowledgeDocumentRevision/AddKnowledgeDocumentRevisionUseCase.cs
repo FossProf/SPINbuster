@@ -61,7 +61,7 @@ public sealed class AddKnowledgeDocumentRevisionUseCase
       _currentUser.UserId.Value,
       _clock.UtcNow);
 
-    await _knowledgeDocumentRepository.UpdateAsync(knowledgeDocument, cancellationToken);
+    await _knowledgeDocumentRepository.UpdateAsync(knowledgeDocument, knowledgeDocument.ConcurrencyToken, cancellationToken);
     await _knowledgeRevisionRepository.AddAsync(knowledgeRevision, cancellationToken);
     StageAuditEvents(AuditTrailSlice.GetNewEvents(knowledgeDocument, initialAuditCount));
     await _unitOfWork.CommitAsync(cancellationToken);

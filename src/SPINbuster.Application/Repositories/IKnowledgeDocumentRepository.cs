@@ -18,5 +18,6 @@ public interface IKnowledgeDocumentRepository
 
   Task UpdateAsync(
     KnowledgeDocument knowledgeDocument,
+    int expectedConcurrencyToken,
     CancellationToken cancellationToken = default);
 }

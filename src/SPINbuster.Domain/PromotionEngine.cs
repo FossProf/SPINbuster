@@ -10,6 +10,15 @@ public enum PromotionDiagnosticStatus
   Failed = 2,
 }
 
+public enum PromotionConflictType
+{
+  None = 0,
+  AmbiguousDocumentMatch = 1,
+  HigherAuthorityExists = 2,
+  ConcurrentPromotion = 3,
+  TemporalOrderViolation = 4,
+}
+
 public enum PromotionAttemptOutcome
 {
   Promoted = 0,
@@ -429,6 +438,8 @@ public sealed class PromotionDiagnostic
 
   public KnowledgeDocumentRevisionId? SupersededRevisionId { get; private set; }
 
+  public PromotionConflictType ConflictType { get; private set; }
+
   internal static PromotionDiagnostic Rehydrate(
     PromotionDiagnosticId id,
     FragmentCandidateId fragmentCandidateId,
@@ -441,7 +452,8 @@ public sealed class PromotionDiagnostic
     KnowledgeDocumentRevisionId? knowledgeDocumentRevisionId,
     KnowledgeCitationId? knowledgeCitationId,
     bool supersededExistingRevision,
-    KnowledgeDocumentRevisionId? supersededRevisionId)
+    KnowledgeDocumentRevisionId? supersededRevisionId,
+    PromotionConflictType conflictType = PromotionConflictType.None)
   {
     return new PromotionDiagnostic(id, fragmentCandidateId, parserRunId, projectId, promotedAtUtc)
     {
@@ -452,6 +464,7 @@ public sealed class PromotionDiagnostic
       KnowledgeCitationId = knowledgeCitationId,
       SupersededExistingRevision = supersededExistingRevision,
       SupersededRevisionId = supersededRevisionId,
+      ConflictType = conflictType,
     };
   }
 
@@ -475,7 +488,7 @@ public sealed class PromotionDiagnostic
     SupersededRevisionId = supersededRevisionId;
   }
 
-  public void RecordFailure(string reason)
+  public void RecordFailure(string reason, PromotionConflictType conflictType = PromotionConflictType.None)
   {
     if (Status is not PromotionDiagnosticStatus.Eligible)
     {
@@ -484,6 +497,7 @@ public sealed class PromotionDiagnostic
 
     Status = PromotionDiagnosticStatus.Failed;
     FailureReason = DomainGuards.NotNullOrWhiteSpace(reason, nameof(reason));
+    ConflictType = conflictType;
     if (FailureReason.Length > MaxFailureReasonLength)
     {
       throw new DomainInvariantException($"{nameof(FailureReason)} length exceeds maximum of {MaxFailureReasonLength} characters.");
@@ -493,5 +507,13 @@ public sealed class PromotionDiagnostic
   private static string? NormalizeOptional(string? value)
   {
     return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+  }
+}
+
+public sealed class ConcurrencyConflictException : DomainInvariantException
+{
+  public ConcurrencyConflictException(string message)
+    : base(message)
+  {
   }
 }
