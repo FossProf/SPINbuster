@@ -27,7 +27,7 @@ public sealed class SqliteReportPersistenceTests : IDisposable
 
     await using (var seedContext = CreateDbContext())
     {
-      await seedContext.Database.MigrateAsync();
+      await SpinbusterDbContext.MigrateWithSha256Async(seedContext);
       var seededInspection = await SeedInspectionContextAsync(seedContext);
       var auditRecorder = new SqliteAuditRecorder();
       var unitOfWork = new SqliteUnitOfWork(seedContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
@@ -77,7 +77,7 @@ public sealed class SqliteReportPersistenceTests : IDisposable
 
     await using (var seedContext = CreateDbContext())
     {
-      await seedContext.Database.MigrateAsync();
+      await SpinbusterDbContext.MigrateWithSha256Async(seedContext);
       seedContext.Add(new AuditEventRecord
       {
         Id = duplicateAuditId,
@@ -139,7 +139,7 @@ public sealed class SqliteReportPersistenceTests : IDisposable
 
     await using (var firstContext = CreateDbContext())
     {
-      await firstContext.Database.MigrateAsync();
+      await SpinbusterDbContext.MigrateWithSha256Async(firstContext);
       var seededInspection = await SeedInspectionContextAsync(firstContext);
       var auditRecorder = new SqliteAuditRecorder();
       var unitOfWork = new SqliteUnitOfWork(firstContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
@@ -204,11 +204,11 @@ public sealed class SqliteReportPersistenceTests : IDisposable
 
     await using (var migratedContext = CreateDbContext())
     {
-      await migratedContext.Database.MigrateAsync();
-      await migratedContext.Database.MigrateAsync();
+      await SpinbusterDbContext.MigrateWithSha256Async(migratedContext);
+      await SpinbusterDbContext.MigrateWithSha256Async(migratedContext);
 
       var appliedMigrations = (await migratedContext.Database.GetAppliedMigrationsAsync()).ToArray();
-      Assert.Equal(15, appliedMigrations.Length);
+      Assert.Equal(17, appliedMigrations.Length);
 
       var storedProject = await new SqliteProjectRepository(migratedContext).GetByIdAsync(seededInspection.ProjectId);
       var storedInspectionSession = await new SqliteInspectionSessionRepository(migratedContext).GetByIdAsync(seededInspection.InspectionSessionId);

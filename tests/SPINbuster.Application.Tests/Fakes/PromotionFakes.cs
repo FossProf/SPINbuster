@@ -76,6 +76,18 @@ internal sealed class FakePromotionAttemptRepository : IPromotionAttemptReposito
         .FirstOrDefault());
   }
 
+  public Task<IReadOnlyList<PromotionAttempt>> GetByFragmentCandidateAsync(
+    FragmentCandidateId fragmentCandidateId,
+    CancellationToken cancellationToken = default)
+  {
+    IReadOnlyList<PromotionAttempt> result = _attempts.Values
+      .Where(attempt => attempt.FragmentCandidateId == fragmentCandidateId)
+      .OrderBy(attempt => attempt.AttemptedAtUtc)
+      .ThenBy(attempt => attempt.Id)
+      .ToArray();
+    return Task.FromResult(result);
+  }
+
   public Task AddAsync(
     PromotionAttempt promotionAttempt,
     CancellationToken cancellationToken = default)

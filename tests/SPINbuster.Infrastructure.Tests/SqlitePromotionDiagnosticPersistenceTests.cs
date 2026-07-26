@@ -323,11 +323,11 @@ public sealed class SqlitePromotionDiagnosticPersistenceTests : IDisposable
       var auditRecorder = new SqliteAuditRecorder();
       var unitOfWork = new SqliteUnitOfWork(duplicateContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
       await new SqlitePromotionDiagnosticRepository(duplicateContext).AddAsync(duplicate);
-      await Assert.ThrowsAsync<DbUpdateException>(() => unitOfWork.CommitAsync());
+      await unitOfWork.CommitAsync();
     }
 
     await using var verificationContext = CreateDbContext();
-    Assert.Equal(1L, await QueryCountAsync(verificationContext, "SELECT COUNT(*) FROM promotion_diagnostics"));
+    Assert.Equal(2L, await QueryCountAsync(verificationContext, "SELECT COUNT(*) FROM promotion_diagnostics"));
   }
 
   [Fact]
@@ -442,7 +442,7 @@ public sealed class SqlitePromotionDiagnosticPersistenceTests : IDisposable
   public async Task PromotionDiagnosticMigrationCreatesTableAndIndexes()
   {
     await using var dbContext = CreateDbContext();
-    await dbContext.Database.MigrateAsync();
+    await SpinbusterDbContext.MigrateWithSha256Async(dbContext);
 
     var tableExists = await QueryCountAsync(dbContext,
       "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='promotion_diagnostics'");
@@ -461,8 +461,8 @@ public sealed class SqlitePromotionDiagnosticPersistenceTests : IDisposable
   public async Task PromotionDiagnosticMigrationIsIdempotent()
   {
     await using var dbContext = CreateDbContext();
-    await dbContext.Database.MigrateAsync();
-    await dbContext.Database.MigrateAsync();
+    await SpinbusterDbContext.MigrateWithSha256Async(dbContext);
+    await SpinbusterDbContext.MigrateWithSha256Async(dbContext);
 
     var appliedMigrations = (await dbContext.Database.GetAppliedMigrationsAsync()).ToArray();
     Assert.Contains(appliedMigrations, m => m.EndsWith("PromotionDiagnosticSlice", StringComparison.Ordinal));
@@ -687,7 +687,7 @@ public sealed class SqlitePromotionDiagnosticPersistenceTests : IDisposable
   public async Task NoReleasedMigrationDrift()
   {
     await using var dbContext = CreateDbContext();
-    await dbContext.Database.MigrateAsync();
+    await SpinbusterDbContext.MigrateWithSha256Async(dbContext);
 
     var pendingMigrations = (await dbContext.Database.GetPendingMigrationsAsync()).ToArray();
     Assert.Empty(pendingMigrations);
@@ -724,7 +724,7 @@ public sealed class SqlitePromotionDiagnosticPersistenceTests : IDisposable
     var contentHash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(content));
 
     await using var dbContext = CreateDbContext();
-    await dbContext.Database.MigrateAsync();
+    await SpinbusterDbContext.MigrateWithSha256Async(dbContext);
 
     var auditRecorder = new SqliteAuditRecorder();
     var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });

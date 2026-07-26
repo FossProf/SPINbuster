@@ -151,7 +151,9 @@ public sealed class LoadPromotionProvenanceUseCaseTests
       "identity-hash",
       attemptId,
       "promoter@example.invalid",
-      TestTime);
+      TestTime,
+      "test-authority-basis",
+      "test-policy-version");
 
     fixture.PromotionProvenanceRepository.AddAsync(provenance).GetAwaiter().GetResult();
     return provenance;

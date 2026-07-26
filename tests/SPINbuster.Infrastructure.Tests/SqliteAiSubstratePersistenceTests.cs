@@ -143,7 +143,7 @@ public sealed class SqliteAiSubstratePersistenceTests : IDisposable
 
     await using (var dbContext = CreateDbContext())
     {
-      await dbContext.Database.MigrateAsync();
+      await SpinbusterDbContext.MigrateWithSha256Async(dbContext);
       var auditRecorder = new SqliteAuditRecorder();
       var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
 
@@ -197,7 +197,7 @@ public sealed class SqliteAiSubstratePersistenceTests : IDisposable
 
     await using (var seedContext = CreateDbContext())
     {
-      await seedContext.Database.MigrateAsync();
+      await SpinbusterDbContext.MigrateWithSha256Async(seedContext);
       seedContext.AuditEvents.Add(new SPINbuster.Infrastructure.Persistence.Records.AuditEventRecord
       {
         Id = duplicateAuditId,
@@ -385,8 +385,8 @@ public sealed class SqliteAiSubstratePersistenceTests : IDisposable
 
     await using (var migratedContext = CreateDbContext())
     {
-      await migratedContext.Database.MigrateAsync();
-      await migratedContext.Database.MigrateAsync();
+      await SpinbusterDbContext.MigrateWithSha256Async(migratedContext);
+      await SpinbusterDbContext.MigrateWithSha256Async(migratedContext);
 
       var storedProject = await new SqliteProjectRepository(migratedContext).GetByIdAsync(projectId);
       var storedInspectionSession = await new SqliteInspectionSessionRepository(migratedContext).GetByIdAsync(inspectionSessionId);

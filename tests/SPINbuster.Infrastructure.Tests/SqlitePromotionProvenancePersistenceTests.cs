@@ -132,7 +132,9 @@ public sealed class SqlitePromotionProvenancePersistenceTests : IDisposable
       "identity-hash-123",
       PromotionAttemptId.New(),
       "promoter@example.invalid",
-      promotedAt);
+      promotedAt,
+      "test-authority-basis",
+      "test-policy-version");
 
     await using (var persistContext = CreateDbContext())
     {
@@ -167,6 +169,8 @@ public sealed class SqlitePromotionProvenancePersistenceTests : IDisposable
     Assert.Equal(expected.PromotionAttemptId, stored.PromotionAttemptId);
     Assert.Equal("promoter@example.invalid", stored.PromotedBy);
     Assert.Equal(promotedAt, stored.PromotedAtUtc);
+    Assert.Equal("test-authority-basis", stored.AuthorityBasis);
+    Assert.Equal("test-policy-version", stored.PolicyVersion);
     Assert.Equal(1L, await QueryCountAsync(verificationContext, "SELECT COUNT(*) FROM promotion_provenances"));
   }
 
@@ -282,7 +286,9 @@ public sealed class SqlitePromotionProvenancePersistenceTests : IDisposable
       "identity-hash-456",
       promotionAttemptId,
       "promoter@example.invalid",
-      createdAt.AddMinutes(11));
+      createdAt.AddMinutes(11),
+      "test-authority-basis",
+      "test-policy-version");
 
     await using (var persistContext = CreateDbContext())
     {
@@ -402,10 +408,12 @@ public sealed class SqlitePromotionProvenancePersistenceTests : IDisposable
         "contract-hash-sha256",
         seeded.SourceId,
         seeded.ContentHash,
-        "identity-hash",
-        PromotionAttemptId.New(),
-        "promoter@example.invalid",
-        createdAt.AddMinutes(11));
+      "identity-hash",
+      PromotionAttemptId.New(),
+      "promoter@example.invalid",
+      createdAt.AddMinutes(11),
+      "test-authority-basis",
+      "test-policy-version");
 
       var auditRecorder3 = new SqliteAuditRecorder();
       var unitOfWork3 = new SqliteUnitOfWork(seedContext, auditRecorder3, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
@@ -421,22 +429,22 @@ public sealed class SqlitePromotionProvenancePersistenceTests : IDisposable
   public async Task UpgradeMigrationCreatesProvenanceTableWithoutChangingReleasedMigrations()
   {
     await using var dbContext = CreateDbContext();
-    await dbContext.Database.MigrateAsync();
+    await SpinbusterDbContext.MigrateWithSha256Async(dbContext);
 
     var tableExists = await QueryCountAsync(dbContext,
       "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='promotion_provenances'");
     Assert.Equal(1, tableExists);
 
     var appliedMigrations = (await dbContext.Database.GetAppliedMigrationsAsync()).ToArray();
-    Assert.Equal(15, appliedMigrations.Length);
+    Assert.Equal(17, appliedMigrations.Length);
   }
 
   [Fact]
   public async Task RepeatedMigrateAsyncIsSafe()
   {
     await using var dbContext = CreateDbContext();
-    await dbContext.Database.MigrateAsync();
-    await dbContext.Database.MigrateAsync();
+    await SpinbusterDbContext.MigrateWithSha256Async(dbContext);
+    await SpinbusterDbContext.MigrateWithSha256Async(dbContext);
 
     var tableExists = await QueryCountAsync(dbContext,
       "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='promotion_provenances'");
@@ -540,10 +548,12 @@ public sealed class SqlitePromotionProvenancePersistenceTests : IDisposable
         "contract-hash-sha256",
         seeded.SourceId,
         seeded.ContentHash,
-        "identity-hash-disposal",
-        PromotionAttemptId.New(),
-        "promoter@example.invalid",
-        createdAt.AddMinutes(11));
+      "identity-hash-disposal",
+      PromotionAttemptId.New(),
+      "promoter@example.invalid",
+      createdAt.AddMinutes(11),
+      "test-authority-basis",
+      "test-policy-version");
 
       var auditRecorder3 = new SqliteAuditRecorder();
       var unitOfWork3 = new SqliteUnitOfWork(seedContext, auditRecorder3, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
@@ -566,6 +576,8 @@ public sealed class SqlitePromotionProvenancePersistenceTests : IDisposable
     Assert.Equal(FragmentCandidateReviewState.HumanAccepted, loaded.ReviewState);
     Assert.Equal("reviewer@example.invalid", loaded.ReviewedBy);
     Assert.Equal("promoter@example.invalid", loaded.PromotedBy);
+    Assert.Equal("test-authority-basis", loaded.AuthorityBasis);
+    Assert.Equal("test-policy-version", loaded.PolicyVersion);
   }
 
   [Fact]
@@ -664,10 +676,12 @@ public sealed class SqlitePromotionProvenancePersistenceTests : IDisposable
         "contract-hash-sha256",
         seeded.SourceId,
         seeded.ContentHash,
-        "identity-hash-ordering",
-        PromotionAttemptId.New(),
-        "promoter@example.invalid",
-        createdAt.AddMinutes(11));
+      "identity-hash-ordering",
+      PromotionAttemptId.New(),
+      "promoter@example.invalid",
+      createdAt.AddMinutes(11),
+      "test-authority-basis",
+      "test-policy-version");
 
       var auditRecorder3 = new SqliteAuditRecorder();
       var unitOfWork3 = new SqliteUnitOfWork(seedContext, auditRecorder3, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
@@ -714,7 +728,7 @@ public sealed class SqlitePromotionProvenancePersistenceTests : IDisposable
     var contentHash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(content));
 
     await using var dbContext = CreateDbContext();
-    await dbContext.Database.MigrateAsync();
+    await SpinbusterDbContext.MigrateWithSha256Async(dbContext);
 
     var auditRecorder = new SqliteAuditRecorder();
     var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });

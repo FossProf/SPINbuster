@@ -14,6 +14,7 @@ public sealed class PromoteFragmentCandidateUseCase
   private const string PromotionContractVersion = PromotionIdentity.ContractVersion;
 
   private readonly IAuditRecorder _auditRecorder;
+  private readonly IAuthorityPolicy _authorityPolicy;
   private readonly IClock _clock;
   private readonly ICurrentUser _currentUser;
   private readonly IFragmentCandidateRepository _fragmentCandidateRepository;
@@ -48,6 +49,7 @@ public sealed class PromoteFragmentCandidateUseCase
     IClock clock,
     ICurrentUser currentUser,
     IAuditRecorder auditRecorder,
+    IAuthorityPolicy authorityPolicy,
     ILogger<PromoteFragmentCandidateUseCase> logger)
   {
     _fragmentCandidateRepository = fragmentCandidateRepository;
@@ -66,6 +68,7 @@ public sealed class PromoteFragmentCandidateUseCase
     _clock = clock;
     _currentUser = currentUser;
     _auditRecorder = auditRecorder;
+    _authorityPolicy = authorityPolicy;
     _logger = logger;
   }
 
@@ -152,23 +155,6 @@ public sealed class PromoteFragmentCandidateUseCase
         {
           var ambiguousMessage = $"Ambiguous document match: {documentResolution.MatchedDocuments.Count} documents match type '{command.DocumentType}' with title '{command.CanonicalTitle}' in project {candidate.ProjectId}.";
 
-          var existingAmbiguousDiagnostic = await _promotionDiagnosticRepository.GetByFragmentCandidateAsync(
-            command.FragmentCandidateId, cancellationToken);
-
-          if (existingAmbiguousDiagnostic is not null)
-          {
-            return new PromoteFragmentCandidateResult(
-              existingAmbiguousDiagnostic.Id,
-              existingAmbiguousDiagnostic.Status,
-              existingAmbiguousDiagnostic.KnowledgeDocumentId,
-              existingAmbiguousDiagnostic.KnowledgeDocumentRevisionId,
-              existingAmbiguousDiagnostic.KnowledgeCitationId,
-              existingAmbiguousDiagnostic.SupersededExistingRevision,
-              existingAmbiguousDiagnostic.SupersededRevisionId,
-              ambiguousMessage,
-              PromotionConflictType.AmbiguousDocumentMatch);
-          }
-
           diagnostic.RecordFailure(
             ambiguousMessage,
             PromotionConflictType.AmbiguousDocumentMatch);
@@ -203,6 +189,8 @@ public sealed class PromoteFragmentCandidateUseCase
         var supersededRevisionId = knowledgeDocument.CurrentAuthoritativeRevisionId;
         var supersededExistingRevision = supersededRevisionId is not null;
 
+        var authorityResult = _authorityPolicy.Classify(candidate, candidate.ProjectId);
+
         var revisionLabel = $"v1-parsed-{candidate.Ordinal}-{candidate.Id.Value.ToString("N")[..8]}";
         var knowledgeSourceId = KnowledgeSourceId.New();
 
@@ -215,7 +203,7 @@ public sealed class PromoteFragmentCandidateUseCase
           revisionLabel,
           null,
           _clock.UtcNow,
-          command.SourceAuthorityLevel,
+          authorityResult.EffectiveAuthorityLevel,
           candidate.SourceContentHash,
           documentMetadataHash,
           supersededRevisionId,
@@ -236,23 +224,6 @@ public sealed class PromoteFragmentCandidateUseCase
           if (existingRevision.SourceAuthority >= knowledgeRevision.SourceAuthority)
           {
             var authorityMessage = $"Existing revision {existingRevision.Id} has equal or higher source authority ({existingRevision.SourceAuthority}) than the promoted revision ({knowledgeRevision.SourceAuthority}).";
-
-            var existingAuthorityDiagnostic = await _promotionDiagnosticRepository.GetByFragmentCandidateAsync(
-              command.FragmentCandidateId, cancellationToken);
-
-            if (existingAuthorityDiagnostic is not null)
-            {
-              return new PromoteFragmentCandidateResult(
-                existingAuthorityDiagnostic.Id,
-                existingAuthorityDiagnostic.Status,
-                existingAuthorityDiagnostic.KnowledgeDocumentId,
-                existingAuthorityDiagnostic.KnowledgeDocumentRevisionId,
-                existingAuthorityDiagnostic.KnowledgeCitationId,
-                existingAuthorityDiagnostic.SupersededExistingRevision,
-                existingAuthorityDiagnostic.SupersededRevisionId,
-                authorityMessage,
-                PromotionConflictType.HigherAuthorityExists);
-            }
 
             diagnostic.RecordFailure(authorityMessage, PromotionConflictType.HigherAuthorityExists);
 
@@ -285,23 +256,6 @@ public sealed class PromoteFragmentCandidateUseCase
           if (knowledgeRevision.ReceivedAtUtc < existingRevision.ReceivedAtUtc)
           {
             var temporalMessage = $"New revision ReceivedAtUtc ({knowledgeRevision.ReceivedAtUtc:O}) is earlier than existing revision ReceivedAtUtc ({existingRevision.ReceivedAtUtc:O}).";
-
-            var existingTemporalDiagnostic = await _promotionDiagnosticRepository.GetByFragmentCandidateAsync(
-              command.FragmentCandidateId, cancellationToken);
-
-            if (existingTemporalDiagnostic is not null)
-            {
-              return new PromoteFragmentCandidateResult(
-                existingTemporalDiagnostic.Id,
-                existingTemporalDiagnostic.Status,
-                existingTemporalDiagnostic.KnowledgeDocumentId,
-                existingTemporalDiagnostic.KnowledgeDocumentRevisionId,
-                existingTemporalDiagnostic.KnowledgeCitationId,
-                existingTemporalDiagnostic.SupersededExistingRevision,
-                existingTemporalDiagnostic.SupersededRevisionId,
-                temporalMessage,
-                PromotionConflictType.TemporalOrderViolation);
-            }
 
             diagnostic.RecordFailure(temporalMessage, PromotionConflictType.TemporalOrderViolation);
 
@@ -442,7 +396,9 @@ public sealed class PromoteFragmentCandidateUseCase
           identity.Hash,
           promotionAttempt.Id,
           _currentUser.UserId.Value,
-          _clock.UtcNow);
+          _clock.UtcNow,
+          authorityResult.AuthorityBasis,
+          _authorityPolicy.PolicyVersion);
 
         await _promotionDiagnosticRepository.AddAsync(diagnostic, cancellationToken);
         await _promotionRecordRepository.AddAsync(promotionRecord, cancellationToken);

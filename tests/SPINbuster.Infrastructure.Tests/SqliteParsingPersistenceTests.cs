@@ -22,7 +22,7 @@ public sealed class SqliteParsingPersistenceTests : IDisposable
   public async Task FreshMigrationCreatesParserTables()
   {
     await using var dbContext = CreateDbContext();
-    await dbContext.Database.MigrateAsync();
+    await SpinbusterDbContext.MigrateWithSha256Async(dbContext);
 
     var appliedMigrations = (await dbContext.Database.GetAppliedMigrationsAsync()).ToArray();
 
@@ -39,8 +39,8 @@ public sealed class SqliteParsingPersistenceTests : IDisposable
   public async Task UpgradeMigrationIsIdempotent()
   {
     await using var dbContext = CreateDbContext();
-    await dbContext.Database.MigrateAsync();
-    await dbContext.Database.MigrateAsync();
+    await SpinbusterDbContext.MigrateWithSha256Async(dbContext);
+    await SpinbusterDbContext.MigrateWithSha256Async(dbContext);
 
     var appliedMigrations = (await dbContext.Database.GetAppliedMigrationsAsync()).ToArray();
     Assert.Contains(appliedMigrations, migration => migration.EndsWith("ParsingFoundationSlice", StringComparison.Ordinal));
@@ -389,7 +389,7 @@ public sealed class SqliteParsingPersistenceTests : IDisposable
   public async Task FreshMigrationCreatesFragmentReviewColumnsAndIndexes()
   {
     await using var dbContext = CreateDbContext();
-    await dbContext.Database.MigrateAsync();
+    await SpinbusterDbContext.MigrateWithSha256Async(dbContext);
 
     var appliedMigrations = (await dbContext.Database.GetAppliedMigrationsAsync()).ToArray();
     Assert.Contains(appliedMigrations, m => m.EndsWith("AddFragmentReviewIndexesAndConstraint", StringComparison.Ordinal));
@@ -402,8 +402,8 @@ public sealed class SqliteParsingPersistenceTests : IDisposable
   public async Task UpgradeMigrationIsIdempotentForReviewIndexes()
   {
     await using var dbContext = CreateDbContext();
-    await dbContext.Database.MigrateAsync();
-    await dbContext.Database.MigrateAsync();
+    await SpinbusterDbContext.MigrateWithSha256Async(dbContext);
+    await SpinbusterDbContext.MigrateWithSha256Async(dbContext);
 
     var appliedMigrations = (await dbContext.Database.GetAppliedMigrationsAsync()).ToArray();
     Assert.Contains(appliedMigrations, m => m.EndsWith("AddFragmentReviewIndexesAndConstraint", StringComparison.Ordinal));
@@ -759,7 +759,7 @@ public sealed class SqliteParsingPersistenceTests : IDisposable
   public async Task NoReleasedMigrationDrift()
   {
     await using var dbContext = CreateDbContext();
-    await dbContext.Database.MigrateAsync();
+    await SpinbusterDbContext.MigrateWithSha256Async(dbContext);
 
     var pendingMigrations = (await dbContext.Database.GetPendingMigrationsAsync()).ToArray();
     Assert.Empty(pendingMigrations);
@@ -769,7 +769,7 @@ public sealed class SqliteParsingPersistenceTests : IDisposable
   public async Task ParserDiagnosticsTableExistsAfterMigration()
   {
     await using var dbContext = CreateDbContext();
-    await dbContext.Database.MigrateAsync();
+    await SpinbusterDbContext.MigrateWithSha256Async(dbContext);
 
     var tableExists = await QueryCountAsync(dbContext,
       "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='parser_diagnostics'");
@@ -1205,7 +1205,7 @@ public sealed class SqliteParsingPersistenceTests : IDisposable
     var contentHash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(content));
 
     await using var dbContext = CreateDbContext();
-    await dbContext.Database.MigrateAsync();
+    await SpinbusterDbContext.MigrateWithSha256Async(dbContext);
 
     var auditRecorder = new SqliteAuditRecorder();
     var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });

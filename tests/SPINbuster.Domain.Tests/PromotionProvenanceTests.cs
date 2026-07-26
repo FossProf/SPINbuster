@@ -65,7 +65,9 @@ public sealed class PromotionProvenanceTests
       "identity-hash",
       promotionAttemptId,
       "promoter@example.invalid",
-      BaseTime);
+      BaseTime,
+      "test-authority-basis",
+      "test-policy-version");
 
     Assert.Equal(id, provenance.Id);
     Assert.Equal(projectId, provenance.ProjectId);
@@ -87,6 +89,8 @@ public sealed class PromotionProvenanceTests
     Assert.Equal(promotionAttemptId, provenance.PromotionAttemptId);
     Assert.Equal("promoter@example.invalid", provenance.PromotedBy);
     Assert.Equal(BaseTime, provenance.PromotedAtUtc);
+    Assert.Equal("test-authority-basis", provenance.AuthorityBasis);
+    Assert.Equal("test-policy-version", provenance.PolicyVersion);
   }
 
   [Fact]
@@ -137,7 +141,9 @@ public sealed class PromotionProvenanceTests
       "identity-hash",
       promotionAttemptId,
       "promoter@example.invalid",
-      BaseTime);
+      BaseTime,
+      "test-authority-basis",
+      "test-policy-version");
 
     Assert.Equal(id, provenance.Id);
     Assert.Equal(projectId, provenance.ProjectId);
@@ -159,6 +165,8 @@ public sealed class PromotionProvenanceTests
     Assert.Equal(promotionAttemptId, provenance.PromotionAttemptId);
     Assert.Equal("promoter@example.invalid", provenance.PromotedBy);
     Assert.Equal(BaseTime, provenance.PromotedAtUtc);
+    Assert.Equal("test-authority-basis", provenance.AuthorityBasis);
+    Assert.Equal("test-policy-version", provenance.PolicyVersion);
   }
 
   [Fact]
@@ -328,7 +336,9 @@ public sealed class PromotionProvenanceTests
       "identity-hash",
       PromotionAttemptId.New(),
       "promoter@example.invalid",
-      default));
+      default,
+      "test-authority-basis",
+      "test-policy-version"));
   }
 
   [Fact]
@@ -438,7 +448,9 @@ public sealed class PromotionProvenanceTests
     string importedSourceContentHash = "import-hash",
     string promotionIdentityHash = "identity-hash",
     string promotedBy = "promoter@example.invalid",
-    DateTimeOffset? promotedAtUtc = null)
+    DateTimeOffset? promotedAtUtc = null,
+    string authorityBasis = "test-authority-basis",
+    string policyVersion = "test-policy-version")
   {
     return new PromotionProvenance(
       PromotionProvenanceId.New(),
@@ -460,6 +472,8 @@ public sealed class PromotionProvenanceTests
       promotionIdentityHash,
       PromotionAttemptId.New(),
       promotedBy,
-      promotedAtUtc ?? BaseTime);
+      promotedAtUtc ?? BaseTime,
+      authorityBasis,
+      policyVersion);
   }
 }

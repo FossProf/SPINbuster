@@ -23,7 +23,7 @@ public sealed class SqlitePersistenceTests : IDisposable
   public async Task CommitPersistsAggregateAndStagedAuditTogether()
   {
     await using var dbContext = CreateDbContext();
-    await dbContext.Database.MigrateAsync();
+    await SpinbusterDbContext.MigrateWithSha256Async(dbContext);
 
     var auditRecorder = new SqliteAuditRecorder();
     var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
@@ -53,7 +53,7 @@ public sealed class SqlitePersistenceTests : IDisposable
 
     await using (var seedContext = CreateDbContext())
     {
-      await seedContext.Database.MigrateAsync();
+      await SpinbusterDbContext.MigrateWithSha256Async(seedContext);
       seedContext.Add(new AuditEventRecord
       {
         Id = duplicateAuditId,
@@ -102,7 +102,7 @@ public sealed class SqlitePersistenceTests : IDisposable
 
     await using (var seedContext = CreateDbContext())
     {
-      await seedContext.Database.MigrateAsync();
+      await SpinbusterDbContext.MigrateWithSha256Async(seedContext);
       var auditRecorder = new SqliteAuditRecorder();
       var unitOfWork = new SqliteUnitOfWork(seedContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
       var projectRepository = new SqliteProjectRepository(seedContext);
@@ -149,7 +149,7 @@ public sealed class SqlitePersistenceTests : IDisposable
 
     await using (var seedContext = CreateDbContext())
     {
-      await seedContext.Database.MigrateAsync();
+      await SpinbusterDbContext.MigrateWithSha256Async(seedContext);
       var auditRecorder = new SqliteAuditRecorder();
       var unitOfWork = new SqliteUnitOfWork(seedContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
       var projectRepository = new SqliteProjectRepository(seedContext);
@@ -270,11 +270,11 @@ public sealed class SqlitePersistenceTests : IDisposable
   {
     await using var dbContext = CreateDbContext();
 
-    await dbContext.Database.MigrateAsync();
+    await SpinbusterDbContext.MigrateWithSha256Async(dbContext);
 
     var appliedMigrations = (await dbContext.Database.GetAppliedMigrationsAsync()).ToArray();
 
-    Assert.Equal(15, appliedMigrations.Length);
+    Assert.Equal(17, appliedMigrations.Length);
     Assert.Contains(appliedMigrations, migration => migration.EndsWith("InitialSqlite", StringComparison.Ordinal));
     Assert.Contains(appliedMigrations, migration => migration.EndsWith("ReportDraftSlice", StringComparison.Ordinal));
     Assert.Contains(appliedMigrations, migration => migration.EndsWith("AiDraftProposalSlice", StringComparison.Ordinal));
@@ -284,7 +284,7 @@ public sealed class SqlitePersistenceTests : IDisposable
     Assert.Contains(appliedMigrations, migration => migration.EndsWith("ParsingFoundationSlice", StringComparison.Ordinal));
     Assert.Contains(appliedMigrations, migration => migration.EndsWith("AddFragmentCandidateReviewState", StringComparison.Ordinal));
     Assert.Contains(appliedMigrations, migration => migration.EndsWith("AddFragmentReviewIndexesAndConstraint", StringComparison.Ordinal));
-    Assert.Equal(15L, await QueryCountAsync(dbContext, "SELECT COUNT(*) FROM __EFMigrationsHistory"));
+    Assert.Equal(17L, await QueryCountAsync(dbContext, "SELECT COUNT(*) FROM __EFMigrationsHistory"));
   }
 
   [Fact]
@@ -292,12 +292,12 @@ public sealed class SqlitePersistenceTests : IDisposable
   {
     await using var dbContext = CreateDbContext();
 
-    await dbContext.Database.MigrateAsync();
-    await dbContext.Database.MigrateAsync();
+    await SpinbusterDbContext.MigrateWithSha256Async(dbContext);
+    await SpinbusterDbContext.MigrateWithSha256Async(dbContext);
 
     var appliedMigrations = (await dbContext.Database.GetAppliedMigrationsAsync()).ToArray();
 
-    Assert.Equal(15, appliedMigrations.Length);
+    Assert.Equal(17, appliedMigrations.Length);
     Assert.Contains(appliedMigrations, migration => migration.EndsWith("InitialSqlite", StringComparison.Ordinal));
     Assert.Contains(appliedMigrations, migration => migration.EndsWith("ReportDraftSlice", StringComparison.Ordinal));
     Assert.Contains(appliedMigrations, migration => migration.EndsWith("AiDraftProposalSlice", StringComparison.Ordinal));
@@ -307,7 +307,7 @@ public sealed class SqlitePersistenceTests : IDisposable
     Assert.Contains(appliedMigrations, migration => migration.EndsWith("ParsingFoundationSlice", StringComparison.Ordinal));
     Assert.Contains(appliedMigrations, migration => migration.EndsWith("AddFragmentCandidateReviewState", StringComparison.Ordinal));
     Assert.Contains(appliedMigrations, migration => migration.EndsWith("AddFragmentReviewIndexesAndConstraint", StringComparison.Ordinal));
-    Assert.Equal(15L, await QueryCountAsync(dbContext, "SELECT COUNT(*) FROM __EFMigrationsHistory"));
+    Assert.Equal(17L, await QueryCountAsync(dbContext, "SELECT COUNT(*) FROM __EFMigrationsHistory"));
   }
 
   private static void StageAuditEvents(SqliteAuditRecorder auditRecorder, IEnumerable<AuditEvent> auditEvents)

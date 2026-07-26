@@ -71,11 +71,8 @@ public sealed class KnowledgePromotionWorkflowTests
       using var serviceProvider = CreateServiceProvider(environment);
       var result = await KnowledgePromotionWorkflowBootstrapper.RunAsync(serviceProvider);
 
-      Assert.Equal(PromotionDiagnosticStatus.Promoted, result.SupersedingPromotion.Status);
-      Assert.Equal(result.FirstPromotion.KnowledgeDocumentId, result.SupersedingPromotion.KnowledgeDocumentId);
-      Assert.NotEqual(result.FirstPromotion.KnowledgeDocumentRevisionId, result.SupersedingPromotion.KnowledgeDocumentRevisionId);
-      Assert.True(result.SupersedingPromotion.SupersededExistingRevision);
-      Assert.Equal(result.FirstPromotion.KnowledgeDocumentRevisionId, result.SupersedingPromotion.SupersededRevisionId);
+      Assert.Equal(PromotionDiagnosticStatus.Failed, result.SupersedingPromotion.Status);
+      Assert.Equal(PromotionConflictType.HigherAuthorityExists, result.SupersedingPromotion.ConflictType);
     }
     finally
     {
@@ -117,17 +114,16 @@ public sealed class KnowledgePromotionWorkflowTests
       Assert.Single(result.KnowledgeSnapshot.Documents);
       var document = result.KnowledgeSnapshot.Documents[0];
       Assert.Equal(KnowledgeDocumentType.Specification, document.DocumentType);
-      Assert.Equal(2, document.Revisions.Count);
-      Assert.Contains(document.Revisions, r => r.Lifecycle == KnowledgeRevisionLifecycle.Superseded);
+      Assert.Single(document.Revisions);
       Assert.Contains(document.Revisions, r => r.Lifecycle == KnowledgeRevisionLifecycle.CurrentAuthoritative);
 
       var citations = document.Revisions.SelectMany(r => r.Citations).ToArray();
-      Assert.Equal(2, citations.Length);
+      Assert.Single(citations);
 
       var derivedFrom = result.KnowledgeSnapshot.Relationships
         .Where(r => r.RelationshipType == KnowledgeRelationshipType.DerivedFrom)
         .ToArray();
-      Assert.Equal(2, derivedFrom.Length);
+      Assert.Single(derivedFrom);
     }
     finally
     {
@@ -146,7 +142,8 @@ public sealed class KnowledgePromotionWorkflowTests
       var result = await KnowledgePromotionWorkflowBootstrapper.RunAsync(serviceProvider);
 
       Assert.True(result.PromotionDiagnostics.Count >= 4);
-      Assert.All(result.PromotionDiagnostics, d => Assert.Equal(PromotionDiagnosticStatus.Promoted, d.Status));
+      Assert.Contains(result.PromotionDiagnostics, d => d.Status == PromotionDiagnosticStatus.Promoted);
+      Assert.Contains(result.PromotionDiagnostics, d => d.Status == PromotionDiagnosticStatus.Failed);
     }
     finally
     {
@@ -180,8 +177,8 @@ public sealed class KnowledgePromotionWorkflowTests
 
       Assert.Equal(PromotionDiagnosticStatus.Promoted, reloadedFirst.Status);
       Assert.Equal(firstResult.FirstPromotion.KnowledgeDocumentId, reloadedFirst.KnowledgeDocumentId);
-      Assert.Equal(PromotionDiagnosticStatus.Promoted, reloadedSupersession.Status);
-      Assert.True(reloadedSupersession.SupersededExistingRevision);
+      Assert.Equal(PromotionDiagnosticStatus.Failed, reloadedSupersession.Status);
+      Assert.False(reloadedSupersession.SupersededExistingRevision);
     }
     finally
     {
@@ -211,7 +208,7 @@ public sealed class KnowledgePromotionWorkflowTests
         new LoadProjectKnowledgeSnapshotQuery(firstResult.CreatedProject.ProjectId));
 
       Assert.Single(reloadedSnapshot.Documents);
-      Assert.Equal(2, reloadedSnapshot.Documents[0].Revisions.Count);
+      Assert.Single(reloadedSnapshot.Documents[0].Revisions);
     }
     finally
     {
@@ -336,7 +333,7 @@ public sealed class KnowledgePromotionWorkflowTests
         new LoadProjectKnowledgeSnapshotQuery(firstRun.CreatedProject.ProjectId));
 
       Assert.Single(firstProjectSnapshot.Documents);
-      Assert.Equal(2, firstProjectSnapshot.Documents[0].Revisions.Count);
+      Assert.Single(firstProjectSnapshot.Documents[0].Revisions);
     }
     finally
     {
@@ -366,7 +363,7 @@ public sealed class KnowledgePromotionWorkflowTests
       }
 
       Assert.True(await CountAsync("knowledge_documents") >= 1);
-      Assert.True(await CountAsync("knowledge_document_revisions") >= 2);
+      Assert.True(await CountAsync("knowledge_document_revisions") >= 1);
       Assert.Equal(0, await CountAsync("reports"));
       Assert.Equal(0, await CountAsync("ai_proposals"));
     }
@@ -566,8 +563,8 @@ public sealed class KnowledgePromotionWorkflowTests
       using var serviceProvider = CreateServiceProvider(environment);
       var result = await KnowledgePromotionWorkflowBootstrapper.RunAsync(serviceProvider);
 
-      Assert.Equal(PromotionConflictType.None, result.SupersedingPromotion.ConflictType);
-      Assert.Equal(PromotionDiagnosticStatus.Promoted, result.SupersedingPromotion.Status);
+      Assert.Equal(PromotionConflictType.HigherAuthorityExists, result.SupersedingPromotion.ConflictType);
+      Assert.Equal(PromotionDiagnosticStatus.Failed, result.SupersedingPromotion.Status);
     }
     finally
     {

@@ -1,3 +1,6 @@
+using System.Security.Cryptography;
+using System.Text;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using SPINbuster.Infrastructure.Persistence.Records;
 
@@ -8,6 +11,38 @@ public sealed class SpinbusterDbContext : DbContext
   public SpinbusterDbContext(DbContextOptions<SpinbusterDbContext> options)
     : base(options)
   {
+  }
+
+  internal static void RegisterSha256Hex(SqliteConnection connection)
+  {
+    connection.CreateFunction<string, string>(
+      "sha256_hex",
+      input =>
+      {
+        var bytes = Encoding.UTF8.GetBytes(input);
+        return Convert.ToHexString(SHA256.HashData(bytes));
+      });
+  }
+
+  internal static async Task MigrateWithSha256Async(SpinbusterDbContext dbContext, CancellationToken cancellationToken = default)
+  {
+    var connection = (SqliteConnection)dbContext.Database.GetDbConnection();
+
+    connection.StateChange += (_, args) =>
+    {
+      if (args.CurrentState == System.Data.ConnectionState.Open)
+      {
+        RegisterSha256Hex(connection);
+      }
+    };
+
+    RegisterSha256Hex(connection);
+    await dbContext.Database.MigrateAsync(cancellationToken);
+  }
+
+  protected override void OnModelCreating(ModelBuilder modelBuilder)
+  {
+    SpinbusterModelConfiguration.Configure(modelBuilder);
   }
 
   internal DbSet<ProjectRecord> Projects => Set<ProjectRecord>();
@@ -68,10 +103,7 @@ public sealed class SpinbusterDbContext : DbContext
 
   internal DbSet<PromotionDiagnosticRecord> PromotionDiagnostics => Set<PromotionDiagnosticRecord>();
 
-  internal DbSet<PromotionProvenanceRecord> PromotionProvenances => Set<PromotionProvenanceRecord>();
+  internal DbSet<PromotionAttemptRecord> PromotionAttempts => Set<PromotionAttemptRecord>();
 
-  protected override void OnModelCreating(ModelBuilder modelBuilder)
-  {
-    SpinbusterModelConfiguration.Configure(modelBuilder);
-  }
+  internal DbSet<PromotionProvenanceRecord> PromotionProvenances => Set<PromotionProvenanceRecord>();
 }

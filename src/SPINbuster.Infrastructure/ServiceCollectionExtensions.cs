@@ -43,7 +43,7 @@ public static class ServiceCollectionExtensions
     services.AddScoped<IParserDiagnosticRepository, SqliteParserDiagnosticRepository>();
     services.AddScoped<IPromotionDiagnosticRepository, SqlitePromotionDiagnosticRepository>();
     services.AddScoped<IPromotionRecordRepository, InMemoryPromotionRecordRepository>();
-    services.AddScoped<IPromotionAttemptRepository, InMemoryPromotionAttemptRepository>();
+    services.AddScoped<IPromotionAttemptRepository, SqlitePromotionAttemptRepository>();
     services.AddScoped<IPromotionProvenanceRepository, SqlitePromotionProvenanceRepository>();
     return services;
   }

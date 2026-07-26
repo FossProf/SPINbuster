@@ -12,6 +12,10 @@ public interface IPromotionAttemptRepository
     PromotionRecordId promotionRecordId,
     CancellationToken cancellationToken = default);
 
+  Task<IReadOnlyList<PromotionAttempt>> GetByFragmentCandidateAsync(
+    FragmentCandidateId fragmentCandidateId,
+    CancellationToken cancellationToken = default);
+
   Task AddAsync(
     PromotionAttempt promotionAttempt,
     CancellationToken cancellationToken = default);

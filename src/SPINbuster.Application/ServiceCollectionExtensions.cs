@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using SPINbuster.Application.Contracts;
+using SPINbuster.Domain;
 using SPINbuster.Application.UseCases.AddInterpretation;
 using SPINbuster.Application.UseCases.AcceptAiProposal;
 using SPINbuster.Application.UseCases.AddKnowledgeCitation;
@@ -97,6 +98,7 @@ public static class ServiceCollectionExtensions
     services.AddScoped<ICommandHandler<RejectFragmentCandidateCommand, RejectFragmentCandidateResult>, RejectFragmentCandidateUseCase>();
     services.AddScoped<IQueryHandler<LoadFragmentReviewSnapshotQuery, LoadFragmentReviewSnapshotResult>, LoadFragmentReviewSnapshotUseCase>();
     services.AddScoped<ICommandHandler<PromoteFragmentCandidateCommand, PromoteFragmentCandidateResult>, PromoteFragmentCandidateUseCase>();
+    services.AddScoped<IAuthorityPolicy, AuthorityPolicy>();
     services.AddScoped<ICommandHandler<ActivateProjectCommand, ActivateProjectResult>, ActivateProjectUseCase>();
     services.AddScoped<IQueryHandler<LoadPromotionDiagnosticQuery, LoadPromotionDiagnosticResult>, LoadPromotionDiagnosticUseCase>();
     services.AddScoped<IQueryHandler<LoadPromotionProvenanceQuery, LoadPromotionProvenanceResult>, LoadPromotionProvenanceUseCase>();

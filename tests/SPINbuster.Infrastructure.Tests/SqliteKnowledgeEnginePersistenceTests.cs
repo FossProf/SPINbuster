@@ -365,7 +365,7 @@ public sealed class SqliteKnowledgeEnginePersistenceTests : IDisposable
 
     await using (var seedContext = CreateDbContext())
     {
-      await seedContext.Database.MigrateAsync();
+      await SpinbusterDbContext.MigrateWithSha256Async(seedContext);
       seedContext.AuditEvents.Add(new AuditEventRecord
       {
         Id = duplicateAuditId,
@@ -473,15 +473,15 @@ public sealed class SqliteKnowledgeEnginePersistenceTests : IDisposable
       migrationsAssembly.Migrations.Keys,
       migration => migration.EndsWith("KnowledgeEnginePersistenceSnapshotAlignment", StringComparison.Ordinal));
 
-    await dbContext.Database.MigrateAsync();
-    await dbContext.Database.MigrateAsync();
+    await SpinbusterDbContext.MigrateWithSha256Async(dbContext);
+    await SpinbusterDbContext.MigrateWithSha256Async(dbContext);
 
     var appliedMigrations = (await dbContext.Database.GetAppliedMigrationsAsync()).ToArray();
 
-    Assert.Equal(15, appliedMigrations.Length);
+    Assert.Equal(17, appliedMigrations.Length);
     Assert.Contains(appliedMigrations, migration => migration.EndsWith("KnowledgeEnginePersistenceRc2", StringComparison.Ordinal));
     Assert.Contains(appliedMigrations, migration => migration.EndsWith("KnowledgeEnginePersistenceSnapshotAlignment", StringComparison.Ordinal));
-    Assert.Equal(15L, await QueryCountAsync(dbContext, "SELECT COUNT(*) FROM __EFMigrationsHistory"));
+    Assert.Equal(17L, await QueryCountAsync(dbContext, "SELECT COUNT(*) FROM __EFMigrationsHistory"));
   }
 
   [Fact]
@@ -497,11 +497,11 @@ public sealed class SqliteKnowledgeEnginePersistenceTests : IDisposable
     }
 
     await using var migratedContext = CreateDbContext();
-    await migratedContext.Database.MigrateAsync();
-    await migratedContext.Database.MigrateAsync();
+    await SpinbusterDbContext.MigrateWithSha256Async(migratedContext);
+    await SpinbusterDbContext.MigrateWithSha256Async(migratedContext);
 
     var appliedMigrations = (await migratedContext.Database.GetAppliedMigrationsAsync()).ToArray();
-    Assert.Equal(15, appliedMigrations.Length);
+    Assert.Equal(17, appliedMigrations.Length);
 
     var storedProject = await new SqliteProjectRepository(migratedContext).GetByIdAsync(seededState.ProjectId);
     var storedInspectionSession = await new SqliteInspectionSessionRepository(migratedContext).GetByIdAsync(seededState.InspectionSessionId);
@@ -715,7 +715,7 @@ public sealed class SqliteKnowledgeEnginePersistenceTests : IDisposable
 
     await using (var seedContext = CreateDbContext())
     {
-      await seedContext.Database.MigrateAsync();
+      await SpinbusterDbContext.MigrateWithSha256Async(seedContext);
       seedContext.KnowledgeDocuments.Add(new KnowledgeDocumentRecord
       {
         Id = knowledgeDocument.Id,
@@ -890,7 +890,7 @@ public sealed class SqliteKnowledgeEnginePersistenceTests : IDisposable
     var createdAtUtc = new DateTimeOffset(2026, 7, 16, 9, 0, 0, TimeSpan.Zero);
 
     await using var dbContext = CreateDbContext();
-    await dbContext.Database.MigrateAsync();
+    await SpinbusterDbContext.MigrateWithSha256Async(dbContext);
     var auditRecorder = new SqliteAuditRecorder();
     var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
     var projectRepository = new SqliteProjectRepository(dbContext);

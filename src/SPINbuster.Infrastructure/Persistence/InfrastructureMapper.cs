@@ -974,7 +974,8 @@ internal static class InfrastructureMapper
       record.KnowledgeDocumentRevisionId,
       record.KnowledgeCitationId,
       record.SupersededExistingRevision,
-      record.SupersededRevisionId);
+      record.SupersededRevisionId,
+      record.ConflictType);
   }
 
   public static PromotionDiagnosticRecord ToRecord(PromotionDiagnostic promotionDiagnostic)
@@ -993,6 +994,35 @@ internal static class InfrastructureMapper
       KnowledgeCitationId = promotionDiagnostic.KnowledgeCitationId,
       SupersededExistingRevision = promotionDiagnostic.SupersededExistingRevision,
       SupersededRevisionId = promotionDiagnostic.SupersededRevisionId,
+      ConflictType = promotionDiagnostic.ConflictType,
+    };
+  }
+
+  public static PromotionAttempt ToDomain(PromotionAttemptRecord record)
+  {
+    return PromotionAttempt.Rehydrate(
+      record.Id,
+      record.RecordId,
+      record.Outcome,
+      record.DiagnosticId,
+      record.FragmentCandidateId,
+      record.ContentHash,
+      record.AttemptedAtUtc,
+      record.FailureReason);
+  }
+
+  public static PromotionAttemptRecord ToRecord(PromotionAttempt promotionAttempt)
+  {
+    return new PromotionAttemptRecord
+    {
+      Id = promotionAttempt.Id,
+      RecordId = promotionAttempt.RecordId,
+      Outcome = promotionAttempt.Outcome,
+      DiagnosticId = promotionAttempt.DiagnosticId,
+      FragmentCandidateId = promotionAttempt.FragmentCandidateId,
+      ContentHash = promotionAttempt.ContentHash,
+      AttemptedAtUtc = promotionAttempt.AttemptedAtUtc,
+      FailureReason = promotionAttempt.FailureReason,
     };
   }
 
@@ -1018,7 +1048,9 @@ internal static class InfrastructureMapper
       record.PromotionIdentityHash,
       record.PromotionAttemptId,
       record.PromotedBy,
-      record.PromotedAtUtc);
+      record.PromotedAtUtc,
+      record.AuthorityBasis,
+      record.PolicyVersion);
   }
 
   public static PromotionProvenanceRecord ToRecord(PromotionProvenance provenance)
@@ -1046,6 +1078,8 @@ internal static class InfrastructureMapper
       PromotedBy = provenance.PromotedBy,
       PromotedAtUtc = provenance.PromotedAtUtc,
       PromotedAtUtcTicks = provenance.PromotedAtUtc.UtcDateTime.Ticks,
+      AuthorityBasis = provenance.AuthorityBasis,
+      PolicyVersion = provenance.PolicyVersion,
     };
   }
 }

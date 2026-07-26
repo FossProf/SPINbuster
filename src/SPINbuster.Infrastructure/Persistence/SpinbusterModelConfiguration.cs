@@ -21,6 +21,7 @@ internal static class SpinbusterModelConfiguration
     ConfigureDocumentEngine(modelBuilder);
     ConfigureParserRuns(modelBuilder);
     ConfigurePromotionDiagnostics(modelBuilder);
+    ConfigurePromotionAttempts(modelBuilder);
     ConfigurePromotionProvenances(modelBuilder);
   }
 
@@ -628,8 +629,9 @@ internal static class SpinbusterModelConfiguration
     builder.Property(record => record.KnowledgeCitationId).HasConversion(StronglyTypedIdValueConverters.KnowledgeCitationId);
     builder.Property(record => record.SupersededExistingRevision).IsRequired();
     builder.Property(record => record.SupersededRevisionId).HasConversion(StronglyTypedIdValueConverters.KnowledgeDocumentRevisionId);
+    builder.Property(record => record.ConflictType).IsRequired();
     builder.HasIndex(record => record.ProjectId);
-    builder.HasIndex(record => record.FragmentCandidateId).IsUnique();
+    builder.HasIndex(record => record.FragmentCandidateId);
     builder.HasIndex(record => record.ParserRunId);
     builder.HasOne<ParserRunRecord>()
       .WithMany()
@@ -643,6 +645,24 @@ internal static class SpinbusterModelConfiguration
       .WithMany()
       .HasForeignKey(record => record.ProjectId)
       .OnDelete(DeleteBehavior.Restrict);
+  }
+
+  private static void ConfigurePromotionAttempts(ModelBuilder modelBuilder)
+  {
+    var builder = modelBuilder.Entity<PromotionAttemptRecord>();
+    builder.ToTable("promotion_attempts");
+    builder.HasKey(record => record.Id);
+    builder.Property(record => record.Id).HasConversion(StronglyTypedIdValueConverters.PromotionAttemptId).ValueGeneratedNever();
+    builder.Property(record => record.RecordId).HasConversion(StronglyTypedIdValueConverters.PromotionRecordId).IsRequired();
+    builder.Property(record => record.Outcome).IsRequired();
+    builder.Property(record => record.DiagnosticId).HasConversion(StronglyTypedIdValueConverters.PromotionDiagnosticId).IsRequired();
+    builder.Property(record => record.FragmentCandidateId).HasConversion(StronglyTypedIdValueConverters.FragmentCandidateId).IsRequired();
+    builder.Property(record => record.ContentHash).HasColumnType("TEXT").IsRequired();
+    builder.Property(record => record.AttemptedAtUtc).IsRequired();
+    builder.Property(record => record.FailureReason).HasColumnType("TEXT");
+    builder.HasIndex(record => record.RecordId);
+    builder.HasIndex(record => record.DiagnosticId);
+    builder.HasIndex(record => record.FragmentCandidateId);
   }
 
   private static void ConfigurePromotionProvenances(ModelBuilder modelBuilder)
@@ -671,9 +691,11 @@ internal static class SpinbusterModelConfiguration
     builder.Property(record => record.PromotedBy).HasColumnType("TEXT").IsRequired();
     builder.Property(record => record.PromotedAtUtc).IsRequired();
     builder.Property(record => record.PromotedAtUtcTicks).IsRequired();
+    builder.Property(record => record.AuthorityBasis).HasColumnType("TEXT").IsRequired();
+    builder.Property(record => record.PolicyVersion).HasColumnType("TEXT").IsRequired();
     builder.HasIndex(record => record.ProjectId);
     builder.HasIndex(record => record.PromotedRevisionId).IsUnique();
-    builder.HasIndex(record => record.FragmentCandidateId).IsUnique();
+    builder.HasIndex(record => record.FragmentCandidateId);
     builder.HasIndex(record => record.DiagnosticId).IsUnique();
     builder.HasOne<KnowledgeDocumentRevisionRecord>()
       .WithMany()

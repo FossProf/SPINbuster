@@ -281,7 +281,9 @@ public sealed class PromotionProvenance
     string promotionIdentityHash,
     PromotionAttemptId promotionAttemptId,
     string promotedBy,
-    DateTimeOffset promotedAtUtc)
+    DateTimeOffset promotedAtUtc,
+    string authorityBasis,
+    string policyVersion)
   {
     Id = id;
     ProjectId = projectId;
@@ -303,6 +305,8 @@ public sealed class PromotionProvenance
     PromotionAttemptId = promotionAttemptId;
     PromotedBy = DomainGuards.NotNullOrWhiteSpace(promotedBy, nameof(promotedBy));
     PromotedAtUtc = DomainGuards.NotDefault(promotedAtUtc, nameof(promotedAtUtc));
+    AuthorityBasis = DomainGuards.NotNullOrWhiteSpace(authorityBasis, nameof(authorityBasis));
+    PolicyVersion = DomainGuards.NotNullOrWhiteSpace(policyVersion, nameof(policyVersion));
   }
 
   private PromotionProvenance()
@@ -349,6 +353,10 @@ public sealed class PromotionProvenance
 
   public DateTimeOffset PromotedAtUtc { get; private set; }
 
+  public string AuthorityBasis { get; private set; } = string.Empty;
+
+  public string PolicyVersion { get; private set; } = string.Empty;
+
   public static PromotionProvenance Rehydrate(
     PromotionProvenanceId id,
     ProjectId projectId,
@@ -369,7 +377,9 @@ public sealed class PromotionProvenance
     string promotionIdentityHash,
     PromotionAttemptId promotionAttemptId,
     string promotedBy,
-    DateTimeOffset promotedAtUtc)
+    DateTimeOffset promotedAtUtc,
+    string authorityBasis,
+    string policyVersion)
   {
     return new PromotionProvenance(
       id,
@@ -391,7 +401,9 @@ public sealed class PromotionProvenance
       promotionIdentityHash,
       promotionAttemptId,
       promotedBy,
-      promotedAtUtc);
+      promotedAtUtc,
+      authorityBasis,
+      policyVersion);
   }
 }
 

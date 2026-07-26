@@ -138,7 +138,7 @@ public sealed class SqliteConcurrencyGuardTests : IDisposable
   private async Task<KnowledgeDocumentId> SeedTestDataAsync()
   {
     await using var dbContext = CreateDbContext();
-    await dbContext.Database.MigrateAsync();
+    await SpinbusterDbContext.MigrateWithSha256Async(dbContext);
 
     var project = new Project(ProjectId.New(), "Test", "system", DateTimeOffset.UtcNow);
     project.Activate("system", DateTimeOffset.UtcNow);

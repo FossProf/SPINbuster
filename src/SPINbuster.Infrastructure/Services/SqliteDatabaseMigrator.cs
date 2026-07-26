@@ -12,8 +12,8 @@ public sealed class SqliteDatabaseMigrator : ISpinbusterDatabaseMigrator
     _dbContext = dbContext;
   }
 
-  public Task MigrateAsync(CancellationToken cancellationToken = default)
+  public async Task MigrateAsync(CancellationToken cancellationToken = default)
   {
-    return _dbContext.Database.MigrateAsync(cancellationToken);
+    await SpinbusterDbContext.MigrateWithSha256Async(_dbContext, cancellationToken);
   }
 }

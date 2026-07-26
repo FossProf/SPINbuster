@@ -27,4 +27,6 @@ internal sealed class PromotionDiagnosticRecord
   public bool SupersededExistingRevision { get; set; }
 
   public KnowledgeDocumentRevisionId? SupersededRevisionId { get; set; }
+
+  public PromotionConflictType ConflictType { get; set; }
 }

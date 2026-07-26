@@ -45,4 +45,8 @@ internal sealed class PromotionProvenanceRecord
   public DateTimeOffset PromotedAtUtc { get; set; }
 
   public long PromotedAtUtcTicks { get; set; }
+
+  public string AuthorityBasis { get; set; } = string.Empty;
+
+  public string PolicyVersion { get; set; } = string.Empty;
 }

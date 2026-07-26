@@ -17,6 +17,36 @@ namespace SPINbuster.Infrastructure.Persistence.Migrations
                 table: "knowledge_documents",
                 type: "TEXT",
                 maxLength: 128,
+                nullable: true);
+
+            migrationBuilder.Sql(@"
+                UPDATE knowledge_documents
+                SET CanonicalIdentityHash = sha256_hex(
+                    ProjectId || '|' ||
+                    CASE DocumentType
+                        WHEN 0 THEN 'Drawing'
+                        WHEN 1 THEN 'Specification'
+                        WHEN 2 THEN 'RFI'
+                        WHEN 3 THEN 'Bulletin'
+                        WHEN 4 THEN 'Submittal'
+                        WHEN 5 THEN 'ChangeOrder'
+                        WHEN 6 THEN 'Report'
+                        WHEN 7 THEN 'FieldNote'
+                        WHEN 8 THEN 'Evidence'
+                        WHEN 9 THEN 'GeneralReference'
+                        ELSE 'Unknown'
+                    END || '|' ||
+                    UPPER(TRIM(CanonicalTitle)) || '|' ||
+                    UPPER(TRIM(COALESCE(ExternalReferenceNumber, ''))) || '|' ||
+                    UPPER(TRIM(COALESCE(DisciplineOrCategory, '')))
+                )
+                WHERE CanonicalIdentityHash IS NULL");
+
+            migrationBuilder.AlterColumn<string>(
+                name: "CanonicalIdentityHash",
+                table: "knowledge_documents",
+                type: "TEXT",
+                maxLength: 128,
                 nullable: false,
                 defaultValue: "");
 

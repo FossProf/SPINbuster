@@ -151,8 +151,8 @@ public sealed class SqliteDocumentEnginePersistenceTests : IDisposable
       migrationsAssembly.Migrations.Keys,
       migration => migration.EndsWith("DocumentEngineFoundationRc", StringComparison.Ordinal));
 
-    await dbContext.Database.MigrateAsync();
-    await dbContext.Database.MigrateAsync();
+    await SpinbusterDbContext.MigrateWithSha256Async(dbContext);
+    await SpinbusterDbContext.MigrateWithSha256Async(dbContext);
 
     var appliedMigrations = (await dbContext.Database.GetAppliedMigrationsAsync()).ToArray();
 
@@ -189,7 +189,7 @@ public sealed class SqliteDocumentEnginePersistenceTests : IDisposable
     var createdAtUtc = new DateTimeOffset(2026, 7, 16, 9, 0, 0, TimeSpan.Zero);
 
     await using var dbContext = CreateDbContext();
-    await dbContext.Database.MigrateAsync();
+    await SpinbusterDbContext.MigrateWithSha256Async(dbContext);
     var auditRecorder = new SqliteAuditRecorder();
     var unitOfWork = new SqliteUnitOfWork(dbContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
     var project = new Project(ProjectId.New(), "Project Falcon", "owner@example.invalid", createdAtUtc);

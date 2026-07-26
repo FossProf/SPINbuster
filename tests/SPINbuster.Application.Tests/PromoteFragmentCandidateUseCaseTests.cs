@@ -999,6 +999,7 @@ public sealed class PromoteFragmentCandidateUseCaseTests
       fixture.Clock,
       fixture.CurrentUser,
       fixture.AuditRecorder,
+      fixture.AuthorityPolicy,
       NullLogger<PromoteFragmentCandidateUseCase>.Instance);
   }
 
@@ -1087,6 +1088,7 @@ public sealed class PromoteFragmentCandidateUseCaseTests
 
   private static PromotionFixture CreateFixture()
   {
+    var currentUser = new FakeCurrentUser("promoter@example.invalid");
     return new PromotionFixture(
       new FakeProjectRepository(),
       new FakeImportedDocumentSourceRepository(),
@@ -1102,8 +1104,9 @@ public sealed class PromoteFragmentCandidateUseCaseTests
       new FakePromotionProvenanceRepository(),
       new FakeUnitOfWork(),
       new FakeClock(TestTime),
-      new FakeCurrentUser("promoter@example.invalid"),
-      new FakeAuditRecorder());
+      currentUser,
+      new FakeAuditRecorder(),
+      new AuthorityPolicy(currentUser));
   }
 
   private sealed record PromotionFixture(
@@ -1122,5 +1125,6 @@ public sealed class PromoteFragmentCandidateUseCaseTests
     FakeUnitOfWork UnitOfWork,
     FakeClock Clock,
     FakeCurrentUser CurrentUser,
-    FakeAuditRecorder AuditRecorder);
+    FakeAuditRecorder AuditRecorder,
+    AuthorityPolicy AuthorityPolicy);
 }

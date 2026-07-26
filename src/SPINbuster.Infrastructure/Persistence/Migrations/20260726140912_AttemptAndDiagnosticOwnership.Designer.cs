@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SPINbuster.Infrastructure.Persistence;
 
@@ -10,9 +11,11 @@ using SPINbuster.Infrastructure.Persistence;
 namespace SPINbuster.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(SpinbusterDbContext))]
-    partial class SpinbusterDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260726140912_AttemptAndDiagnosticOwnership")]
+    partial class AttemptAndDiagnosticOwnership
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1393,10 +1396,6 @@ namespace SPINbuster.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("AuthorityBasis")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
                     b.Property<Guid>("DiagnosticId")
                         .HasColumnType("TEXT");
 
@@ -1430,10 +1429,6 @@ namespace SPINbuster.Infrastructure.Persistence.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ParserVersion")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("PolicyVersion")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
