@@ -243,6 +243,10 @@ public sealed class KnowledgePromotionWorkflowRunner
       runScope,
       cancellationToken);
 
+    var (failedPromotion, retryPromotion, attemptHistory) = await RunRecoverableFailureScenarioAsync(
+      runScope,
+      cancellationToken);
+
     return new KnowledgePromotionWorkflowResult(
       createdProject,
       beganImportSession,
@@ -267,7 +271,10 @@ public sealed class KnowledgePromotionWorkflowRunner
       supersessionIdempotentReplay,
       knowledgeSnapshot,
       [firstPromotion, idempotentReplay, supersedingPromotion, supersessionIdempotentReplay],
-      failurePresentations);
+      failurePresentations,
+      failedPromotion,
+      retryPromotion,
+      attemptHistory);
   }
 
   private async Task<IReadOnlyList<DesktopWorkflowFailurePresentation>> RunExpectedFailureScenariosAsync(
@@ -310,6 +317,83 @@ public sealed class KnowledgePromotionWorkflowRunner
         cancellationToken)));
 
     return failures;
+  }
+
+  private async Task<(PromoteFragmentCandidateResult Failed, PromoteFragmentCandidateResult Retry, IReadOnlyList<PromotionAttempt> AttemptHistory)> RunRecoverableFailureScenarioAsync(
+    WorkflowRunScope runScope,
+    CancellationToken cancellationToken)
+  {
+    var recoveredProject = await _createProject.HandleAsync(
+      new CreateProjectCommand($"Recovery {runScope.Suffix}"),
+      cancellationToken);
+
+    var beganRecoverySession = await _beginImportSession.HandleAsync(
+      new BeginDocumentImportSessionCommand(recoveredProject.ProjectId),
+      cancellationToken);
+
+    var sourceBytes = Encoding.UTF8.GetBytes(runScope.SourceAContent);
+    await using var sourceStream = new MemoryStream(sourceBytes, writable: false);
+    var importedSource = await _importSource.HandleAsync(
+      new ImportDocumentSourceCommand(
+        beganRecoverySession.ImportSessionId,
+        recoveredProject.ProjectId,
+        runScope.SourceAFileName,
+        "text/plain",
+        ImportedSourceOrigin.LocalFile,
+        null,
+        sourceStream),
+      cancellationToken);
+
+    await _completeImportSession.HandleAsync(
+      new CompleteDocumentImportSessionCommand(beganRecoverySession.ImportSessionId),
+      cancellationToken);
+
+    var parseResult = await _requestDocumentParsing.HandleAsync(
+      new RequestDocumentParsingCommand(
+        recoveredProject.ProjectId,
+        importedSource.ImportedSourceId,
+        ParserKey,
+        ParserContractVersion),
+      cancellationToken);
+
+    var snapshot = await LoadParsingSnapshotAsync(
+      recoveredProject.ProjectId,
+      importedSource.ImportedSourceId,
+      cancellationToken);
+
+    var candidate = snapshot.ParserRuns
+      .SelectMany(r => r.FragmentCandidates)
+      .First();
+
+    await _acceptFragmentCandidate.HandleAsync(
+      new AcceptFragmentCandidateCommand(
+        candidate.FragmentCandidateId,
+        "Recoverable failure test acceptance."),
+      cancellationToken);
+
+    var failedResult = await _promoteFragmentCandidate.HandleAsync(
+      new PromoteFragmentCandidateCommand(
+        candidate.FragmentCandidateId,
+        runScope.DocumentType,
+        runScope.CanonicalTitle,
+        runScope.ExternalReference,
+        runScope.Discipline),
+      cancellationToken);
+
+    await _activateProject.HandleAsync(
+      new ActivateProjectCommand(recoveredProject.ProjectId),
+      cancellationToken);
+
+    var retryResult = await _promoteFragmentCandidate.HandleAsync(
+      new PromoteFragmentCandidateCommand(
+        candidate.FragmentCandidateId,
+        runScope.DocumentType,
+        runScope.CanonicalTitle,
+        runScope.ExternalReference,
+        runScope.Discipline),
+      cancellationToken);
+
+    return (failedResult, retryResult, []);
   }
 
   private async Task<LoadParsingSnapshotResult> LoadParsingSnapshotAsync(

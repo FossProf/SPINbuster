@@ -86,6 +86,18 @@ Next:
 
 - Await release decision for `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` or begin spec gap remediation
 
+## 2026-07-26
+
+Completed:
+
+- `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` WO5 hardening: Supersedes `KnowledgeRelationship` creation during supersession (spec gap 3c.5 closed). The use case now creates a `Supersedes` relationship from the new revision to the old revision when superseding, complementing the existing `DerivedFrom` relationship.
+- Focused Application tests for promotion use case (5 new tests): `SupersedingPromotionWithHigherAuthorityCreatesSupersedesRelationship` (exercises supersession path with `HigherAuthorityPolicy` returning `EngineerIssued`), `ReplayAfterMutableSourceStateChangeDoesNotMutateKnowledge` (replay before eligibility), `WrongTargetReplayProducesDifferentIdentity` (identity-based replay divergence), `PromotedDiagnosticExcludesSensitiveContentFromResult` (no sensitive data in result), `CancellationExceptionPropagatesAndRecordsNoDiagnostic` (OperationCanceledException behavior).
+- Desktop executable proof extended with recoverable failed promotion + retry scenario: creates a project in Draft state, imports source, parses, accepts candidate, attempts promotion (fails — project not Active), activates project, retries promotion (succeeds). Demonstrates requirement #9: failed attempts do not block subsequent retries.
+- 3 new Desktop integration tests for recoverable failure scenario: `RecoverableFailedPromotionFailsBeforeActivation`, `RecoverableRetryPromotionSucceedsAfterActivation`, `RecoverableRetryProducesDifferentDiagnosticThanFailure`.
+- `FakeFragmentCandidateRepository.ThrowOnGetById` flag added for cancellation testing.
+- `HigherAuthorityPolicy` test helper added for exercising supersession with authority escalation.
+- Full validation gate passed: 729/729 tests, format clean, 0 build errors.
+
 ## 2026-07-15
 
 Completed:

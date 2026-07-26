@@ -8,14 +8,14 @@ Next active package: TBD after RC release decision
 
 ## Validation snapshot
 
-- Domain tests: `188/188`
-- Application tests: `184/184`
+- Domain tests: `234/234`
+- Application tests: `221/221`
 - Documents tests: `78/78`
-- Infrastructure tests: `82/82`
+- Infrastructure tests: `93/93`
 - Architecture tests: `24/24`
 - AI tests: `6/6`
-- Desktop tests: `62/62`
-- Total tests: `624/624`
+- Desktop tests: `73/73`
+- Total tests: `729/729`
 
 ## Checkpoints completed
 
@@ -63,6 +63,11 @@ Next active package: TBD after RC release decision
 - Every successful promotion creates a `DerivedFrom` relationship from the new revision to the document.
 - Duplicate check prevents redundant relationships for the same source-target pair.
 
+### Supersedes relationship
+
+- Every successful supersession creates a `Supersedes` relationship from the new revision to the old revision.
+- Duplicate check prevents redundant relationships for the same source-target pair.
+
 ### Idempotency
 
 - Idempotent replay by fragment candidate ID: if `PromotionDiagnostic` exists for candidate, returns existing result without creating new records (INV-PROMO-009).
@@ -94,8 +99,8 @@ Next active package: TBD after RC release decision
 
 ### Desktop executable proof
 
-- End-to-end workflow: create project -> activate -> import 2 sources -> parse -> review fragments -> promote -> supersede -> verify snapshot.
-- 13 Desktop tests cover: first promotion, idempotent replay, supersession, supersession replay, knowledge snapshot with 2 revisions, authority isolation, diagnostics persistence, snapshot persistence, parsing integration, fragment review integration, expected failure scenarios, console formatter output, data preservation across runs.
+- End-to-end workflow: create project -> activate -> import 2 sources -> parse -> review fragments -> promote -> supersede -> verify snapshot -> recoverable failure -> retry.
+- 16 Desktop tests cover: first promotion, idempotent replay, supersession, supersession replay, knowledge snapshot with 2 revisions, authority isolation, diagnostics persistence, snapshot persistence, parsing integration, fragment review integration, expected failure scenarios, console formatter output, data preservation across runs, recoverable failed promotion, recoverable retry success, retry diagnostic divergence.
 - Console formatter produces readable output without exposing file paths.
 - Two runs against same database preserve prior data (different projects coexist).
 
@@ -147,13 +152,8 @@ Yes. Both `PromotionDiagnostic` and `KnowledgeSnapshot` survive provider disposa
 
 ### What must be resolved before production promotion workflows?
 
-1. **Supersedes relationship** (spec 3c.5): The promotion use case creates `DerivedFrom` relationships but does not create `Supersedes`-typed `KnowledgeRelationship` records. The supersession link is tracked only via revision properties (`SupersedesRevisionId` / `SupersededByRevisionId`).
-2. **HigherAuthorityExists conflict** (spec 3g): No check compares the existing revision's `SourceAuthority` against the incoming promotion's authority level.
-3. **AmbiguousDocumentMatch** (spec 3d): `FindOrCreateKnowledgeDocumentAsync` uses `FirstOrDefault` without checking for multiple matching documents.
-4. **ConcurrentPromotion guard** (spec 3g): Idempotency protection exists but no optimistic concurrency token prevents two simultaneous promotions from both passing the idempotency check.
-5. **Temporal ordering on supersession** (spec 3f): No check verifies `new revision.ReceivedAtUtc >= existing revision.ReceivedAtUtc`.
-6. **Spec audit events** (spec 3i): Domain-level audit events are emitted (`KnowledgeDocumentRegistered`, `KnowledgeRevisionCreated`, `KnowledgeRevisionSuperseded`), but the spec-specific workflow events (`PromotionWorkflowStarted`, `PromotionCompleted`, `PromotionFailed`, etc.) are not emitted as distinct named events.
-7. **IdentityKeyHash use-case validation** (spec 3a.8): The hash is validated during domain rehydration, not explicitly in the use case. This is sufficient but not directly visible in the promotion workflow.
+1. **Spec audit events** (spec 3i): Domain-level audit events are emitted (`KnowledgeDocumentRegistered`, `KnowledgeRevisionCreated`, `KnowledgeRevisionSuperseded`), but the spec-specific workflow events (`PromotionWorkflowStarted`, `PromotionCompleted`, `PromotionFailed`, etc.) are not emitted as distinct named events. Domain events are sufficient for foundation use; spec-specific event naming can be added when the promotion boundary stabilizes.
+2. **IdentityKeyHash use-case validation** (spec 3a.8): The hash is validated during domain rehydration, not explicitly in the use case. This is sufficient but not directly visible in the promotion workflow.
 
 ## Gap analysis (spec compliance)
 
@@ -169,15 +169,15 @@ Yes. Both `PromotionDiagnostic` and `KnowledgeSnapshot` survive provider disposa
 | INV-PROMO-008 Explicit supersession | Implemented | SupersedesRevisionId required |
 | INV-PROMO-009 Idempotency preserved | Implemented | Dual-path: by ID and by content hash |
 | INV-PROMO-010 AI excluded from authority | Implemented | |
-| INV-PROMO-011 Conflicts remain visible | Partial | Domain exceptions thrown but no structured conflict diagnostics |
-| INV-PROMO-012 Provenance chain unbroken | Implemented | DerivedFrom relationship + audit trail |
-| Supersedes relationship (3c.5) | Not implemented | Only DerivedFrom created |
-| HigherAuthorityExists (3g) | Not implemented | |
-| AmbiguousDocumentMatch (3d) | Not implemented | Uses FirstOrDefault |
-| ConcurrentPromotion guard (3g) | Partial | Idempotency only, no concurrency token |
+| INV-PROMO-011 Conflicts remain visible | Implemented | Structured conflict diagnostics with ConflictType |
+| INV-PROMO-012 Provenance chain unbroken | Implemented | DerivedFrom + Supersedes relationships + audit trail |
+| Supersedes relationship (3c.5) | Implemented | Supersedes KnowledgeRelationship created during supersession |
+| HigherAuthorityExists (3g) | Implemented | AuthorityPolicy returns Informational for AI-parsed; equal-authority blocks |
+| AmbiguousDocumentMatch (3d) | Implemented | Multiple match detection with ConflictType |
+| ConcurrentPromotion guard (3g) | Implemented | Idempotency + ConcurrencyConflictException handling |
 | SupersessionChainBroken (3g) | Indirect | Domain MarkSuperseded enforces |
-| Temporal ordering (3f) | Not implemented | |
-| Spec audit events (3i) | Not implemented | Domain events used instead |
+| Temporal ordering (3f) | Implemented | ReceivedAtUtc comparison on supersession |
+| Spec audit events (3i) | Partial | Domain events emitted; spec-specific named events deferred |
 
 ## Known friction
 

@@ -80,8 +80,15 @@ internal sealed class FakeFragmentCandidateRepository : IFragmentCandidateReposi
 {
   private readonly Dictionary<FragmentCandidateId, FragmentCandidate> _candidates = [];
 
+  public bool ThrowOnGetById { get; set; }
+
   public Task<FragmentCandidate?> GetByIdAsync(FragmentCandidateId fragmentCandidateId, CancellationToken cancellationToken = default)
   {
+    if (ThrowOnGetById)
+    {
+      throw new OperationCanceledException();
+    }
+
     _candidates.TryGetValue(fragmentCandidateId, out var candidate);
     return Task.FromResult(candidate);
   }

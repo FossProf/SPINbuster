@@ -591,6 +591,66 @@ public sealed class KnowledgePromotionWorkflowTests
     }
   }
 
+  [Fact]
+  public async Task RecoverableFailedPromotionFailsBeforeActivation()
+  {
+    var environment = CreateEnvironmentPaths();
+
+    try
+    {
+      using var serviceProvider = CreateServiceProvider(environment);
+      var result = await KnowledgePromotionWorkflowBootstrapper.RunAsync(serviceProvider);
+
+      Assert.Equal(PromotionDiagnosticStatus.Failed, result.RecoverableFailedPromotion.Status);
+      Assert.Null(result.RecoverableFailedPromotion.KnowledgeDocumentId);
+    }
+    finally
+    {
+      DeleteEnvironmentIfPresent(environment);
+    }
+  }
+
+  [Fact]
+  public async Task RecoverableRetryPromotionSucceedsAfterActivation()
+  {
+    var environment = CreateEnvironmentPaths();
+
+    try
+    {
+      using var serviceProvider = CreateServiceProvider(environment);
+      var result = await KnowledgePromotionWorkflowBootstrapper.RunAsync(serviceProvider);
+
+      Assert.Equal(PromotionDiagnosticStatus.Promoted, result.RecoverableRetryPromotion.Status);
+      Assert.NotNull(result.RecoverableRetryPromotion.KnowledgeDocumentId);
+      Assert.NotNull(result.RecoverableRetryPromotion.KnowledgeDocumentRevisionId);
+      Assert.NotNull(result.RecoverableRetryPromotion.KnowledgeCitationId);
+    }
+    finally
+    {
+      DeleteEnvironmentIfPresent(environment);
+    }
+  }
+
+  [Fact]
+  public async Task RecoverableRetryProducesDifferentDiagnosticThanFailure()
+  {
+    var environment = CreateEnvironmentPaths();
+
+    try
+    {
+      using var serviceProvider = CreateServiceProvider(environment);
+      var result = await KnowledgePromotionWorkflowBootstrapper.RunAsync(serviceProvider);
+
+      Assert.NotEqual(
+        result.RecoverableFailedPromotion.PromotionDiagnosticId,
+        result.RecoverableRetryPromotion.PromotionDiagnosticId);
+    }
+    finally
+    {
+      DeleteEnvironmentIfPresent(environment);
+    }
+  }
+
   private static ServiceProvider CreateServiceProvider(
     TestEnvironmentPaths environment,
     Action<IServiceCollection>? configureServices = null)

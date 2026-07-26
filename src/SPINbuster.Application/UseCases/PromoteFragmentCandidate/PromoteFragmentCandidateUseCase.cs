@@ -343,6 +343,34 @@ public sealed class PromoteFragmentCandidateUseCase
           StageAuditEvents(derivedFromRelationship.AuditTrail);
         }
 
+        if (supersededExistingRevision && supersededRevisionId is not null)
+        {
+          var supersedesSource = KnowledgeSubjectReference.ForRevision(candidate.ProjectId, knowledgeRevision.Id);
+          var supersedesTarget = KnowledgeSubjectReference.ForRevision(candidate.ProjectId, supersededRevisionId.Value);
+          var existingSupersedes = await _knowledgeRelationshipRepository.FindByEndpointsAsync(
+            candidate.ProjectId,
+            supersedesSource,
+            supersedesTarget,
+            KnowledgeRelationshipType.Supersedes,
+            cancellationToken);
+
+          if (existingSupersedes is null)
+          {
+            var supersedesRelationship = new KnowledgeRelationship(
+              KnowledgeRelationshipId.New(),
+              candidate.ProjectId,
+              supersedesSource,
+              supersedesTarget,
+              KnowledgeRelationshipType.Supersedes,
+              $"Revision {knowledgeRevision.RevisionLabel} supersedes revision on document {knowledgeDocument.Id}",
+              _currentUser.UserId.Value,
+              _clock.UtcNow);
+
+            await _knowledgeRelationshipRepository.AddAsync(supersedesRelationship, cancellationToken);
+            StageAuditEvents(supersedesRelationship.AuditTrail);
+          }
+        }
+
         await _knowledgeDocumentRepository.UpdateAsync(knowledgeDocument, cancellationToken);
         if (supersededDomainRevision is not null)
         {

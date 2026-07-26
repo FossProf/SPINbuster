@@ -33,14 +33,14 @@
 
 ## Test Status
 
-- Domain: `188/188`
-- Application: `184/184`
+- Domain: `234/234`
+- Application: `221/221`
 - Documents: `78/78`
-- Infrastructure: `82/82`
+- Infrastructure: `93/93`
 - Architecture: `24/24`
 - AI: `6/6`
-- Desktop: `62/62`
-- Total: `624/624`
+- Desktop: `73/73`
+- Total: `729/729`
 
 ## Open ADRs
 

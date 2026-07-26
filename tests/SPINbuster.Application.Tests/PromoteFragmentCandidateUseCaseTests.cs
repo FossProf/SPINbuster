@@ -896,6 +896,161 @@ public sealed class PromoteFragmentCandidateUseCaseTests
     Assert.Null(result.KnowledgeDocumentId);
   }
 
+  [Fact]
+  public async Task SupersedingPromotionWithHigherAuthorityCreatesSupersedesRelationship()
+  {
+    var fixture = CreateFixture();
+    var (candidateId, _, projectId) = await SeedReadyCandidateAsync(fixture);
+
+    var firstResult = await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
+      candidateId,
+      KnowledgeDocumentType.Specification,
+      "Concrete Spec",
+      "EXT-001",
+      "Civil"));
+    Assert.Equal(PromotionDiagnosticStatus.Promoted, firstResult.Status);
+
+    var secondCandidateId = await SeedSecondCandidateInSameDocumentAsync(fixture, projectId);
+    fixture.Clock.UtcNow = TestTime.AddMinutes(5);
+
+    var result = await CreateUseCaseWithPolicy(fixture, new HigherAuthorityPolicy()).HandleAsync(
+      new PromoteFragmentCandidateCommand(
+        secondCandidateId,
+        KnowledgeDocumentType.Specification,
+        "Concrete Spec",
+        "EXT-001",
+        "Civil"));
+
+    Assert.Equal(PromotionDiagnosticStatus.Promoted, result.Status);
+    Assert.NotNull(result.KnowledgeDocumentId);
+    Assert.True(result.SupersededExistingRevision);
+
+    var supersedesRelationship = fixture.KnowledgeRelationshipRepository.AddedRelationships
+      .FirstOrDefault(r => r.RelationshipType == KnowledgeRelationshipType.Supersedes);
+    Assert.NotNull(supersedesRelationship);
+    Assert.Equal(
+      KnowledgeSubjectReference.ForRevision(projectId, result.KnowledgeDocumentRevisionId!.Value),
+      supersedesRelationship.Source);
+  }
+
+  [Fact]
+  public async Task ReplayAfterMutableSourceStateChangeDoesNotMutateKnowledge()
+  {
+    var fixture = CreateFixture();
+    var (candidateId, _, _) = await SeedReadyCandidateAsync(fixture);
+
+    var firstResult = await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
+      candidateId,
+      KnowledgeDocumentType.Specification,
+      "Concrete Spec",
+      "EXT-001",
+      "Civil"));
+
+    var documentsAfterFirst = fixture.KnowledgeDocumentRepository.AddedDocuments.Count;
+    var revisionsAfterFirst = fixture.KnowledgeRevisionRepository.AddedRevisions.Count;
+
+    fixture.Clock.UtcNow = TestTime.AddHours(1);
+
+    var replayResult = await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
+      candidateId,
+      KnowledgeDocumentType.Specification,
+      "Concrete Spec",
+      "EXT-001",
+      "Civil"));
+
+    Assert.Equal(firstResult.PromotionDiagnosticId, replayResult.PromotionDiagnosticId);
+    Assert.Equal(documentsAfterFirst, fixture.KnowledgeDocumentRepository.AddedDocuments.Count);
+    Assert.Equal(revisionsAfterFirst, fixture.KnowledgeRevisionRepository.AddedRevisions.Count);
+  }
+
+  [Fact]
+  public async Task WrongTargetReplayProducesDifferentIdentity()
+  {
+    var fixture = CreateFixture();
+    var (candidateId, _, _) = await SeedReadyCandidateAsync(fixture);
+
+    var firstResult = await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
+      candidateId,
+      KnowledgeDocumentType.Specification,
+      "Concrete Spec",
+      "EXT-001",
+      "Civil"));
+    Assert.Equal(PromotionDiagnosticStatus.Promoted, firstResult.Status);
+
+    var secondResult = await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
+      candidateId,
+      KnowledgeDocumentType.Report,
+      "Concrete Spec",
+      "EXT-001",
+      "Civil"));
+
+    Assert.Equal(PromotionDiagnosticStatus.Promoted, secondResult.Status);
+    Assert.NotEqual(firstResult.PromotionDiagnosticId, secondResult.PromotionDiagnosticId);
+    Assert.NotEqual(firstResult.KnowledgeDocumentId, secondResult.KnowledgeDocumentId);
+  }
+
+  [Fact]
+  public async Task PromotedDiagnosticExcludesSensitiveContentFromResult()
+  {
+    var fixture = CreateFixture();
+    var (candidateId, _, _) = await SeedReadyCandidateAsync(fixture);
+
+    var result = await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
+      candidateId,
+      KnowledgeDocumentType.Specification,
+      "Concrete Spec",
+      "EXT-001",
+      "Civil"));
+
+    Assert.Equal(PromotionDiagnosticStatus.Promoted, result.Status);
+    Assert.Null(result.FailureReason);
+    Assert.Equal(PromotionConflictType.None, result.ConflictType);
+  }
+
+  [Fact]
+  public async Task CancellationExceptionPropagatesAndRecordsNoDiagnostic()
+  {
+    var fixture = CreateFixture();
+    var (candidateId, _, _) = await SeedReadyCandidateAsync(fixture);
+    fixture.FragmentCandidateRepository.ThrowOnGetById = true;
+
+    await Assert.ThrowsAsync<OperationCanceledException>(() =>
+      CreateUseCase(fixture).HandleAsync(
+        new PromoteFragmentCandidateCommand(
+          candidateId,
+          KnowledgeDocumentType.Specification,
+          "Concrete Spec",
+          "EXT-001",
+          "Civil")));
+
+    Assert.Empty(fixture.PromotionDiagnosticRepository.AddedDiagnostics);
+    Assert.Empty(fixture.PromotionAttemptRepository.AddedAttempts);
+  }
+
+  private static PromoteFragmentCandidateUseCase CreateUseCaseWithPolicy(
+    PromotionFixture fixture, IAuthorityPolicy policy)
+  {
+    return new PromoteFragmentCandidateUseCase(
+      fixture.FragmentCandidateRepository,
+      fixture.ParserRunRepository,
+      fixture.ImportedSourceRepository,
+      fixture.ProjectRepository,
+      fixture.KnowledgeDocumentRepository,
+      fixture.KnowledgeRevisionRepository,
+      fixture.KnowledgeCitationRepository,
+      fixture.KnowledgeRelationshipRepository,
+      fixture.PromotionDiagnosticRepository,
+      fixture.PromotionRecordRepository,
+      fixture.PromotionAttemptRepository,
+      fixture.PromotionProvenanceRepository,
+      fixture.UnitOfWork,
+      fixture.Clock,
+      fixture.CurrentUser,
+      fixture.AuditRecorder,
+      policy,
+      NullLogger<PromoteFragmentCandidateUseCase>.Instance);
+  }
+
   private static async Task<FragmentCandidateId> SeedSecondCandidateInSameDocumentAsync(
     PromotionFixture fixture, ProjectId projectId)
   {
@@ -1127,4 +1282,16 @@ public sealed class PromoteFragmentCandidateUseCaseTests
     FakeCurrentUser CurrentUser,
     FakeAuditRecorder AuditRecorder,
     AuthorityPolicy AuthorityPolicy);
+}
+
+internal sealed class HigherAuthorityPolicy : IAuthorityPolicy
+{
+  public string PolicyVersion => "test-higher-authority";
+
+  public AuthorityPolicyResult Classify(FragmentCandidate candidate, ProjectId projectId)
+  {
+    return new AuthorityPolicyResult(
+      KnowledgeSourceAuthorityLevel.EngineerIssued,
+      $"Test higher authority policy for candidate {candidate.Id}.");
+  }
 }

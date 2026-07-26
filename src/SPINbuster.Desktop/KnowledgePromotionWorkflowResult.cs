@@ -38,4 +38,7 @@ public sealed record KnowledgePromotionWorkflowResult(
   PromoteFragmentCandidateResult SupersessionIdempotentReplay,
   LoadProjectKnowledgeSnapshotResult KnowledgeSnapshot,
   IReadOnlyList<PromoteFragmentCandidateResult> PromotionDiagnostics,
-  IReadOnlyList<DesktopWorkflowFailurePresentation> FailurePresentations);
+  IReadOnlyList<DesktopWorkflowFailurePresentation> FailurePresentations,
+  PromoteFragmentCandidateResult RecoverableFailedPromotion,
+  PromoteFragmentCandidateResult RecoverableRetryPromotion,
+  IReadOnlyList<PromotionAttempt> RecoverableAttemptHistory);
