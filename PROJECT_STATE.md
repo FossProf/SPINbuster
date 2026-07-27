@@ -36,11 +36,11 @@
 - Domain: `234/234`
 - Application: `221/221`
 - Documents: `78/78`
-- Infrastructure: `93/93`
+- Infrastructure: `102/102`
 - Architecture: `24/24`
 - AI: `6/6`
-- Desktop: `73/73`
-- Total: `729/729`
+- Desktop: `75/75`
+- Total: `740/740`
 
 ## Open ADRs
 
@@ -118,9 +118,14 @@
 - Desktop executable proof exercises structured text parsing with diagnostics display
 - Knowledge Promotion: human-reviewed fragment candidates can be promoted into authoritative KnowledgeDocument, KnowledgeDocumentRevision, KnowledgeCitation, and KnowledgeRelationship records
 - Promotion precondition checklist enforced deterministically (no AI participation in authority decisions)
-- Idempotent promotion replay by candidate ID and by content hash
+- PromotionIdentity-based idempotent replay (candidate-ID or content-hash replay removed, WO4 hardened)
 - Two-phase supersession (BeginSupersession/CompleteSupersession) handles SQLite filtered unique index
 - Promotion diagnostics are durable and queryable (Eligible/Promoted/Failed lifecycle)
 - Project lifecycle management: Draft -> Active (required for promotion eligibility)
 - Knowledge snapshot survives provider disposal and recreation
 - End-to-end executable proof: create project -> activate -> import -> parse -> review -> promote -> supersede -> verify snapshot
+- Persisted attempt history: Desktop scenario loads real promotion attempts across retries
+- Attempt/diagnostic ownership: SQLite integration tests verify per-candidate isolation
+- Canonical identity migration: unique index, duplicate detection, cross-project isolation verified
+- Released migration integrity: 17 migrations apply cleanly, snapshot consistency verified
+- AI-parsed supersession blocked at equal authority via IAuthorityPolicy (Informational classification)

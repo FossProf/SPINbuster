@@ -10,10 +10,10 @@ Latest software baseline:
 FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1
 
 Active implementation package:
-DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC
+FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC
 
 Status:
-DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC validated as release candidate, not released
+FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC validated as release candidate, not released
 
 Build:
 Passing
@@ -22,16 +22,16 @@ Warnings:
 Pre-existing CA1848 (LoggerMessage delegates) — acknowledged technical debt
 
 Domain tests:
-181/181 passing
+234/234 passing
 
 Application tests:
-184/184 passing
+221/221 passing
 
 Documents tests:
-63/63 passing
+78/78 passing
 
 Infrastructure tests:
-61/61 passing
+102/102 passing
 
 Architecture tests:
 24/24 passing
@@ -40,30 +40,35 @@ AI tests:
 6/6 passing
 
 Desktop tests:
-45/45 passing
+75/75 passing
 
 Total tests:
-564/564 passing
+740/740 passing
 
 Current task:
-`DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC` validated as release candidate. Awaiting release decision.
+`FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` validated as release candidate. Awaiting release decision.
 
 Required outcome:
 
-- Implement structural text extraction: headings, numbered clauses, tables, source-location fidelity
-- Establish overlapping-fragment policy
-- Add parser diagnostics and partial-success semantics
-- Keep review lifecycle boundaries from FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1 intact
-- Preserve authority isolation
+- Promote fragment candidates into authoritative KnowledgeDocument, KnowledgeDocumentRevision, KnowledgeCitation, and KnowledgeRelationship records
+- Enforce promotion precondition checklist deterministically (no AI participation in authority decisions)
+- Implement PromotionIdentity-based idempotent replay
+- Implement two-phase supersession (BeginSupersession/CompleteSupersession) for SQLite
+- Canonical identity enforcement via unique index on CanonicalIdentityHash
+- ConcurrencyToken on KnowledgeDocument prevents lost updates
+- Authority policy: AI-parsed candidates classified Informational, cannot escalate authority
+- Persisted attempt history across Desktop retries
+- Attempt/diagnostic ownership: per-candidate isolation
+- End-to-end executable proof: create project -> activate -> import -> parse -> review -> promote -> supersede -> verify snapshot
 
 Next review:
-After `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC` release decision
+After `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` release decision
 
 Known blockers:
 None
 
 Known process deviation:
-The EF migration `AddFragmentCandidateReviewState` was created during Prompt 1 before Application review workflows were finalized. This was premature per slice boundaries. Treat the checkpoint as `FRAGMENT-REVIEW-DOMAIN-AND-SCHEMA-CHECKPOINT`. Do not create another migration unless the model genuinely changes.
+None
 
 Last completed:
 
@@ -77,11 +82,15 @@ Last completed:
 - Completed `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC` Prompt 2: StructuredTextDocumentParser with heading/clause/table extraction, overlap detection, diagnostics, 25 tests
 - Completed `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC` Prompt 3: Infrastructure & Executable Proof — workflow runner extension, console formatter diagnostics, persistence tests, integration tests, 11 tests
 - Completed `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC` Prompt 5: Governance & RC Review — prototype review, continuity updates, full validation, 564/564 tests
+- Completed `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` WO1-WO3: PromotionProvenance, two-phase supersession, IAuthorityPolicy
+- Completed `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` WO4 FINAL: Canonical identity, ConcurrencyToken, AuthorityBasis/PolicyVersion, SourceAuthorityLevel removal, 17 migrations
+- Completed `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` WO5: Supersedes relationship, 5 focused Application tests, 3 Desktop recoverable-failure tests
+- Completed `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` WO6 FINAL: Persisted attempt history, ownership tests, migration upgrade tests, migration integrity guard, supersession claims corrected, governance corrected, 740/740 tests
 
 Proposed next direction:
 
-- Await release decision for `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC`
-- After that, proceed to `FRAGMENT-TO-KNOWLEDGE-PROMOTION-FOUNDATION-0.1-RC`
+- Await release decision for `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC`
+- After that, proceed to next package (OCR, assertion promotion, or broader retrieval)
 - Preserve the non-authoritative document-candidate boundary
 - Keep OCR, AI extraction, and reconciliation workflows deferred until fragment contracts are explicit
 
@@ -141,6 +150,15 @@ Current capabilities:
 - Display parser diagnostics in Desktop console output
 - Resolve parser by key through DocumentParserRegistry
 - Distinguish Completed, CompletedWithWarnings, and Failed parser statuses
+- Knowledge Promotion: human-reviewed fragment candidates promoted into authoritative records
+- PromotionIdentity-based idempotent replay
+- Two-phase supersession for SQLite filtered unique index
+- Canonical identity enforcement via unique index
+- ConcurrencyToken prevents lost updates
+- AI-parsed candidates blocked from authority escalation
+- Persisted attempt history across Desktop retries
+- Attempt/diagnostic ownership per-candidate isolation
+- 17 migrations apply cleanly, snapshot consistency verified
 
 Authoritative context:
 
@@ -158,6 +176,7 @@ Authoritative context:
 - `docs/decisions/status/PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC-PROTOTYPE-REVIEW.md`
 - `docs/decisions/status/FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1-RC-REVIEW.md`
 - `docs/decisions/status/DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC-PROTOTYPE-REVIEW.md`
+- `docs/decisions/status/FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC-REVIEW.md`
 - `spec/rules/README.md`
 - `spec/rules/rule-engine-boundary.md`
 - `docs/00-governance/ROADMAP.md`
