@@ -5,6 +5,7 @@ using SPINbuster.Application;
 using SPINbuster.Application.Abstractions;
 using SPINbuster.Application.Contracts;
 using SPINbuster.Application.UseCases.LoadParsingSnapshot;
+using SPINbuster.Application.UseCases.LoadPromotionAttempts;
 using SPINbuster.Application.UseCases.LoadProjectKnowledgeSnapshot;
 using SPINbuster.Application.UseCases.LoadPromotionDiagnostic;
 using SPINbuster.Application.UseCases.LoadPromotionProvenance;
@@ -644,6 +645,63 @@ public sealed class KnowledgePromotionWorkflowTests
       Assert.NotEqual(
         result.RecoverableFailedPromotion.PromotionDiagnosticId,
         result.RecoverableRetryPromotion.PromotionDiagnosticId);
+    }
+    finally
+    {
+      DeleteEnvironmentIfPresent(environment);
+    }
+  }
+
+  [Fact]
+  public async Task RecoverableAttemptHistoryContainsTwoOrderedAttempts()
+  {
+    var environment = CreateEnvironmentPaths();
+
+    try
+    {
+      using var serviceProvider = CreateServiceProvider(environment);
+      var result = await KnowledgePromotionWorkflowBootstrapper.RunAsync(serviceProvider);
+
+      Assert.Equal(2, result.RecoverableAttemptHistory.Count);
+      Assert.Equal(PromotionAttemptOutcome.RetryablePreconditionFailure, result.RecoverableAttemptHistory[0].Outcome);
+      Assert.Equal(PromotionAttemptOutcome.Promoted, result.RecoverableAttemptHistory[1].Outcome);
+      Assert.NotEqual(result.RecoverableAttemptHistory[0].Id, result.RecoverableAttemptHistory[1].Id);
+      Assert.True(result.RecoverableAttemptHistory[1].AttemptedAtUtc >= result.RecoverableAttemptHistory[0].AttemptedAtUtc);
+    }
+    finally
+    {
+      DeleteEnvironmentIfPresent(environment);
+    }
+  }
+
+  [Fact]
+  public async Task RecoverableAttemptHistorySurvivesDisposeAndRecreateProvider()
+  {
+    var environment = CreateEnvironmentPaths();
+
+    try
+    {
+      KnowledgePromotionWorkflowResult firstResult;
+      using (var firstProvider = CreateServiceProvider(environment))
+      {
+        firstResult = await KnowledgePromotionWorkflowBootstrapper.RunAsync(firstProvider);
+      }
+
+      using var secondProvider = CreateServiceProvider(environment);
+      await KnowledgePromotionWorkflowBootstrapper.MigrateAsync(secondProvider);
+      await using var scope = secondProvider.CreateAsyncScope();
+      var loadAttempts = scope.ServiceProvider.GetRequiredService<IQueryHandler<LoadPromotionAttemptsQuery, LoadPromotionAttemptsResult>>();
+
+      var reloaded = await loadAttempts.HandleAsync(
+        new LoadPromotionAttemptsQuery(firstResult.RecoverableAttemptHistory[0].FragmentCandidateId));
+
+      Assert.Equal(2, reloaded.Attempts.Count);
+      Assert.Equal(PromotionAttemptOutcome.RetryablePreconditionFailure, reloaded.Attempts[0].Outcome);
+      Assert.Equal(PromotionAttemptOutcome.Promoted, reloaded.Attempts[1].Outcome);
+      Assert.Equal(firstResult.RecoverableAttemptHistory[0].Id, reloaded.Attempts[0].Id);
+      Assert.Equal(firstResult.RecoverableAttemptHistory[1].Id, reloaded.Attempts[1].Id);
+      Assert.Equal(firstResult.RecoverableAttemptHistory[0].DiagnosticId, reloaded.Attempts[0].DiagnosticId);
+      Assert.Equal(firstResult.RecoverableAttemptHistory[1].DiagnosticId, reloaded.Attempts[1].DiagnosticId);
     }
     finally
     {

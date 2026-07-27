@@ -10,6 +10,7 @@ using SPINbuster.Application.UseCases.ImportDocumentSource;
 using SPINbuster.Application.UseCases.LoadFragmentReviewSnapshot;
 using SPINbuster.Application.UseCases.LoadParsingSnapshot;
 using SPINbuster.Application.UseCases.LoadProjectKnowledgeSnapshot;
+using SPINbuster.Application.UseCases.LoadPromotionAttempts;
 using SPINbuster.Application.UseCases.LoadPromotionDiagnostic;
 using SPINbuster.Application.UseCases.PromoteFragmentCandidate;
 using SPINbuster.Application.UseCases.RejectFragmentCandidate;
@@ -30,6 +31,7 @@ public sealed class KnowledgePromotionWorkflowRunner
   private readonly ICommandHandler<CompleteDocumentImportSessionCommand, CompleteDocumentImportSessionResult> _completeImportSession;
   private readonly ICommandHandler<CreateProjectCommand, CreateProjectResult> _createProject;
   private readonly ICommandHandler<ImportDocumentSourceCommand, ImportDocumentSourceResult> _importSource;
+  private readonly IQueryHandler<LoadPromotionAttemptsQuery, LoadPromotionAttemptsResult> _loadPromotionAttempts;
   private readonly IQueryHandler<LoadPromotionDiagnosticQuery, LoadPromotionDiagnosticResult> _loadPromotionDiagnostic;
   private readonly IQueryHandler<LoadFragmentReviewSnapshotQuery, LoadFragmentReviewSnapshotResult> _loadFragmentReviewSnapshot;
   private readonly IQueryHandler<LoadParsingSnapshotQuery, LoadParsingSnapshotResult> _loadParsingSnapshot;
@@ -50,6 +52,7 @@ public sealed class KnowledgePromotionWorkflowRunner
     ICommandHandler<RejectFragmentCandidateCommand, RejectFragmentCandidateResult> rejectFragmentCandidate,
     IQueryHandler<LoadFragmentReviewSnapshotQuery, LoadFragmentReviewSnapshotResult> loadFragmentReviewSnapshot,
     ICommandHandler<PromoteFragmentCandidateCommand, PromoteFragmentCandidateResult> promoteFragmentCandidate,
+    IQueryHandler<LoadPromotionAttemptsQuery, LoadPromotionAttemptsResult> loadPromotionAttempts,
     IQueryHandler<LoadPromotionDiagnosticQuery, LoadPromotionDiagnosticResult> loadPromotionDiagnostic,
     IQueryHandler<LoadProjectKnowledgeSnapshotQuery, LoadProjectKnowledgeSnapshotResult> loadProjectKnowledgeSnapshot)
   {
@@ -64,6 +67,7 @@ public sealed class KnowledgePromotionWorkflowRunner
     _rejectFragmentCandidate = rejectFragmentCandidate;
     _loadFragmentReviewSnapshot = loadFragmentReviewSnapshot;
     _promoteFragmentCandidate = promoteFragmentCandidate;
+    _loadPromotionAttempts = loadPromotionAttempts;
     _loadPromotionDiagnostic = loadPromotionDiagnostic;
     _loadProjectKnowledgeSnapshot = loadProjectKnowledgeSnapshot;
   }
@@ -319,7 +323,7 @@ public sealed class KnowledgePromotionWorkflowRunner
     return failures;
   }
 
-  private async Task<(PromoteFragmentCandidateResult Failed, PromoteFragmentCandidateResult Retry, IReadOnlyList<PromotionAttempt> AttemptHistory)> RunRecoverableFailureScenarioAsync(
+  private async Task<(PromoteFragmentCandidateResult Failed, PromoteFragmentCandidateResult Retry, IReadOnlyList<PromotionAttemptResult> AttemptHistory)> RunRecoverableFailureScenarioAsync(
     WorkflowRunScope runScope,
     CancellationToken cancellationToken)
   {
@@ -393,7 +397,11 @@ public sealed class KnowledgePromotionWorkflowRunner
         runScope.Discipline),
       cancellationToken);
 
-    return (failedResult, retryResult, []);
+    var attemptHistory = await _loadPromotionAttempts.HandleAsync(
+      new LoadPromotionAttemptsQuery(candidate.FragmentCandidateId),
+      cancellationToken);
+
+    return (failedResult, retryResult, attemptHistory.Attempts);
   }
 
   private async Task<LoadParsingSnapshotResult> LoadParsingSnapshotAsync(

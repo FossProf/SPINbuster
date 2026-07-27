@@ -7,6 +7,7 @@ using SPINbuster.Application.UseCases.LoadFragmentReviewSnapshot;
 using SPINbuster.Application.UseCases.LoadParsingSnapshot;
 using SPINbuster.Application.UseCases.LoadProjectKnowledgeSnapshot;
 using SPINbuster.Application.UseCases.LoadPromotionDiagnostic;
+using SPINbuster.Application.UseCases.LoadPromotionAttempts;
 using SPINbuster.Application.UseCases.PromoteFragmentCandidate;
 using SPINbuster.Application.UseCases.RejectFragmentCandidate;
 using SPINbuster.Application.UseCases.RequestDocumentParsing;
@@ -41,4 +42,4 @@ public sealed record KnowledgePromotionWorkflowResult(
   IReadOnlyList<DesktopWorkflowFailurePresentation> FailurePresentations,
   PromoteFragmentCandidateResult RecoverableFailedPromotion,
   PromoteFragmentCandidateResult RecoverableRetryPromotion,
-  IReadOnlyList<PromotionAttempt> RecoverableAttemptHistory);
+  IReadOnlyList<PromotionAttemptResult> RecoverableAttemptHistory);

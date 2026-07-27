@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #pragma warning disable CA1861
 
@@ -6,20 +6,20 @@
 
 namespace SPINbuster.Infrastructure.Persistence.Migrations
 {
+  /// <inheritdoc />
+  public partial class ConcurrencyTokenAndCanonicalIdentityHash : Migration
+  {
     /// <inheritdoc />
-    public partial class ConcurrencyTokenAndCanonicalIdentityHash : Migration
+    protected override void Up(MigrationBuilder migrationBuilder)
     {
-        /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
-            migrationBuilder.AddColumn<string>(
-                name: "CanonicalIdentityHash",
-                table: "knowledge_documents",
-                type: "TEXT",
-                maxLength: 128,
-                nullable: true);
+      migrationBuilder.AddColumn<string>(
+          name: "CanonicalIdentityHash",
+          table: "knowledge_documents",
+          type: "TEXT",
+          maxLength: 128,
+          nullable: true);
 
-            migrationBuilder.Sql(@"
+      migrationBuilder.Sql(@"
                 UPDATE knowledge_documents
                 SET CanonicalIdentityHash = sha256_hex(
                     ProjectId || '|' ||
@@ -42,31 +42,31 @@ namespace SPINbuster.Infrastructure.Persistence.Migrations
                 )
                 WHERE CanonicalIdentityHash IS NULL");
 
-            migrationBuilder.AlterColumn<string>(
-                name: "CanonicalIdentityHash",
-                table: "knowledge_documents",
-                type: "TEXT",
-                maxLength: 128,
-                nullable: false,
-                defaultValue: "");
+      migrationBuilder.AlterColumn<string>(
+          name: "CanonicalIdentityHash",
+          table: "knowledge_documents",
+          type: "TEXT",
+          maxLength: 128,
+          nullable: false,
+          defaultValue: "");
 
-            migrationBuilder.CreateIndex(
-                name: "IX_knowledge_documents_ProjectId_CanonicalIdentityHash",
-                table: "knowledge_documents",
-                columns: new[] { "ProjectId", "CanonicalIdentityHash" },
-                unique: true);
-        }
-
-        /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
-            migrationBuilder.DropIndex(
-                name: "IX_knowledge_documents_ProjectId_CanonicalIdentityHash",
-                table: "knowledge_documents");
-
-            migrationBuilder.DropColumn(
-                name: "CanonicalIdentityHash",
-                table: "knowledge_documents");
-        }
+      migrationBuilder.CreateIndex(
+          name: "IX_knowledge_documents_ProjectId_CanonicalIdentityHash",
+          table: "knowledge_documents",
+          columns: new[] { "ProjectId", "CanonicalIdentityHash" },
+          unique: true);
     }
+
+    /// <inheritdoc />
+    protected override void Down(MigrationBuilder migrationBuilder)
+    {
+      migrationBuilder.DropIndex(
+          name: "IX_knowledge_documents_ProjectId_CanonicalIdentityHash",
+          table: "knowledge_documents");
+
+      migrationBuilder.DropColumn(
+          name: "CanonicalIdentityHash",
+          table: "knowledge_documents");
+    }
+  }
 }

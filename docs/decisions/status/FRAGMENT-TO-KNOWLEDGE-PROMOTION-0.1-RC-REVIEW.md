@@ -1,6 +1,7 @@
 # FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC Prototype Review
 
 Date: 2026-07-23
+Updated: 2026-07-27
 Status: Release Candidate (not released)
 Active implementation package: `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC`
 Released baseline: none (pending release decision)
@@ -11,11 +12,11 @@ Next active package: TBD after RC release decision
 - Domain tests: `234/234`
 - Application tests: `221/221`
 - Documents tests: `78/78`
-- Infrastructure tests: `93/93`
+- Infrastructure tests: `100/100`
 - Architecture tests: `24/24`
 - AI tests: `6/6`
-- Desktop tests: `73/73`
-- Total tests: `729/729`
+- Desktop tests: `75/75`
+- Total tests: `738/738`
 
 ## Checkpoints completed
 
@@ -70,18 +71,21 @@ Next active package: TBD after RC release decision
 
 ### Idempotency
 
-- Idempotent replay by fragment candidate ID: if `PromotionDiagnostic` exists for candidate, returns existing result without creating new records (INV-PROMO-009).
-- Idempotent replay by content hash: if successful diagnostic exists for same project + content hash + normalized locator, returns existing result.
-- Both replay paths are tested: same-candidate replay and supersession replay.
-- Idempotent replay of failed promotions re-runs from `Eligible` state.
+- Idempotent replay is PromotionIdentity-based only: if a `PromotionRecord` with matching identity hash exists and has a successful attempt, returns cached diagnostic without creating new records (INV-PROMO-009).
+- `PromotionIdentity` hash is derived from project, document type, canonical title, external reference, discipline, fragment identity key, and contract version (case-insensitive).
+- Candidate-ID or content-hash replay is NOT used; successful replay relies solely on `PromotionIdentity` hash.
+- Error handlers check for existing diagnostics per candidate to avoid duplicate diagnostics on retryable failures.
 
 ### Supersession
 
-- Supersession occurs when promoted fragment matches existing document with a current authoritative revision.
-- Old revision transitions to `Superseded` lifecycle.
-- New revision transitions to `CurrentAuthoritative` lifecycle.
+- Supersession occurs when promoted fragment matches existing document with a current authoritative revision AND the new revision has higher source authority than the existing revision.
+- AI-parsed candidates receive `Informational` authority from `AuthorityPolicy`, so supersession between AI-parsed candidates is blocked (equal authority).
+- Human-controlled `AddKnowledgeDocumentRevision` preserves the revision-management path for genuine supersession.
+- Old revision transitions to `Superseded` lifecycle when supersession succeeds.
+- New revision transitions to `CurrentAuthoritative` lifecycle when supersession succeeds.
 - `SupersedesRevisionId` on new revision explicitly identifies the revision being superseded (INV-PROMO-008).
 - `SupersededExistingRevision` flag and `SupersededRevisionId` recorded in diagnostic for audit.
+- When supersession is blocked, `HigherAuthorityExists` conflict type is returned.
 
 ### Promotion diagnostics
 
@@ -99,15 +103,15 @@ Next active package: TBD after RC release decision
 
 ### Desktop executable proof
 
-- End-to-end workflow: create project -> activate -> import 2 sources -> parse -> review fragments -> promote -> supersede -> verify snapshot -> recoverable failure -> retry.
-- 16 Desktop tests cover: first promotion, idempotent replay, supersession, supersession replay, knowledge snapshot with 2 revisions, authority isolation, diagnostics persistence, snapshot persistence, parsing integration, fragment review integration, expected failure scenarios, console formatter output, data preservation across runs, recoverable failed promotion, recoverable retry success, retry diagnostic divergence.
+- End-to-end workflow: create project -> activate -> import 2 sources -> parse -> review fragments -> promote -> supersession attempt (blocked by authority policy — AI-parsed candidates are Informational) -> verify snapshot -> recoverable failure -> retry.
+- 18 Desktop tests cover: first promotion, idempotent replay, supersession attempt (HigherAuthorityExists), supersession replay, knowledge snapshot with 1 revision, authority isolation, diagnostics persistence, snapshot persistence, parsing integration, fragment review integration, expected failure scenarios, console formatter output, data preservation across runs, recoverable failed promotion, recoverable retry success, retry diagnostic divergence, persisted attempt history, attempt history survives provider recreation.
 - Console formatter produces readable output without exposing file paths.
 - Two runs against same database preserve prior data (different projects coexist).
 
 ### Concurrency and atomicity
 
-- Idempotency guard by fragment candidate ID prevents duplicate promotions.
-- `PromotionDiagnostic` unique index on `FragmentCandidateId` prevents duplicate diagnostics.
+- Idempotency guard by PromotionIdentity hash prevents duplicate promotions.
+- Non-unique index on `FragmentCandidateId` in `promotion_diagnostics` permits multiple attempts per candidate with independent diagnostic histories.
 - Domain state machine prevents invalid lifecycle transitions on `PromotionDiagnostic`, `KnowledgeDocumentRevision`, and `KnowledgeDocument`.
 
 ## Desktop composition boundary
@@ -128,15 +132,16 @@ Next active package: TBD after RC release decision
 
 ## Migration status
 
-- 12 total EF Core migrations.
+- 17 total EF Core migrations (14 released + ConcurrencyTokenSlice + ConcurrencyTokenAndCanonicalIdentityHash + AttemptAndDiagnosticOwnership + GovernedSourceAuthority).
 - `PromotionDiagnosticSlice` migration created during Prompt 2.
-- `PromotionDiagnosticRecord` table with unique index on `FragmentCandidateId`, FK constraints, and nullable knowledge FK columns.
+- `AttemptAndDiagnosticOwnership` migration removed unique `FragmentCandidateId` index on `promotion_diagnostics`, added `ConflictType` column, and created `promotion_attempts` table.
+- `GovernedSourceAuthority` migration added `AuthorityBasis` and `PolicyVersion` columns to `promotion_provenances`.
 
 ## Prototype review questions
 
 ### Does the promotion workflow correctly enforce all INV-PROMO preconditions?
 
-Partially. The use case enforces INV-PROMO-001 (HumanAccepted), INV-PROMO-002 (Completed parser run), INV-PROMO-003 (content hash match), INV-PROMO-004 (Available source), and INV-PROMO-005 (Active project). Not implemented: `IdentityKeyHash` validation is handled by domain rehydration (not explicit in use case). HigherAuthorityExists conflict check, temporal ordering on supersession, and AmbiguousDocumentMatch multi-match detection are not implemented (see gap analysis below).
+Yes. The use case enforces INV-PROMO-001 (HumanAccepted), INV-PROMO-002 (Completed parser run), INV-PROMO-003 (content hash match), INV-PROMO-004 (Available source), and INV-PROMO-005 (Active project). HigherAuthorityExists conflict check (equal-authority blocks), temporal ordering on supersession, and AmbiguousDocumentMatch multi-match detection are implemented. AI-parsed candidates receive `Informational` authority and cannot supersede each other.
 
 ### Does supersession correctly preserve revision history?
 
@@ -144,7 +149,7 @@ Yes. The two-phase commit (`BeginSupersession` + `CompleteSupersession`) correct
 
 ### Is idempotent replay reliable?
 
-Yes. Two independent idempotency paths exist: by fragment candidate ID (primary) and by content hash (secondary). Both are tested with direct replay and supersession replay scenarios. The primary guard was moved before the content-hash JOIN to improve reliability.
+Yes. PromotionIdentity-based replay returns cached diagnostics for successful promotions. The identity hash is derived from project, document type, canonical title, external reference, discipline, fragment identity key, and contract version (case-insensitive). Error handlers check for existing diagnostics per candidate to avoid duplicate diagnostics on retryable failures.
 
 ### Can promotion survive provider recreation?
 
@@ -189,20 +194,20 @@ Yes. Both `PromotionDiagnostic` and `KnowledgeSnapshot` survive provider disposa
 
 ## Recommended next package
 
-Recommendation: Complete the Knowledge Promotion spec gaps before release
+Recommendation: Complete remaining spec items before release
 
 Rationale:
 
-- The vertical slice proves the core promotion flow end-to-end: precondition validation, document matching, revision creation, supersession, citation, relationship, idempotency, diagnostics, authority isolation.
-- Six spec gaps remain: Supersedes relationship, HigherAuthorityExists, AmbiguousDocumentMatch, ConcurrentPromotion, temporal ordering, and spec audit events.
-- These gaps are well-scoped and can be addressed as incremental improvements without architectural changes.
+- The vertical slice proves the core promotion flow end-to-end: precondition validation, document matching, revision creation, citation, relationship, idempotency, diagnostics, authority isolation.
+- Supersession is correctly blocked for AI-parsed candidates (both Informational). Human-controlled `AddKnowledgeDocumentRevision` preserves the revision-management path.
+- One spec gap remains: spec audit events (PromotionWorkflowStarted, PromotionCompleted, etc.) are deferred.
 - The two-phase commit architecture is validated and stable.
 
 Follow-on order:
 
-1. Supersedes relationship creation during supersession
-2. HigherAuthorityExists conflict check
-3. AmbiguousDocumentMatch detection
+1. ~~Supersedes relationship creation during supersession~~ (Implemented in WO5)
+2. ~~HigherAuthorityExists conflict check~~ (Implemented in WO4)
+3. ~~AmbiguousDocumentMatch detection~~ (Implemented in WO4)
 4. Spec audit event naming (PromotionWorkflowStarted, PromotionCompleted, etc.)
-5. Temporal ordering on supersession
+5. ~~Temporal ordering on supersession~~ (Implemented in WO4)
 6. ConcurrentPromotion optimistic concurrency token (deferred to server/multi-user boundary)
