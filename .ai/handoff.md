@@ -1,7 +1,7 @@
 # Current State
 
 Repository status:
-Latest governance baseline: `ARCHITECTURE-VISION-2.0`. Latest software baseline: `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1`. Active implementation package: `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` (release candidate, not released). Build passing. Domain tests `234/234`. Application tests `221/221`. Documents tests `78/78`. Infrastructure tests `102/102`. Architecture tests `24/24`. AI tests `6/6`. Desktop tests `75/75`. Total `740/740`. Warnings `0` (pre-existing CA1848 acknowledged).
+Latest governance baseline: `ARCHITECTURE-VISION-2.0`. Latest software baseline: `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1`. Active implementation package: `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` (release candidate, not released). Build passing. Domain tests `234/234`. Application tests `230/230`. Documents tests `78/78`. Infrastructure tests `104/104`. Architecture tests `24/24`. AI tests `6/6`. Desktop tests `75/75`. Total `751/751`. Warnings `0` (pre-existing CA1848 acknowledged).
 
 Current branch:
 `main`
@@ -27,6 +27,7 @@ Recent accomplishments:
   - WO4 FINAL: Canonical identity (`KnowledgeDocumentIdentity`), `ConcurrencyToken` on `KnowledgeDocument`, `IKnowledgeDocumentRepository.UpdateAsync` signature hardened, `CanonicalIdentityHash` unique index via migration #15, `promotion_diagnostics`/`promotion_provenances` ownership via migration #16, `AuthorityBasis`/`PolicyVersion` on `PromotionProvenance` via migration #17, `SourceAuthorityLevel` removed from use-case args, all callers updated
   - WO5: `Supersedes` relationship created during supersession, 5 focused Application tests, 3 Desktop recoverable-failure tests, RC review gap analysis updated
   - WO6 FINAL: Persisted attempt history (LoadPromotionAttempts query/handler, Desktop loads real attempts), attempt/diagnostic ownership (4 SQLite tests), canonical identity migration upgrade (5 SQLite tests), released migration integrity (guard tests), supersession claims corrected, governance docs corrected, test counts updated to 740/740
+  - WO7 CORRECTION: Removed candidate-based diagnostic short-circuit from PromoteFragmentCandidateUseCase (both catch blocks now always create new diagnostic/attempt), secured LoadPromotionAttemptsQuery with ProjectId ownership validation and MaxResults, added SanitizedFailureReason (500-char cap), new LoadPromotionAttemptsUseCaseTests (5 tests), new SqlitePromotionAttemptOwnershipTests (2 tests: wrong-project, max-bound), exposed RecoverableProject in workflow result/runner, fixed Desktop test ProjectId mismatch, test counts updated to 751/751
 
 Current architectural decisions:
 
@@ -115,6 +116,8 @@ Current capabilities:
 - Canonical identity migration: unique index, duplicate detection, cross-project isolation verified
 - Released migration integrity: 17 migrations apply cleanly, snapshot consistency verified
 - AI-parsed supersession blocked at equal authority via IAuthorityPolicy (Informational classification)
+- Candidate-based diagnostic short-circuit removed: every promotion attempt creates fresh diagnostic/attempt
+- LoadPromotionAttempts secured with ProjectId ownership validation and MaxResults enforcement
 
 Released baselines (chronological):
 

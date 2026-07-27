@@ -532,4 +532,139 @@ public sealed class SqlitePromotionAttemptOwnershipTests : IDisposable
     ImportedSourceId SourceId,
     string ContentHash,
     DateTimeOffset CreatedAtUtc);
+
+  [Fact]
+  public async Task WrongProjectCandidateIsRejected()
+  {
+    var seeded = await SeedSourceAsync();
+    var createdAt = seeded.CreatedAtUtc;
+    FragmentCandidateId candidateId;
+
+    await using (var seedContext = CreateDbContext())
+    {
+      var auditRecorder = new SqliteAuditRecorder();
+      var unitOfWork = new SqliteUnitOfWork(seedContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
+      var run = CreateParserRun(seeded.ProjectId, seeded.SourceId, createdAt);
+      run.Start(createdAt.AddMinutes(1));
+      run.Complete(createdAt.AddMinutes(2), ParserExecutionStatus.Completed);
+
+      var candidate = CreateFragmentCandidate(run.Id, seeded.ProjectId, seeded.SourceId, createdAt.AddMinutes(1));
+      candidateId = candidate.Id;
+
+      await new SqliteParserRunRepository(seedContext).AddAsync(run);
+      await new SqliteFragmentCandidateRepository(seedContext).AddAsync(candidate);
+      StageAuditEvents(auditRecorder, run.AuditTrail);
+      StageAuditEvents(auditRecorder, candidate.AuditTrail);
+      await unitOfWork.CommitAsync();
+    }
+
+    await using (var testContext = CreateDbContext())
+    {
+      var wrongProjectId = ProjectId.New();
+      var repo = new SqlitePromotionAttemptRepository(testContext);
+      var candidateRepo = new SqliteFragmentCandidateRepository(testContext);
+      var candidate = await candidateRepo.GetByIdAsync(candidateId);
+
+      Assert.NotNull(candidate);
+      Assert.NotEqual(wrongProjectId, candidate.ProjectId);
+
+      var fakeCandidateRepo = new FakeFragmentCandidateRepo(candidate);
+      var useCase = new Application.UseCases.LoadPromotionAttempts.LoadPromotionAttemptsUseCase(
+        repo, fakeCandidateRepo);
+
+      var result = await useCase.HandleAsync(
+        new Application.UseCases.LoadPromotionAttempts.LoadPromotionAttemptsQuery(
+          candidateId, wrongProjectId));
+
+      Assert.Empty(result.Attempts);
+    }
+  }
+
+  [Fact]
+  public async Task MaxResultsLimitsReloadedAttempts()
+  {
+    var seeded = await SeedSourceAsync();
+    var createdAt = seeded.CreatedAtUtc;
+
+    await using (var seedContext = CreateDbContext())
+    {
+      var auditRecorder = new SqliteAuditRecorder();
+      var unitOfWork = new SqliteUnitOfWork(seedContext, auditRecorder, NullLogger<SqliteUnitOfWork>.Instance, new[] { new KnowledgeDocumentDeferredReferenceHandler() });
+      var run = CreateParserRun(seeded.ProjectId, seeded.SourceId, createdAt);
+      run.Start(createdAt.AddMinutes(1));
+      run.Complete(createdAt.AddMinutes(2), ParserExecutionStatus.Completed);
+
+      var candidate = CreateFragmentCandidate(run.Id, seeded.ProjectId, seeded.SourceId, createdAt.AddMinutes(1));
+
+      await new SqliteParserRunRepository(seedContext).AddAsync(run);
+      await new SqliteFragmentCandidateRepository(seedContext).AddAsync(candidate);
+      StageAuditEvents(auditRecorder, run.AuditTrail);
+      StageAuditEvents(auditRecorder, candidate.AuditTrail);
+
+      var recordId = PromotionRecordId.New();
+      for (var i = 0; i < 5; i++)
+      {
+        var diagnostic = new PromotionDiagnostic(
+          PromotionDiagnosticId.New(), candidate.Id, run.Id, seeded.ProjectId,
+          createdAt.AddMinutes(10 + i));
+        diagnostic.RecordFailure($"failure {i}");
+        await new SqlitePromotionDiagnosticRepository(seedContext).AddAsync(diagnostic);
+
+        await new SqlitePromotionAttemptRepository(seedContext).AddAsync(new PromotionAttempt(
+          PromotionAttemptId.New(), recordId,
+          PromotionAttemptOutcome.RetryablePreconditionFailure,
+          diagnostic.Id, candidate.Id, seeded.ContentHash,
+          createdAt.AddMinutes(10 + i), $"failure {i}"));
+      }
+
+      await unitOfWork.CommitAsync();
+    }
+
+    await using (var testContext = CreateDbContext())
+    {
+      var candidateRepo = new SqliteFragmentCandidateRepository(testContext);
+      var candidate = await candidateRepo.GetByIdAsync(
+        (await testContext.FragmentCandidates.FirstAsync()).Id);
+      Assert.NotNull(candidate);
+
+      var fakeCandidateRepo = new FakeFragmentCandidateRepo(candidate);
+      var repo = new SqlitePromotionAttemptRepository(testContext);
+      var useCase = new Application.UseCases.LoadPromotionAttempts.LoadPromotionAttemptsUseCase(
+        repo, fakeCandidateRepo);
+
+      var result = await useCase.HandleAsync(
+        new Application.UseCases.LoadPromotionAttempts.LoadPromotionAttemptsQuery(
+          candidate.Id, seeded.ProjectId, MaxResults: 3));
+
+      Assert.Equal(3, result.Attempts.Count);
+    }
+  }
+
+  private sealed class FakeFragmentCandidateRepo : Application.Repositories.IFragmentCandidateRepository
+  {
+    private readonly FragmentCandidate _candidate;
+
+    public FakeFragmentCandidateRepo(FragmentCandidate candidate)
+    {
+      _candidate = candidate;
+    }
+
+    public Task<FragmentCandidate?> GetByIdAsync(FragmentCandidateId id, CancellationToken ct = default)
+      => Task.FromResult<FragmentCandidate?>(_candidate);
+
+    public Task<IReadOnlyCollection<FragmentCandidate>> GetByParserRunAsync(ParserRunId runId, int maxResults, CancellationToken ct = default)
+      => Task.FromResult<IReadOnlyCollection<FragmentCandidate>>([_candidate]);
+
+    public Task<IReadOnlyCollection<FragmentCandidate>> GetByImportedSourceAsync(ImportedSourceId sourceId, int maxResults, CancellationToken ct = default)
+      => Task.FromResult<IReadOnlyCollection<FragmentCandidate>>([_candidate]);
+
+    public Task<IReadOnlyCollection<FragmentCandidate>> GetByProjectAsync(ProjectId projectId, int maxResults, CancellationToken ct = default)
+      => Task.FromResult<IReadOnlyCollection<FragmentCandidate>>([_candidate]);
+
+    public Task<IReadOnlyCollection<FragmentCandidate>> GetByProjectFilteredAsync(ProjectId projectId, int maxResults, FragmentCandidateReviewState? reviewStateFilter, CancellationToken ct = default)
+      => Task.FromResult<IReadOnlyCollection<FragmentCandidate>>([_candidate]);
+
+    public Task AddAsync(FragmentCandidate entity, CancellationToken ct = default) => Task.CompletedTask;
+    public Task UpdateAsync(FragmentCandidate entity, CancellationToken ct = default) => Task.CompletedTask;
+  }
 }

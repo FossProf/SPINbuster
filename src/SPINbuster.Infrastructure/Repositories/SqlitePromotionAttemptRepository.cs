@@ -34,7 +34,7 @@ public sealed class SqlitePromotionAttemptRepository : IPromotionAttemptReposito
       .Where(record => record.RecordId == promotionRecordId && record.Outcome == PromotionAttemptOutcome.Promoted)
       .ToArrayAsync(cancellationToken))
       .OrderByDescending(record => record.AttemptedAtUtc)
-      .ThenBy(record => record.Id)
+      .ThenBy(record => record.Id.Value)
       .FirstOrDefault();
 
     return record is null ? null : InfrastructureMapper.ToDomain(record);
@@ -49,7 +49,7 @@ public sealed class SqlitePromotionAttemptRepository : IPromotionAttemptReposito
       .Where(record => record.FragmentCandidateId == fragmentCandidateId)
       .ToArrayAsync(cancellationToken))
       .OrderBy(record => record.AttemptedAtUtc)
-      .ThenBy(record => record.Id)
+      .ThenBy(record => record.Id.Value)
       .ToArray();
 
     return records.Select(InfrastructureMapper.ToDomain).ToArray();

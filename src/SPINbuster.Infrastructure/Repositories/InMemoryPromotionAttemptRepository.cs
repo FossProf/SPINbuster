@@ -39,7 +39,7 @@ public sealed class InMemoryPromotionAttemptRepository : IPromotionAttemptReposi
     IReadOnlyList<PromotionAttempt> result = _attempts.Values
       .Where(attempt => attempt.FragmentCandidateId == fragmentCandidateId)
       .OrderBy(attempt => attempt.AttemptedAtUtc)
-      .ThenBy(attempt => attempt.Id)
+      .ThenBy(attempt => attempt.Id.Value)
       .ToArray();
     return Task.FromResult(result);
   }

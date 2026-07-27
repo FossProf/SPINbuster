@@ -25,13 +25,13 @@ Domain tests:
 234/234 passing
 
 Application tests:
-221/221 passing
+230/230 passing
 
 Documents tests:
 78/78 passing
 
 Infrastructure tests:
-102/102 passing
+104/104 passing
 
 Architecture tests:
 24/24 passing
@@ -43,10 +43,10 @@ Desktop tests:
 75/75 passing
 
 Total tests:
-740/740 passing
+751/751 passing
 
 Current task:
-`FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` validated as release candidate. Awaiting release decision.
+`FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` correction pass complete. 751/751 tests passing. Awaiting release decision.
 
 Required outcome:
 
@@ -86,6 +86,7 @@ Last completed:
 - Completed `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` WO4 FINAL: Canonical identity, ConcurrencyToken, AuthorityBasis/PolicyVersion, SourceAuthorityLevel removal, 17 migrations
 - Completed `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` WO5: Supersedes relationship, 5 focused Application tests, 3 Desktop recoverable-failure tests
 - Completed `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` WO6 FINAL: Persisted attempt history, ownership tests, migration upgrade tests, migration integrity guard, supersession claims corrected, governance corrected, 740/740 tests
+- Completed `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` WO7 CORRECTION: Removed candidate-based diagnostic short-circuit, secured LoadPromotionAttempts with ProjectId validation, added SanitizedFailureReason, new Application tests (5), new Infrastructure tests (2), exposed RecoverableProject in workflow result, fixed Desktop test, 751/751 tests
 
 Proposed next direction:
 
@@ -158,6 +159,8 @@ Current capabilities:
 - AI-parsed candidates blocked from authority escalation
 - Persisted attempt history across Desktop retries
 - Attempt/diagnostic ownership per-candidate isolation
+- Candidate-based diagnostic short-circuit removed: fresh diagnostic/attempt per promotion execution
+- LoadPromotionAttempts secured with ProjectId ownership validation
 - 17 migrations apply cleanly, snapshot consistency verified
 
 Authoritative context:

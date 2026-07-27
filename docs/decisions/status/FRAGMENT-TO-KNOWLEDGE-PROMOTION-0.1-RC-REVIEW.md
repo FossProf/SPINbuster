@@ -10,13 +10,13 @@ Next active package: TBD after RC release decision
 ## Validation snapshot
 
 - Domain tests: `234/234`
-- Application tests: `221/221`
+- Application tests: `230/230`
 - Documents tests: `78/78`
-- Infrastructure tests: `100/100`
+- Infrastructure tests: `104/104`
 - Architecture tests: `24/24`
 - AI tests: `6/6`
 - Desktop tests: `75/75`
-- Total tests: `738/738`
+- Total tests: `751/751`
 
 ## Checkpoints completed
 
@@ -74,7 +74,7 @@ Next active package: TBD after RC release decision
 - Idempotent replay is PromotionIdentity-based only: if a `PromotionRecord` with matching identity hash exists and has a successful attempt, returns cached diagnostic without creating new records (INV-PROMO-009).
 - `PromotionIdentity` hash is derived from project, document type, canonical title, external reference, discipline, fragment identity key, and contract version (case-insensitive).
 - Candidate-ID or content-hash replay is NOT used; successful replay relies solely on `PromotionIdentity` hash.
-- Error handlers check for existing diagnostics per candidate to avoid duplicate diagnostics on retryable failures.
+- Error handlers always create fresh diagnostics and attempts on retryable failures (no candidate-based diagnostic reuse).
 
 ### Supersession
 
@@ -111,7 +111,7 @@ Next active package: TBD after RC release decision
 ### Concurrency and atomicity
 
 - Idempotency guard by PromotionIdentity hash prevents duplicate promotions.
-- Non-unique index on `FragmentCandidateId` in `promotion_diagnostics` permits multiple attempts per candidate with independent diagnostic histories.
+- Non-unique index on `FragmentCandidateId` in `promotion_diagnostics` permits multiple diagnostics per candidate; each retryable failure creates a fresh diagnostic and attempt.
 - Domain state machine prevents invalid lifecycle transitions on `PromotionDiagnostic`, `KnowledgeDocumentRevision`, and `KnowledgeDocument`.
 
 ## Desktop composition boundary
@@ -149,7 +149,7 @@ Yes. The two-phase commit (`BeginSupersession` + `CompleteSupersession`) correct
 
 ### Is idempotent replay reliable?
 
-Yes. PromotionIdentity-based replay returns cached diagnostics for successful promotions. The identity hash is derived from project, document type, canonical title, external reference, discipline, fragment identity key, and contract version (case-insensitive). Error handlers check for existing diagnostics per candidate to avoid duplicate diagnostics on retryable failures.
+Yes. PromotionIdentity-based replay returns cached diagnostics for successful promotions. The identity hash is derived from project, document type, canonical title, external reference, discipline, fragment identity key, and contract version (case-insensitive). Error handlers always create fresh diagnostics and attempts on retryable failures.
 
 ### Can promotion survive provider recreation?
 
@@ -172,7 +172,7 @@ Yes. Both `PromotionDiagnostic` and `KnowledgeSnapshot` survive provider disposa
 | INV-PROMO-006 One citation per promotion | Implemented | |
 | INV-PROMO-007 Revision immutable | Implemented | No mutation after creation |
 | INV-PROMO-008 Explicit supersession | Implemented | SupersedesRevisionId required |
-| INV-PROMO-009 Idempotency preserved | Implemented | Dual-path: by ID and by content hash |
+| INV-PROMO-009 Idempotency preserved | Implemented | PromotionIdentity-based only |
 | INV-PROMO-010 AI excluded from authority | Implemented | |
 | INV-PROMO-011 Conflicts remain visible | Implemented | Structured conflict diagnostics with ConflictType |
 | INV-PROMO-012 Provenance chain unbroken | Implemented | DerivedFrom + Supersedes relationships + audit trail |

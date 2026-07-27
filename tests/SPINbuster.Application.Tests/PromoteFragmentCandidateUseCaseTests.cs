@@ -200,6 +200,161 @@ public sealed class PromoteFragmentCandidateUseCaseTests
   }
 
   [Fact]
+  public async Task SameCandidateSameTargetFailureThenFailureThenSuccess()
+  {
+    var fixture = CreateFixture();
+    var projectId = ProjectId.New();
+    var sourceId = ImportedSourceId.New();
+    var project = new Project(projectId, "Test", "system", TestTime);
+    await fixture.ProjectRepository.AddAsync(project);
+    await SeedSourceAsync(fixture, projectId, sourceId);
+
+    var parserRun = new ParserRun(
+      ParserRunId.New(), projectId, sourceId, "test-parser", "1.0.0", "1.0.0",
+      "contract-hash", "source-hash", "SHA-256", 1, "system", TestTime);
+    parserRun.Start(TestTime);
+    parserRun.Complete(TestTime, ParserExecutionStatus.Completed);
+    await fixture.ParserRunRepository.AddAsync(parserRun);
+
+    var candidate = new FragmentCandidate(
+      FragmentCandidateId.New(), parserRun.Id, projectId, sourceId, "source-hash",
+      new FragmentLocator(FragmentLocatorType.WholeDocument, "*"), 1,
+      ContentKind.PlainText, "Some text", ConfidenceBand.High,
+      "test-parser", "1.0.0", TestTime);
+    candidate.Accept("reviewer", TestTime, null);
+    await fixture.FragmentCandidateRepository.AddAsync(candidate);
+
+    var failResult1 = await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
+      candidate.Id, KnowledgeDocumentType.Specification, "Concrete Spec", null, null));
+    Assert.Equal(PromotionDiagnosticStatus.Failed, failResult1.Status);
+    Assert.Single(fixture.PromotionAttemptRepository.AddedAttempts);
+
+    var activeProject = new Project(projectId, "Test", "system", TestTime);
+    activeProject.Activate("system", TestTime);
+    await fixture.ProjectRepository.UpdateAsync(activeProject);
+    fixture.Clock.UtcNow = TestTime.AddMinutes(1);
+
+    var failResult2 = await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
+      candidate.Id, KnowledgeDocumentType.Specification, "Concrete Spec", null, null));
+    Assert.Equal(PromotionDiagnosticStatus.Promoted, failResult2.Status);
+    Assert.NotNull(failResult2.KnowledgeDocumentId);
+    Assert.Equal(2, fixture.PromotionAttemptRepository.AddedAttempts.Count);
+
+    var attempt1 = fixture.PromotionAttemptRepository.AddedAttempts[0];
+    var attempt2 = fixture.PromotionAttemptRepository.AddedAttempts[1];
+    Assert.NotEqual(attempt1.Id.Value, attempt2.Id.Value);
+    Assert.NotEqual(attempt1.DiagnosticId, attempt2.DiagnosticId);
+    Assert.Equal(PromotionAttemptOutcome.RetryablePreconditionFailure, attempt1.Outcome);
+    Assert.Equal(PromotionAttemptOutcome.Promoted, attempt2.Outcome);
+  }
+
+  [Fact]
+  public async Task ThreeDistinctAttemptIdsWithTwoFailuresThenPromoted()
+  {
+    var fixture = CreateFixture();
+    var projectId = ProjectId.New();
+    var sourceId = ImportedSourceId.New();
+    var project = new Project(projectId, "Test", "system", TestTime);
+    await fixture.ProjectRepository.AddAsync(project);
+    await SeedSourceAsync(fixture, projectId, sourceId);
+
+    var parserRun = new ParserRun(
+      ParserRunId.New(), projectId, sourceId, "test-parser", "1.0.0", "1.0.0",
+      "contract-hash", "source-hash", "SHA-256", 1, "system", TestTime);
+    parserRun.Start(TestTime);
+    parserRun.Complete(TestTime, ParserExecutionStatus.Completed);
+    await fixture.ParserRunRepository.AddAsync(parserRun);
+
+    var candidate = new FragmentCandidate(
+      FragmentCandidateId.New(), parserRun.Id, projectId, sourceId, "source-hash",
+      new FragmentLocator(FragmentLocatorType.WholeDocument, "*"), 1,
+      ContentKind.PlainText, "Some text", ConfidenceBand.High,
+      "test-parser", "1.0.0", TestTime);
+    candidate.Accept("reviewer", TestTime, null);
+    await fixture.FragmentCandidateRepository.AddAsync(candidate);
+
+    var r1 = await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
+      candidate.Id, KnowledgeDocumentType.Specification, "Concrete Spec", null, null));
+    Assert.Equal(PromotionDiagnosticStatus.Failed, r1.Status);
+
+    var r2 = await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
+      candidate.Id, KnowledgeDocumentType.Specification, "Concrete Spec", null, null));
+    Assert.Equal(PromotionDiagnosticStatus.Failed, r2.Status);
+
+    var activeProject = new Project(projectId, "Test", "system", TestTime);
+    activeProject.Activate("system", TestTime);
+    await fixture.ProjectRepository.UpdateAsync(activeProject);
+    fixture.Clock.UtcNow = TestTime.AddMinutes(1);
+
+    var r3 = await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
+      candidate.Id, KnowledgeDocumentType.Specification, "Concrete Spec", null, null));
+    Assert.Equal(PromotionDiagnosticStatus.Promoted, r3.Status);
+
+    Assert.Equal(3, fixture.PromotionAttemptRepository.AddedAttempts.Count);
+    var ids = fixture.PromotionAttemptRepository.AddedAttempts.Select(a => a.Id.Value).Distinct().ToList();
+    Assert.Equal(3, ids.Count);
+  }
+
+  [Fact]
+  public async Task FailedDiagnosticNeverReturnedAsReplay()
+  {
+    var fixture = CreateFixture();
+    var projectId = ProjectId.New();
+    var sourceId = ImportedSourceId.New();
+    var project = new Project(projectId, "Test", "system", TestTime);
+    await fixture.ProjectRepository.AddAsync(project);
+    await SeedSourceAsync(fixture, projectId, sourceId);
+
+    var parserRun = new ParserRun(
+      ParserRunId.New(), projectId, sourceId, "test-parser", "1.0.0", "1.0.0",
+      "contract-hash", "source-hash", "SHA-256", 1, "system", TestTime);
+    parserRun.Start(TestTime);
+    parserRun.Complete(TestTime, ParserExecutionStatus.Completed);
+    await fixture.ParserRunRepository.AddAsync(parserRun);
+
+    var candidate = new FragmentCandidate(
+      FragmentCandidateId.New(), parserRun.Id, projectId, sourceId, "source-hash",
+      new FragmentLocator(FragmentLocatorType.WholeDocument, "*"), 1,
+      ContentKind.PlainText, "Some text", ConfidenceBand.High,
+      "test-parser", "1.0.0", TestTime);
+    candidate.Accept("reviewer", TestTime, null);
+    await fixture.FragmentCandidateRepository.AddAsync(candidate);
+
+    var failResult = await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
+      candidate.Id, KnowledgeDocumentType.Specification, "Concrete Spec", null, null));
+    Assert.Equal(PromotionDiagnosticStatus.Failed, failResult.Status);
+
+    var replayResult = await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
+      candidate.Id, KnowledgeDocumentType.Specification, "Concrete Spec", null, null));
+    Assert.Equal(PromotionDiagnosticStatus.Failed, replayResult.Status);
+    Assert.NotEqual(failResult.PromotionDiagnosticId, replayResult.PromotionDiagnosticId);
+    Assert.Equal(2, fixture.PromotionAttemptRepository.AddedAttempts.Count);
+    Assert.Empty(fixture.PromotionRecordRepository.AddedRecords);
+  }
+
+  [Fact]
+  public async Task DifferentCandidateDifferentTargetRemainsIndependent()
+  {
+    var fixture = CreateFixture();
+    var (candidateAId, _, projectId) = await SeedReadyCandidateAsync(fixture);
+
+    var resultA = await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
+      candidateAId, KnowledgeDocumentType.Specification, "Spec A", "EXT-A", "Civil"));
+    Assert.Equal(PromotionDiagnosticStatus.Promoted, resultA.Status);
+
+    var candidateBId = await SeedSecondCandidateInSameDocumentAsync(fixture, projectId);
+    fixture.Clock.UtcNow = TestTime.AddMinutes(5);
+
+    var resultB = await CreateUseCase(fixture).HandleAsync(new PromoteFragmentCandidateCommand(
+      candidateBId, KnowledgeDocumentType.Specification, "Spec B", "EXT-B", "Structural"));
+    Assert.Equal(PromotionDiagnosticStatus.Promoted, resultB.Status);
+
+    Assert.NotEqual(resultA.KnowledgeDocumentId, resultB.KnowledgeDocumentId);
+    Assert.Equal(2, fixture.PromotionAttemptRepository.AddedAttempts.Count);
+    Assert.Equal(2, fixture.PromotionRecordRepository.AddedRecords.Count);
+  }
+
+  [Fact]
   public void IdentityHashIsDeterministicAcrossNormalization()
   {
     var projectId = ProjectId.New();

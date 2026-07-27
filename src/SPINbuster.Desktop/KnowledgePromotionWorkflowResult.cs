@@ -42,4 +42,5 @@ public sealed record KnowledgePromotionWorkflowResult(
   IReadOnlyList<DesktopWorkflowFailurePresentation> FailurePresentations,
   PromoteFragmentCandidateResult RecoverableFailedPromotion,
   PromoteFragmentCandidateResult RecoverableRetryPromotion,
+  CreateProjectResult RecoverableProject,
   IReadOnlyList<PromotionAttemptResult> RecoverableAttemptHistory);

@@ -693,7 +693,7 @@ public sealed class KnowledgePromotionWorkflowTests
       var loadAttempts = scope.ServiceProvider.GetRequiredService<IQueryHandler<LoadPromotionAttemptsQuery, LoadPromotionAttemptsResult>>();
 
       var reloaded = await loadAttempts.HandleAsync(
-        new LoadPromotionAttemptsQuery(firstResult.RecoverableAttemptHistory[0].FragmentCandidateId));
+        new LoadPromotionAttemptsQuery(firstResult.RecoverableAttemptHistory[0].FragmentCandidateId, firstResult.RecoverableProject.ProjectId));
 
       Assert.Equal(2, reloaded.Attempts.Count);
       Assert.Equal(PromotionAttemptOutcome.RetryablePreconditionFailure, reloaded.Attempts[0].Outcome);

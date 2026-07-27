@@ -463,28 +463,6 @@ public sealed class PromoteFragmentCandidateUseCase
       {
         stopwatch.Stop();
 
-        var existingDiagnostic = await _promotionDiagnosticRepository.GetByFragmentCandidateAsync(
-          command.FragmentCandidateId,
-          cancellationToken);
-
-        if (existingDiagnostic is not null)
-        {
-          _logger.LogWarning(
-            "{UseCase} failed (transition) in {DurationMs}ms for fragment candidate {FragmentCandidateId}: {Reason} (existing diagnostic reused)",
-            useCaseName, stopwatch.ElapsedMilliseconds, candidateId, exception.Message);
-
-          return new PromoteFragmentCandidateResult(
-            existingDiagnostic.Id,
-            existingDiagnostic.Status,
-            existingDiagnostic.KnowledgeDocumentId,
-            existingDiagnostic.KnowledgeDocumentRevisionId,
-            existingDiagnostic.KnowledgeCitationId,
-            existingDiagnostic.SupersededExistingRevision,
-            existingDiagnostic.SupersededRevisionId,
-            exception.Message,
-            PromotionConflictType.None);
-        }
-
         diagnostic.RecordFailure(exception.Message);
 
         var failedAttempt = new PromotionAttempt(
@@ -554,28 +532,6 @@ public sealed class PromoteFragmentCandidateUseCase
       catch (DomainInvariantException exception)
       {
         stopwatch.Stop();
-
-        var existingDiagnostic = await _promotionDiagnosticRepository.GetByFragmentCandidateAsync(
-          command.FragmentCandidateId,
-          cancellationToken);
-
-        if (existingDiagnostic is not null)
-        {
-          _logger.LogWarning(
-            "{UseCase} failed (invariant) in {DurationMs}ms for fragment candidate {FragmentCandidateId}: {Reason} (existing diagnostic reused)",
-            useCaseName, stopwatch.ElapsedMilliseconds, candidateId, exception.Message);
-
-          return new PromoteFragmentCandidateResult(
-            existingDiagnostic.Id,
-            existingDiagnostic.Status,
-            existingDiagnostic.KnowledgeDocumentId,
-            existingDiagnostic.KnowledgeDocumentRevisionId,
-            existingDiagnostic.KnowledgeCitationId,
-            existingDiagnostic.SupersededExistingRevision,
-            existingDiagnostic.SupersededRevisionId,
-            exception.Message,
-            PromotionConflictType.None);
-        }
 
         diagnostic.RecordFailure(exception.Message);
 

@@ -247,7 +247,7 @@ public sealed class KnowledgePromotionWorkflowRunner
       runScope,
       cancellationToken);
 
-    var (failedPromotion, retryPromotion, attemptHistory) = await RunRecoverableFailureScenarioAsync(
+    var (failedPromotion, retryPromotion, recoverableProject, attemptHistory) = await RunRecoverableFailureScenarioAsync(
       runScope,
       cancellationToken);
 
@@ -278,6 +278,7 @@ public sealed class KnowledgePromotionWorkflowRunner
       failurePresentations,
       failedPromotion,
       retryPromotion,
+      recoverableProject,
       attemptHistory);
   }
 
@@ -323,7 +324,7 @@ public sealed class KnowledgePromotionWorkflowRunner
     return failures;
   }
 
-  private async Task<(PromoteFragmentCandidateResult Failed, PromoteFragmentCandidateResult Retry, IReadOnlyList<PromotionAttemptResult> AttemptHistory)> RunRecoverableFailureScenarioAsync(
+  private async Task<(PromoteFragmentCandidateResult Failed, PromoteFragmentCandidateResult Retry, CreateProjectResult RecoverableProject, IReadOnlyList<PromotionAttemptResult> AttemptHistory)> RunRecoverableFailureScenarioAsync(
     WorkflowRunScope runScope,
     CancellationToken cancellationToken)
   {
@@ -398,10 +399,10 @@ public sealed class KnowledgePromotionWorkflowRunner
       cancellationToken);
 
     var attemptHistory = await _loadPromotionAttempts.HandleAsync(
-      new LoadPromotionAttemptsQuery(candidate.FragmentCandidateId),
+      new LoadPromotionAttemptsQuery(candidate.FragmentCandidateId, recoveredProject.ProjectId),
       cancellationToken);
 
-    return (failedResult, retryResult, attemptHistory.Attempts);
+    return (failedResult, retryResult, recoveredProject, attemptHistory.Attempts);
   }
 
   private async Task<LoadParsingSnapshotResult> LoadParsingSnapshotAsync(

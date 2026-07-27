@@ -13,4 +13,14 @@ public sealed record PromotionAttemptResult(
   FragmentCandidateId FragmentCandidateId,
   string ContentHash,
   DateTimeOffset AttemptedAtUtc,
-  string? FailureReason);
+  string? FailureReason)
+{
+  private const int MaxFailureReasonLength = 500;
+
+  public string? SanitizedFailureReason =>
+    FailureReason is null
+      ? null
+      : FailureReason.Length <= MaxFailureReasonLength
+        ? FailureReason
+        : FailureReason[..MaxFailureReasonLength] + "...";
+}
