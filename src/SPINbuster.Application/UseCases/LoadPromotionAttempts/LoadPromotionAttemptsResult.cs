@@ -12,4 +12,4 @@ public sealed record PromotionAttemptResult(
   PromotionDiagnosticId DiagnosticId,
   FragmentCandidateId FragmentCandidateId,
   DateTimeOffset AttemptedAtUtc,
-  string? FailureReason);
+  string? FailureSummary);

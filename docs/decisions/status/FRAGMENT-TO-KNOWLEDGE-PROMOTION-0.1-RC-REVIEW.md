@@ -47,7 +47,6 @@ Next active package: TBD after RC release decision
 
 - First promotion on a document creates initial revision via `AddInitialRevision` (Received -> CurrentAuthoritative).
 - Subsequent promotions on same document use `SupersedeCurrentRevision`: marks old revision Superseded, adds new revision as CurrentAuthoritative, all within a single atomic `UnitOfWork` transaction.
-- Two-phase commit required because SQLite filtered unique index `Lifecycle = CurrentAuthoritative` enforces one authoritative revision per document, and EF Core processes INSERTs before UPDATEs.
 - Revision label includes ordinal and 8-char GUID prefix to prevent duplicates across parser runs.
 - `SourceAuthority` is `Informational` for all parsed content.
 
@@ -132,7 +131,7 @@ Next active package: TBD after RC release decision
 
 ## Migration status
 
-- 17 total EF Core migrations (14 released + ConcurrencyTokenSlice + ConcurrencyTokenAndCanonicalIdentityHash + AttemptAndDiagnosticOwnership + GovernedSourceAuthority).
+- 17 total EF Core migrations.
 - `PromotionDiagnosticSlice` migration created during Prompt 2.
 - `AttemptAndDiagnosticOwnership` migration removed unique `FragmentCandidateId` index on `promotion_diagnostics`, added `ConflictType` column, and created `promotion_attempts` table.
 - `GovernedSourceAuthority` migration added `AuthorityBasis` and `PolicyVersion` columns to `promotion_provenances`.

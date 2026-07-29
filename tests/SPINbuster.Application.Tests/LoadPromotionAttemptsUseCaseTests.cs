@@ -118,9 +118,9 @@ public sealed class LoadPromotionAttemptsUseCaseTests
       new LoadPromotionAttemptsQuery(candidateId, projectId));
 
     Assert.Single(result.Attempts);
-    Assert.NotNull(result.Attempts[0].FailureReason);
-    Assert.True(result.Attempts[0].FailureReason!.Length <= 503);
-    Assert.EndsWith("...", result.Attempts[0].FailureReason!);
+    Assert.NotNull(result.Attempts[0].FailureSummary);
+    Assert.True(result.Attempts[0].FailureSummary!.Length <= 503);
+    Assert.EndsWith("...", result.Attempts[0].FailureSummary!);
   }
 
   [Fact]
@@ -148,10 +148,10 @@ public sealed class LoadPromotionAttemptsUseCaseTests
 
     var dtoResult = result.Attempts[0];
 
-    Assert.False(typeof(PromotionAttemptResult).GetProperty("SanitizedFailureReason") is not null && dtoResult.GetType().GetProperty("SanitizedFailureReason") is not null,
-      "SanitizedFailureReason should not exist as a separate property; only FailureReason is exposed");
+    Assert.False(typeof(PromotionAttemptResult).GetProperty("FailureReason") is not null,
+      "FailureReason should not exist as a separate property; only FailureSummary is exposed");
 
-    Assert.Equal("C:\\sensitive\\path\\to\\config.txt", dtoResult.FailureReason);
+    Assert.Equal("C:\\sensitive\\path\\to\\config.txt", dtoResult.FailureSummary);
   }
 
   [Fact]
@@ -189,10 +189,10 @@ public sealed class LoadPromotionAttemptsUseCaseTests
     var result = await CreateUseCase(fixture).HandleAsync(
       new LoadPromotionAttemptsQuery(candidateId, projectId));
 
-    Assert.Equal(10, result.Attempts[0].FailureReason!.Length);
-    Assert.Equal(500, result.Attempts[1].FailureReason!.Length);
-    Assert.Equal(503, result.Attempts[2].FailureReason!.Length);
-    Assert.EndsWith("...", result.Attempts[2].FailureReason!);
+    Assert.Equal(10, result.Attempts[0].FailureSummary!.Length);
+    Assert.Equal(500, result.Attempts[1].FailureSummary!.Length);
+    Assert.Equal(503, result.Attempts[2].FailureSummary!.Length);
+    Assert.EndsWith("...", result.Attempts[2].FailureSummary!);
   }
 
   [Fact]
@@ -221,11 +221,11 @@ public sealed class LoadPromotionAttemptsUseCaseTests
     var result = await CreateUseCase(fixture).HandleAsync(
       new LoadPromotionAttemptsQuery(candidateId, projectId));
 
-    Assert.NotNull(result.Attempts[0].FailureReason);
-    Assert.True(result.Attempts[0].FailureReason!.Length <= 503);
-    Assert.EndsWith("...", result.Attempts[0].FailureReason!);
-    Assert.DoesNotContain("<<<BEYOND-BOUND>>>", result.Attempts[0].FailureReason);
-    Assert.DoesNotContain("zzz", result.Attempts[0].FailureReason);
+    Assert.NotNull(result.Attempts[0].FailureSummary);
+    Assert.True(result.Attempts[0].FailureSummary!.Length <= 503);
+    Assert.EndsWith("...", result.Attempts[0].FailureSummary!);
+    Assert.DoesNotContain("<<<BEYOND-BOUND>>>", result.Attempts[0].FailureSummary);
+    Assert.DoesNotContain("zzz", result.Attempts[0].FailureSummary);
   }
 
   [Fact]
