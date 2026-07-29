@@ -6,6 +6,8 @@ namespace SPINbuster.Application.UseCases.LoadPromotionAttempts;
 public sealed class LoadPromotionAttemptsUseCase
   : IQueryHandler<LoadPromotionAttemptsQuery, LoadPromotionAttemptsResult>
 {
+  private const int MaxFailureReasonLength = 500;
+
   private readonly IFragmentCandidateRepository _fragmentCandidateRepository;
   private readonly IPromotionAttemptRepository _promotionAttemptRepository;
 
@@ -44,11 +46,22 @@ public sealed class LoadPromotionAttemptsUseCase
         a.Outcome,
         a.DiagnosticId,
         a.FragmentCandidateId,
-        a.ContentHash,
         a.AttemptedAtUtc,
-        a.FailureReason))
+        MapFailureSummary(a.FailureReason)))
       .ToArray();
 
     return new LoadPromotionAttemptsResult(results);
+  }
+
+  private static string? MapFailureSummary(string? failureReason)
+  {
+    if (failureReason is null)
+    {
+      return null;
+    }
+
+    return failureReason.Length <= MaxFailureReasonLength
+      ? failureReason
+      : failureReason[..MaxFailureReasonLength] + "...";
   }
 }

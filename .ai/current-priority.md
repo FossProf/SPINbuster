@@ -53,7 +53,7 @@ Required outcome:
 - Promote fragment candidates into authoritative KnowledgeDocument, KnowledgeDocumentRevision, KnowledgeCitation, and KnowledgeRelationship records
 - Enforce promotion precondition checklist deterministically (no AI participation in authority decisions)
 - Implement PromotionIdentity-based idempotent replay
-- Implement two-phase supersession (BeginSupersession/CompleteSupersession) for SQLite
+- Implement SupersedeCurrentRevision (sole Domain supersession operation, atomic UnitOfWork transaction)
 - Canonical identity enforcement via unique index on CanonicalIdentityHash
 - ConcurrencyToken on KnowledgeDocument prevents lost updates
 - Authority policy: AI-parsed candidates classified Informational, cannot escalate authority
@@ -82,7 +82,7 @@ Last completed:
 - Completed `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC` Prompt 2: StructuredTextDocumentParser with heading/clause/table extraction, overlap detection, diagnostics, 25 tests
 - Completed `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC` Prompt 3: Infrastructure & Executable Proof — workflow runner extension, console formatter diagnostics, persistence tests, integration tests, 11 tests
 - Completed `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC` Prompt 5: Governance & RC Review — prototype review, continuity updates, full validation, 564/564 tests
-- Completed `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` WO1-WO3: PromotionProvenance, two-phase supersession, IAuthorityPolicy
+- Completed `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` WO1-WO3: PromotionProvenance, SupersedeCurrentRevision, IAuthorityPolicy
 - Completed `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` WO4 FINAL: Canonical identity, ConcurrencyToken, AuthorityBasis/PolicyVersion, SourceAuthorityLevel removal, 17 migrations
 - Completed `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` WO5: Supersedes relationship, 5 focused Application tests, 3 Desktop recoverable-failure tests
 - Completed `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` WO6 FINAL: Persisted attempt history, ownership tests, migration upgrade tests, migration integrity guard, supersession claims corrected, governance corrected, 740/740 tests

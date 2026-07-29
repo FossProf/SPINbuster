@@ -24,7 +24,7 @@ Next active package: TBD after RC release decision
 - Prompt 2 (`PROMOTION-INFRASTRUCTURE-CHECKPOINT`): Created `PromotionDiagnosticRecord` EF entity with `FragmentCandidateId` unique index, FK constraints, and all nullable knowledge FK columns. Created EF migration `PromotionDiagnosticSlice` (12th migration). Created `SqlitePromotionDiagnosticRepository` with `FindSuccessfulByContentHashAsync` cross-table JOIN query. Created `SqliteKnowledgeDocumentRepository`, `SqliteKnowledgeRevisionRepository`, `SqliteKnowledgeCitationRepository`, `SqliteKnowledgeRelationshipRepository`. Added 6 Infrastructure persistence tests.
 - Prompt 3 (`PROMOTION-REPOSITORY-DI-CHECKPOINT`): Wired all 5 knowledge repositories and `PromotionDiagnostic` repository in `ServiceCollectionExtensions` and `DesktopCompositionRoot`. Added `LoadPromotionDiagnosticUseCase` query handler. Added 6 Application tests for promotion use case.
 - Prompt 4 (`PROMOTION-EXECUTABLE-SLICE-CHECKPOINT`): Created `KnowledgePromotionWorkflowRunner` (26-step orchestration), `KnowledgePromotionWorkflowBootstrapper`, `KnowledgePromotionWorkflowResult` (26 properties), `KnowledgePromotionWorkflowConsoleFormatter` (8 sections). Extended `DesktopCompositionRoot` with all promotion DI registrations. Created `ActivateProject` use case (required because promotion requires Active lifecycle). Added 14 Desktop tests covering: promotion, idempotent replay, supersession, supersession replay, knowledge snapshot, authority isolation, diagnostics persistence, snapshot persistence, parsing integration, fragment review integration, expected failure scenarios, console formatter output, data preservation across runs.
-- Prompt 5 (`PROMOTION-RC-VALIDATION`): Root cause analysis and 8 bug fixes for promotion pipeline: (1) primary idempotency guard by candidate ID before content-hash JOIN, (2) defensive error handlers checking existing diagnostics before insert, (3) runner failure handling via result check instead of exception propagation, (4) project activation use case (Draft -> Active), (5) citation locator value for WholeDocument's empty normalized value, (6) UpdateAsync change tracker fix for new documents, (7) revision label uniqueness across parser runs, (8) two-phase commit for supersession (filtered unique index collision). Full spec gap analysis. All 624 tests passing.
+- Prompt 5 (`PROMOTION-RC-VALIDATION`): Root cause analysis and 8 bug fixes for promotion pipeline: (1) primary idempotency guard by candidate ID before content-hash JOIN, (2) defensive error handlers checking existing diagnostics before insert, (3) runner failure handling via result check instead of exception propagation, (4) project activation use case (Draft -> Active), (5) citation locator value for WholeDocument's empty normalized value, (6) UpdateAsync change tracker fix for new documents, (7) revision label uniqueness across parser runs, (8) SQLite filtered unique index collision resolved by atomic UnitOfWork transaction. Full spec gap analysis. All 624 tests passing.
 
 ## Behavior validated
 
@@ -46,7 +46,7 @@ Next active package: TBD after RC release decision
 ### Revision lifecycle
 
 - First promotion on a document creates initial revision via `AddInitialRevision` (Received -> CurrentAuthoritative).
-- Subsequent promotions on same document use two-phase supersession: `BeginSupersession` (marks old revision Superseded, commits) then `CompleteSupersession` (adds new revision as CurrentAuthoritative, commits).
+- Subsequent promotions on same document use `SupersedeCurrentRevision`: marks old revision Superseded, adds new revision as CurrentAuthoritative, all within a single atomic `UnitOfWork` transaction.
 - Two-phase commit required because SQLite filtered unique index `Lifecycle = CurrentAuthoritative` enforces one authoritative revision per document, and EF Core processes INSERTs before UPDATEs.
 - Revision label includes ordinal and 8-char GUID prefix to prevent duplicates across parser runs.
 - `SourceAuthority` is `Informational` for all parsed content.
@@ -145,7 +145,7 @@ Yes. The use case enforces INV-PROMO-001 (HumanAccepted), INV-PROMO-002 (Complet
 
 ### Does supersession correctly preserve revision history?
 
-Yes. The two-phase commit (`BeginSupersession` + `CompleteSupersession`) correctly marks the old revision as Superseded and adds the new revision as CurrentAuthoritative. The filtered unique index on `Lifecycle = CurrentAuthoritative` is satisfied because the UPDATE of the old revision's lifecycle is committed before the INSERT of the new revision. The `SupersededByRevisionId` and `SupersedesRevisionId` fields maintain the bidirectional link.
+Yes. The `SupersedeCurrentRevision` Domain operation marks the old revision as Superseded and adds the new revision as CurrentAuthoritative in one atomic `UnitOfWork` transaction. The filtered unique index on `Lifecycle = CurrentAuthoritative` is satisfied because the UPDATE of the old revision's lifecycle and the INSERT of the new revision happen within the same transaction. The `SupersededByRevisionId` and `SupersedesRevisionId` fields maintain the bidirectional link.
 
 ### Is idempotent replay reliable?
 
@@ -186,10 +186,10 @@ Yes. Both `PromotionDiagnostic` and `KnowledgeSnapshot` survive provider disposa
 
 ## Known friction
 
-- SQLite filtered unique index (`Lifecycle = CurrentAuthoritative`) required a two-phase commit architecture for supersession. This is an EF Core + SQLite limitation workaround, not a domain concern.
+- SQLite filtered unique index (`Lifecycle = CurrentAuthoritative`) required an atomic `UnitOfWork` transaction for supersession. `SupersedeCurrentRevision` is the sole Domain supersession operation.
 - `SqliteKnowledgeDocumentRepository.UpdateAsync` uses `FindAsync` (not `SingleAsync`) because new documents exist only in the change tracker before first commit. This is a known EF Core tracking behavior.
-- The `BeginSupersession` method temporarily sets `CurrentAuthoritativeRevisionId = null` on the document. This is a valid intermediate state during the two-phase commit but creates a brief window where the document appears to have no authoritative revision.
-- Audit event staging for the two-phase commit required count-based deduplication to prevent re-staging events already committed in the first transaction.
+- The `SupersedeCurrentRevision` operation temporarily sets `CurrentAuthoritativeRevisionId = null` on the document within the UnitOfWork. This is a valid intermediate state during the transaction but creates a brief window where the document appears to have no authoritative revision.
+- Audit event staging for the atomic transaction required count-based deduplication to prevent re-staging events already committed.
 - Pre-existing CA1848 warnings throughout Application use cases (LoggerMessage delegates) are acknowledged technical debt.
 
 ## Recommended next package
@@ -201,7 +201,7 @@ Rationale:
 - The vertical slice proves the core promotion flow end-to-end: precondition validation, document matching, revision creation, citation, relationship, idempotency, diagnostics, authority isolation.
 - Supersession is correctly blocked for AI-parsed candidates (both Informational). Human-controlled `AddKnowledgeDocumentRevision` preserves the revision-management path.
 - One spec gap remains: spec audit events (PromotionWorkflowStarted, PromotionCompleted, etc.) are deferred.
-- The two-phase commit architecture is validated and stable.
+- The atomic UnitOfWork transaction for supersession is validated and stable.
 
 Follow-on order:
 

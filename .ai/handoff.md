@@ -22,7 +22,7 @@ Recent accomplishments:
 
 - Completed `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` with 6 hardening passes (WO1-WO6):
   - WO1: `PromotionProvenance` value object with immutable audit properties
-  - WO2: Two-phase supersession (BeginSupersession/CompleteSupersession) for SQLite filtered unique index
+  - WO2: SupersedeCurrentRevision — sole Domain supersession operation, atomic UnitOfWork transaction
   - WO3: `IAuthorityPolicy` in Domain, `AuthorityPolicy` in Application, DI registered
   - WO4 FINAL: Canonical identity (`KnowledgeDocumentIdentity`), `ConcurrencyToken` on `KnowledgeDocument`, `IKnowledgeDocumentRepository.UpdateAsync` signature hardened, `CanonicalIdentityHash` unique index via migration #15, `promotion_diagnostics`/`promotion_provenances` ownership via migration #16, `AuthorityBasis`/`PolicyVersion` on `PromotionProvenance` via migration #17, `SourceAuthorityLevel` removed from use-case args, all callers updated
   - WO5: `Supersedes` relationship created during supersession, 5 focused Application tests, 3 Desktop recoverable-failure tests, RC review gap analysis updated
@@ -74,7 +74,7 @@ Known issues:
 - The EF migration `AddFragmentCandidateReviewState` was created during the Domain checkpoint (Prompt 1) before Application review workflows were finalized. Treat this as `FRAGMENT-REVIEW-DOMAIN-AND-SCHEMA-CHECKPOINT`. Do not create another migration unless the model genuinely changes.
 - Fragment candidate review concurrency relies on aggregate-level guards (`EnsureReviewNotDecided`). Before server or multi-user work, the database update itself should verify original state with a conditional SQL `WHERE ReviewState = Generated` to ensure true multi-process safety.
 - Knowledge promotion concurrency relies on `PromotionIdentity` uniqueness. No optimistic concurrency token prevents two simultaneous promotions from both passing the idempotency check. Acceptable for single-user foundation; required before server or multi-user work.
-- SQLite filtered unique index workaround (`BeginSupersession`/`CompleteSupersession` two-phase commit) is a known EF Core + SQLite limitation. May be simplified if migrating to a database that supports deferred constraint checking.
+  5. `SupersedeCurrentRevision` is the sole Domain supersession operation; promotion persistence is one atomic `UnitOfWork` transaction. Attempt history is attempt-owned and indexed/queryable by candidate.
 - Pre-existing CA1848 warnings throughout Application use cases (LoggerMessage delegates) are acknowledged technical debt.
 
 Requested review:
@@ -106,7 +106,7 @@ Current capabilities:
 - Knowledge Promotion: human-reviewed fragment candidates can be promoted into authoritative KnowledgeDocument, KnowledgeDocumentRevision, KnowledgeCitation, and KnowledgeRelationship records
 - Promotion precondition checklist enforced deterministically (no AI participation in authority decisions)
 - PromotionIdentity-based idempotent replay (candidate-ID or content-hash replay removed, WO4 hardened)
-- Two-phase supersession (BeginSupersession/CompleteSupersession) handles SQLite filtered unique index
+- `SupersedeCurrentRevision` is the sole Domain supersession operation; promotion persistence uses one atomic `UnitOfWork` transaction.
 - Promotion diagnostics are durable and queryable (Eligible/Promoted/Failed lifecycle)
 - Project lifecycle management: Draft -> Active (required for promotion eligibility)
 - Knowledge snapshot survives provider disposal and recreation
