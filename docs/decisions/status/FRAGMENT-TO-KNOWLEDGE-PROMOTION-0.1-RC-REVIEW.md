@@ -1,22 +1,22 @@
-# FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC Prototype Review
+# FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1 Prototype Review
 
 Date: 2026-07-23
-Updated: 2026-07-27
-Status: Release Candidate (not released)
-Active implementation package: `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC`
-Released baseline: none (pending release decision)
-Next active package: TBD after RC release decision
+Updated: 2026-08-03
+Status: Released (`FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1`)
+Active implementation package: none (released; no next implementation package started)
+Released baseline: `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1` (immutable tag)
+Next active package: engineering-workflow governance package
 
 ## Validation snapshot
 
 - Domain tests: `234/234`
-- Application tests: `230/230`
+- Application tests: `233/233`
 - Documents tests: `78/78`
 - Infrastructure tests: `104/104`
 - Architecture tests: `24/24`
 - AI tests: `6/6`
 - Desktop tests: `75/75`
-- Total tests: `751/751`
+- Total tests: `754/754`
 
 ## Checkpoints completed
 
@@ -193,7 +193,7 @@ Yes. Both `PromotionDiagnostic` and `KnowledgeSnapshot` survive provider disposa
 
 ## Recommended next package
 
-Recommendation: Complete remaining spec items before release
+Recommendation: Released as `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1` (2026-08-03). Next action is the engineering-workflow governance package.
 
 Rationale:
 

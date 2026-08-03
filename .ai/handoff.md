@@ -1,7 +1,7 @@
 # Current State
 
 Repository status:
-Latest governance baseline: `ARCHITECTURE-VISION-2.0`. Latest software baseline: `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1`. Active implementation package: `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` (release candidate, not released). Build passing. Domain tests `234/234`. Application tests `230/230`. Documents tests `78/78`. Infrastructure tests `104/104`. Architecture tests `24/24`. AI tests `6/6`. Desktop tests `75/75`. Total `751/751`. Warnings `0` (pre-existing CA1848 acknowledged).
+Latest governance baseline: `ARCHITECTURE-VISION-2.0`. Latest software baseline: `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1`. Active implementation package: none (released; no next implementation package started). Build passing. Domain tests `234/234`. Application tests `233/233`. Documents tests `78/78`. Infrastructure tests `104/104`. Architecture tests `24/24`. AI tests `6/6`. Desktop tests `75/75`. Total `754/754`. Warnings `0` (pre-existing CA1848 acknowledged).
 
 Current branch:
 `main`
@@ -13,10 +13,10 @@ Latest governance baseline:
 `ARCHITECTURE-VISION-2.0`
 
 Latest software baseline:
-`FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1`
+`FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1`
 
 Active implementation package:
-`FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC`
+none (released; no next implementation package started)
 
 Recent accomplishments:
 
@@ -28,12 +28,15 @@ Recent accomplishments:
   - WO5: `Supersedes` relationship created during supersession, 5 focused Application tests, 3 Desktop recoverable-failure tests, RC review gap analysis updated
   - WO6 FINAL: Persisted attempt history (LoadPromotionAttempts query/handler, Desktop loads real attempts), attempt/diagnostic ownership (4 SQLite tests), canonical identity migration upgrade (5 SQLite tests), released migration integrity (guard tests), supersession claims corrected, governance docs corrected, test counts updated to 740/740
   - WO7 CORRECTION: Removed candidate-based diagnostic short-circuit from PromoteFragmentCandidateUseCase (both catch blocks now always create new diagnostic/attempt), secured LoadPromotionAttemptsQuery with ProjectId ownership validation and MaxResults, added SanitizedFailureReason (500-char cap), new LoadPromotionAttemptsUseCaseTests (5 tests), new SqlitePromotionAttemptOwnershipTests (2 tests: wrong-project, max-bound), exposed RecoverableProject in workflow result/runner, fixed Desktop test ProjectId mismatch, test counts updated to 751/751
+  - WO8 CONTRACT CLEANUP: Removed raw FailureReason and ContentHash from PromotionAttemptResult, mapped FailureSummary in use case (500-char cap + `...`), continuity corrected to single-UoW SupersedeCurrentRevision and attempt-owned history, test counts updated to 754/754
+  - WO9 RELEASE-TEXT: Renamed PromotionAttemptResult.FailureReason -> FailureSummary, removed two-phase commit statement from RC review, fixed migration arithmetic (17 total), verified no active references to BeginSupersession/CompleteSupersession/two-phase, 754/754
+  - RELEASE: Released `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1` as immutable tag at commit `f8b6d75`; release-state continuity updated; next action is the engineering-workflow governance package (no next implementation package started)
 
 Current architectural decisions:
 
 - `ARCHITECTURE-VISION-2.0` is the active governance baseline.
-- `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1` is the latest released software baseline.
-- `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` is validated as release candidate but not released.
+- `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1` is the latest released software baseline.
+- `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1` is released; no next implementation package is started (next action is the engineering-workflow governance package).
 - Fragment identity is parser-run-scoped, not revision-stable (EDR-KE-010 resolved).
 - Fragment identity uses contract version, not implementation version (EDR-DE-006 accepted).
 - Fragment candidate review uses terminal disposition model: Generated -> HumanAccepted or Rejected (EDR-DE-007 accepted).
@@ -58,7 +61,7 @@ Current architectural decisions:
 - Knowledge Engine command idempotency is still deferred by `EDR-KE-009`.
 
 Next task:
-Await release decision for `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC`.
+Begin the engineering-workflow governance package (previously agreed as the next action after promotion release). No next implementation package has been started; do not begin a new vertical slice in this operation.
 
 Known issues:
 
@@ -80,11 +83,12 @@ Known issues:
 Requested review:
 
 - Approved. No release blockers.
-- Recommend next package after approval
+- Released as `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1`.
+- Recommend the engineering-workflow governance package as the next package.
 
 Current capabilities:
 
-- Current released capabilities include `PARSING-AND-FRAGMENT-FOUNDATION-0.1` and `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1`
+- Current released capabilities include `PARSING-AND-FRAGMENT-FOUNDATION-0.1`, `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1`, and `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1`
 - Deterministic text parsing produces fragment candidates with reproducible identity
 - Parser runs, fragment candidates, and audit history persist through SQLite and survive provider recreation
 - Parser version coexistence preserves historical candidates
@@ -118,6 +122,7 @@ Current capabilities:
 - AI-parsed supersession blocked at equal authority via IAuthorityPolicy (Informational classification)
 - Candidate-based diagnostic short-circuit removed: every promotion attempt creates fresh diagnostic/attempt
 - LoadPromotionAttempts secured with ProjectId ownership validation and MaxResults enforcement
+- PromotionAttemptResult exposes bounded FailureSummary (500-char cap); raw FailureReason and ContentHash removed from public DTO
 
 Released baselines (chronological):
 
@@ -133,8 +138,8 @@ Released baselines (chronological):
 10. `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1`
 11. `PARSING-AND-FRAGMENT-FOUNDATION-0.1`
 12. `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1`
+13. `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1`
 
 Release candidates (validated, not released):
 
 1. `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC`
-2. `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC`

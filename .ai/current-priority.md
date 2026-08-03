@@ -7,13 +7,13 @@ Latest governance baseline:
 ARCHITECTURE-VISION-2.0
 
 Latest software baseline:
-FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1
+FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1
 
 Active implementation package:
-FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC
+None (next action is the engineering-workflow governance package)
 
 Status:
-FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC validated as release candidate, not released
+FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1 released; no next implementation package started
 
 Build:
 Passing
@@ -25,7 +25,7 @@ Domain tests:
 234/234 passing
 
 Application tests:
-230/230 passing
+233/233 passing
 
 Documents tests:
 78/78 passing
@@ -43,10 +43,10 @@ Desktop tests:
 75/75 passing
 
 Total tests:
-751/751 passing
+754/754 passing
 
 Current task:
-`FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` correction pass complete. 751/751 tests passing. Awaiting release decision.
+`FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1` released as immutable tag `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1`. 754/754 tests passing. Next action: engineering-workflow governance package (no next implementation package started).
 
 Required outcome:
 
@@ -62,7 +62,7 @@ Required outcome:
 - End-to-end executable proof: create project -> activate -> import -> parse -> review -> promote -> supersede -> verify snapshot
 
 Next review:
-After `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` release decision
+After engineering-workflow governance package
 
 Known blockers:
 None
@@ -87,11 +87,14 @@ Last completed:
 - Completed `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` WO5: Supersedes relationship, 5 focused Application tests, 3 Desktop recoverable-failure tests
 - Completed `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` WO6 FINAL: Persisted attempt history, ownership tests, migration upgrade tests, migration integrity guard, supersession claims corrected, governance corrected, 740/740 tests
 - Completed `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` WO7 CORRECTION: Removed candidate-based diagnostic short-circuit, secured LoadPromotionAttempts with ProjectId validation, added SanitizedFailureReason, new Application tests (5), new Infrastructure tests (2), exposed RecoverableProject in workflow result, fixed Desktop test, 751/751 tests
+- Completed `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` WO8 CONTRACT CLEANUP: Removed raw FailureReason and ContentHash from PromotionAttemptResult, mapped FailureSummary (500-char cap), continuity corrected to single-UoW SupersedeCurrentRevision, 754/754 tests
+- Completed `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` WO9 RELEASE-TEXT: renamed FailureReason -> FailureSummary, removed two-phase commit reference from RC review, fixed migration arithmetic (17 total), 754/754 tests
+- Released `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1` as immutable tag; release-state continuity updated; next action is the engineering-workflow governance package
 
 Proposed next direction:
 
-- Await release decision for `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC`
-- After that, proceed to next package (OCR, assertion promotion, or broader retrieval)
+- Engineering-workflow governance package (previously agreed as the next action); no new implementation package has been started
+- Do not begin a new vertical slice in this operation
 - Preserve the non-authoritative document-candidate boundary
 - Keep OCR, AI extraction, and reconciliation workflows deferred until fragment contracts are explicit
 
@@ -153,7 +156,7 @@ Current capabilities:
 - Distinguish Completed, CompletedWithWarnings, and Failed parser statuses
 - Knowledge Promotion: human-reviewed fragment candidates promoted into authoritative records
 - PromotionIdentity-based idempotent replay
-- Two-phase supersession for SQLite filtered unique index
+- Single atomic UnitOfWork supersession (`SupersedeCurrentRevision` is the sole Domain supersession operation)
 - Canonical identity enforcement via unique index
 - ConcurrencyToken prevents lost updates
 - AI-parsed candidates blocked from authority escalation
@@ -161,6 +164,7 @@ Current capabilities:
 - Attempt/diagnostic ownership per-candidate isolation
 - Candidate-based diagnostic short-circuit removed: fresh diagnostic/attempt per promotion execution
 - LoadPromotionAttempts secured with ProjectId ownership validation
+- FailureReason exposure removed from public DTO; PromotionAttemptResult exposes bounded FailureSummary (500-char cap)
 - 17 migrations apply cleanly, snapshot consistency verified
 
 Authoritative context:

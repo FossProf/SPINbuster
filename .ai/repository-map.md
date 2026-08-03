@@ -57,7 +57,7 @@ Purpose: Explain how the repository is organized and where different kinds of wo
 
 ## Current Released Baseline
 
-- `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1` is the latest released baseline.
+- `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1` is the latest released baseline.
 - `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC` is validated as release candidate but not released.
 
 ## Current Governance Baseline
@@ -66,8 +66,7 @@ Purpose: Explain how the repository is organized and where different kinds of wo
 
 ## Next Active Package
 
-- `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC` (release candidate, not released)
-- After release decision: `FRAGMENT-TO-KNOWLEDGE-PROMOTION-FOUNDATION-0.1-RC` (recommended)
+- Next action: engineering-workflow governance package (previously agreed; no next implementation package started)
 
 ## Current Document Engine Flow
 

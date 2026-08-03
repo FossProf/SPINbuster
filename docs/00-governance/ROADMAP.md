@@ -30,13 +30,14 @@ Chronological released history:
 9. `DOCUMENT-ENGINE-EXECUTABLE-SLICE-0.1`
 10. `LOCAL-FILESYSTEM-STORAGE-ADAPTER-0.1`
 11. `PARSING-AND-FRAGMENT-FOUNDATION-0.1`
+12. `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1`
+13. `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1`
 
 ## Current State
 
-- Latest released baseline: `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1`
-- Active release candidate: `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` (validated, not released)
+- Latest released baseline: `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1`
 - Previous release candidate: `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC` (validated, not released)
-- Next active package recommendation: TBD after RC release decision
+- Next active package: engineering-workflow governance package (previously agreed next action after promotion release)
 
 Why this package was next:
 
@@ -124,7 +125,7 @@ Promote reviewed document understanding into authoritative engineering knowledge
 
 Major packages:
 
-- Fragment-to-knowledge promotion workflows (RC: `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC`)
+- Fragment-to-knowledge promotion workflows (released: `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1`)
 - Engineering assertion promotion
 - Citation promotion from reviewed candidates
 - Knowledge conflict and contradiction handling
@@ -147,7 +148,7 @@ Expected executable slice:
 
 RC status:
 
-- `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` validates the core vertical slice: precondition validation, document matching, revision creation, supersession (two-phase commit), citation, DerivedFrom relationship, idempotency, diagnostics, authority isolation.
+- `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1` released. Validates the core vertical slice: precondition validation, document matching, revision creation, supersession (single atomic UnitOfWork via `SupersedeCurrentRevision`), citation, DerivedFrom relationship, idempotency, diagnostics, authority isolation.
 - 6 spec gaps remain for production: Supersedes relationship, HigherAuthorityExists, AmbiguousDocumentMatch, concurrent promotion guard, temporal ordering, spec audit events.
 - These gaps are well-scoped and can be addressed incrementally without architectural changes.
 
