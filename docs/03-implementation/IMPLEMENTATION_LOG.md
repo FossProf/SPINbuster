@@ -1,5 +1,20 @@
 # Implementation Log
 
+## 2026-08-04
+
+Completed:
+
+- Adopted the Engineering Work Order Standard v1.0 via documentation-only governance package `ENGINEERING-WORKFLOW-STANDARD-1.0-RC`
+- Created `docs/00-governance/ENGINEERING_WORK_ORDER_STANDARD.md` with all twelve normative sections
+- Created `docs/03-implementation/work-orders/ENGINEERING-ASSERTION-PROMOTION-0.1-RC.md` preserving the full planning package including all six work orders (WO0-WO5)
+- Recorded `ENGINEERING-ASSERTION-PROMOTION-0.1-RC` as planned; implementation has not begun
+- Updated minimum governance/index references for discoverability (ROADMAP, `.ai/`, `PROJECT_STATE.md`)
+
+Next:
+
+- Await architectural review of the `ENGINEERING-WORKFLOW-STANDARD-1.0-RC` documentation installation
+- Do not begin WO0 of `ENGINEERING-ASSERTION-PROMOTION-0.1-RC` until explicitly directed
+
 2026-07-16
 
 Completed:

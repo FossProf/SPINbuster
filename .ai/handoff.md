@@ -1,7 +1,7 @@
 # Current State
 
 Repository status:
-Latest governance baseline: `ARCHITECTURE-VISION-2.0`. Latest software baseline: `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1`. Active implementation package: none (released; no next implementation package started). Build passing. Domain tests `234/234`. Application tests `233/233`. Documents tests `78/78`. Infrastructure tests `104/104`. Architecture tests `24/24`. AI tests `6/6`. Desktop tests `75/75`. Total `754/754`. Warnings `0` (pre-existing CA1848 acknowledged).
+Latest governance baseline: `ARCHITECTURE-VISION-2.0`. Latest software baseline: `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1`. Active documentation-only governance package: `ENGINEERING-WORKFLOW-STANDARD-1.0-RC` (installed, not released). Planned implementation package: `ENGINEERING-ASSERTION-PROMOTION-0.1-RC` (planned, not begun). Build passing. Domain tests `234/234`. Application tests `233/233`. Documents tests `78/78`. Infrastructure tests `104/104`. Architecture tests `24/24`. AI tests `6/6`. Desktop tests `75/75`. Total `754/754`. Warnings `0` (pre-existing CA1848 acknowledged).
 
 Current branch:
 `main`
@@ -15,11 +15,18 @@ Latest governance baseline:
 Latest software baseline:
 `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1`
 
-Active implementation package:
-none (released; no next implementation package started)
+Active documentation-only governance package:
+`ENGINEERING-WORKFLOW-STANDARD-1.0-RC` (installed, not released)
+
+Planned implementation package:
+`ENGINEERING-ASSERTION-PROMOTION-0.1-RC` (planned, has not begun implementation)
 
 Recent accomplishments:
 
+- Adopted the Engineering Work Order Standard v1.0 via documentation-only governance package `ENGINEERING-WORKFLOW-STANDARD-1.0-RC`:
+  - Created `docs/00-governance/ENGINEERING_WORK_ORDER_STANDARD.md` with all twelve normative sections (purpose/authority, governing principles, development lifecycle, package-level sections, work-order structure, Architecture Justification Gate, validation standard, stop-gate rules, completion-report standard, review standard, living lessons learned, versioning and change control)
+  - Created `docs/03-implementation/work-orders/ENGINEERING-ASSERTION-PROMOTION-0.1-RC.md` preserving the full planning package (Document Status through Package Completion Criteria) including all six complete work orders WO0-WO5
+  - Recorded `ENGINEERING-ASSERTION-PROMOTION-0.1-RC` as planned but not begun; no assertion implementation started
 - Completed `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` with 6 hardening passes (WO1-WO6):
   - WO1: `PromotionProvenance` value object with immutable audit properties
   - WO2: SupersedeCurrentRevision — sole Domain supersession operation, atomic UnitOfWork transaction
@@ -36,7 +43,8 @@ Current architectural decisions:
 
 - `ARCHITECTURE-VISION-2.0` is the active governance baseline.
 - `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1` is the latest released software baseline.
-- `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1` is released; no next implementation package is started (next action is the engineering-workflow governance package).
+- `ENGINEERING-WORKFLOW-STANDARD-1.0-RC` is a documentation-only governance package; the Engineering Work Order Standard v1.0 is normative for all future implementation packages.
+- `ENGINEERING-ASSERTION-PROMOTION-0.1-RC` is planned but has not begun implementation; do not mark it active until explicitly directed.
 - Fragment identity is parser-run-scoped, not revision-stable (EDR-KE-010 resolved).
 - Fragment identity uses contract version, not implementation version (EDR-DE-006 accepted).
 - Fragment candidate review uses terminal disposition model: Generated -> HumanAccepted or Rejected (EDR-DE-007 accepted).
@@ -61,7 +69,7 @@ Current architectural decisions:
 - Knowledge Engine command idempotency is still deferred by `EDR-KE-009`.
 
 Next task:
-Begin the engineering-workflow governance package (previously agreed as the next action after promotion release). No next implementation package has been started; do not begin a new vertical slice in this operation.
+`ENGINEERING-WORKFLOW-STANDARD-1.0-RC` documentation installation is complete and awaiting architectural review. `ENGINEERING-ASSERTION-PROMOTION-0.1-RC` is planned but has not begun; do not start WO0, create a tag, or change release state in this operation.
 
 Known issues:
 
@@ -82,9 +90,8 @@ Known issues:
 
 Requested review:
 
-- Approved. No release blockers.
+- `ENGINEERING-WORKFLOW-STANDARD-1.0-RC` documentation installation (diff presented for architectural review; no commit)
 - Released as `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1`.
-- Recommend the engineering-workflow governance package as the next package.
 
 Current capabilities:
 

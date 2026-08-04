@@ -16,6 +16,7 @@ Purpose: Explain how the repository is organized and where different kinds of wo
 
 - `docs/00-governance/` contains the durable repository governance layer.
 - `docs/00-governance/ARCHITECTURE_VISION.md` defines the long-term platform constitution, including Layered Architecture and Capability Architecture.
+- `docs/00-governance/ENGINEERING_WORK_ORDER_STANDARD.md` defines the normative engineering work order standard for all future implementation packages.
 - `docs/00-governance/CAPABILITY_MATRIX.md` assigns single-engine ownership for platform capabilities.
 - `docs/00-governance/PLATFORM_COMPLETION_CRITERIA.md` defines objective completion gates for architecture, feature completeness, and commercial readiness.
 - `docs/00-governance/ROADMAP.md` records the strategic roadmap and milestone direction.
@@ -24,6 +25,7 @@ Purpose: Explain how the repository is organized and where different kinds of wo
 - `docs/decisions/edr/` contains engineering and product decision records.
 - `docs/decisions/status/` contains baseline, review, and status records.
 - `docs/03-implementation/IMPLEMENTATION_LOG.md` records completed milestones and the next implementation step.
+- `docs/03-implementation/work-orders/` contains the architect-level implementation planning packages governed by the engineering work order standard; the current planning package is `ENGINEERING-ASSERTION-PROMOTION-0.1-RC` (planned, not begun).
 - `docs/decisions/edr/EDR-KE-001` through `EDR-KE-012` record the current Knowledge Engine and Document Engine deferred or accepted boundaries.
 - `docs/decisions/edr/EDR-DE-008` records the parser diagnostics and registry decision for the text adapter.
 - `docs/decisions/status/PARSING-AND-FRAGMENT-FOUNDATION-0.1-RC-PROTOTYPE-REVIEW.md` captures the parsing foundation review findings and next-package recommendation.
@@ -66,7 +68,8 @@ Purpose: Explain how the repository is organized and where different kinds of wo
 
 ## Next Active Package
 
-- Next action: engineering-workflow governance package (previously agreed; no next implementation package started)
+- `ENGINEERING-WORKFLOW-STANDARD-1.0-RC` — documentation-only governance package (adopts the Engineering Work Order Standard; not released)
+- `ENGINEERING-ASSERTION-PROMOTION-0.1-RC` — planned; implementation has not begun
 
 ## Current Document Engine Flow
 

@@ -7,13 +7,20 @@
 
 ## Latest Software Baseline
 
-- `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1`
+- `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1`
 - Status: `Released`
 
-## Active Implementation Package
+## Active Documentation-Only Governance Package
 
-- `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC`
-- Status: `Release Candidate` (not released)
+- `ENGINEERING-WORKFLOW-STANDARD-1.0-RC`
+- Status: `Documentation installed` (not released)
+- Adopts `docs/00-governance/ENGINEERING_WORK_ORDER_STANDARD.md` as normative for all future implementation packages
+
+## Planned Implementation Package
+
+- `ENGINEERING-ASSERTION-PROMOTION-0.1-RC`
+- Status: `Planned` (implementation has not begun)
+- Planning package: `docs/03-implementation/work-orders/ENGINEERING-ASSERTION-PROMOTION-0.1-RC.md`
 
 ## Current Branch
 
@@ -21,11 +28,11 @@
 
 ## Last Completed Milestone
 
-- Knowledge promotion vertical slice RC validation complete
+- Engineering Work Order Standard v1.0 adopted (documentation-only governance package); Knowledge promotion vertical slice released
 
 ## Current Implementation Phase
 
-- Knowledge Promotion — vertical slice RC validated, pending release decision
+- Governance adoption — Engineering Work Order Standard installed; Engineering Assertion Promotion planned (not begun)
 
 ## Current Milestone
 
@@ -34,13 +41,13 @@
 ## Test Status
 
 - Domain: `234/234`
-- Application: `221/221`
+- Application: `233/233`
 - Documents: `78/78`
-- Infrastructure: `102/102`
+- Infrastructure: `104/104`
 - Architecture: `24/24`
 - AI: `6/6`
 - Desktop: `75/75`
-- Total: `740/740`
+- Total: `754/754`
 
 ## Open ADRs
 
@@ -80,24 +87,25 @@
 - The Windows Desktop apphost may still be blocked by local machine policy even when the managed DLL executes correctly.
 - Fragment candidate review concurrency relies on aggregate-level guards (`EnsureReviewNotDecided`). Before server or multi-user work, the database update itself should verify original state with a conditional SQL `WHERE ReviewState = Generated` to ensure true multi-process safety.
 - Pre-existing CA1848 warnings throughout Application use cases (LoggerMessage delegates) are acknowledged technical debt.
-- Knowledge promotion concurrency relies on idempotency by candidate ID and content hash. No optimistic concurrency token prevents two simultaneous promotions from both passing the idempotency check. Acceptable for single-user foundation; required before server or multi-user work.
-- SQLite filtered unique index workaround (`BeginSupersession`/`CompleteSupersession` two-phase commit) is a known EF Core + SQLite limitation. May be simplified if migrating to a database that supports deferred constraint checking.
+- Knowledge promotion concurrency relies on `PromotionIdentity` uniqueness. No optimistic concurrency token prevents two simultaneous promotions from both passing the idempotency check. Acceptable for single-user foundation; required before server or multi-user work.
+- SQLite filtered unique index workaround is handled by the single atomic `UnitOfWork` transaction in `SupersedeCurrentRevision` (the sole Domain supersession operation). May be simplified if migrating to a database that supports deferred constraint checking.
 
 ## Immediate Next Task
 
-- `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` validated as release candidate. Awaiting release decision.
+- `ENGINEERING-WORKFLOW-STANDARD-1.0-RC` documentation installation awaiting architectural review. `ENGINEERING-ASSERTION-PROMOTION-0.1-RC` is planned but has not begun; do not start WO0 until explicitly directed.
 
 ## Fast Context
 
 - The repository is the source of truth for project state and architecture.
 - Start every new AI session from `.ai/bootstrap.md`.
 - The latest governance baseline is `ARCHITECTURE-VISION-2.0`.
-- The latest software baseline is `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1`.
-- The active implementation package is `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` (release candidate, not released).
+- The latest software baseline is `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1`.
+- The documentation-only governance package is `ENGINEERING-WORKFLOW-STANDARD-1.0-RC` (Engineering Work Order Standard adopted, not released).
+- The planned implementation package is `ENGINEERING-ASSERTION-PROMOTION-0.1-RC` (planned, implementation not begun).
 
 ## Current Capabilities
 
-- Current released capabilities include `PARSING-AND-FRAGMENT-FOUNDATION-0.1` and `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1`
+- Current released capabilities include `PARSING-AND-FRAGMENT-FOUNDATION-0.1`, `FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1`, and `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1`
 - Deterministic text parsing produces fragment candidates with reproducible identity
 - Parser runs, fragment candidates, and audit history persist through SQLite and survive provider recreation
 - Parser version coexistence preserves historical candidates
@@ -119,7 +127,7 @@
 - Knowledge Promotion: human-reviewed fragment candidates can be promoted into authoritative KnowledgeDocument, KnowledgeDocumentRevision, KnowledgeCitation, and KnowledgeRelationship records
 - Promotion precondition checklist enforced deterministically (no AI participation in authority decisions)
 - PromotionIdentity-based idempotent replay (candidate-ID or content-hash replay removed, WO4 hardened)
-- Two-phase supersession (BeginSupersession/CompleteSupersession) handles SQLite filtered unique index
+- Single atomic UnitOfWork supersession (`SupersedeCurrentRevision` is the sole Domain supersession operation)
 - Promotion diagnostics are durable and queryable (Eligible/Promoted/Failed lifecycle)
 - Project lifecycle management: Draft -> Active (required for promotion eligibility)
 - Knowledge snapshot survives provider disposal and recreation

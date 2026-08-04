@@ -10,10 +10,10 @@ Latest software baseline:
 FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1
 
 Active implementation package:
-None (next action is the engineering-workflow governance package)
+ENGINEERING-WORKFLOW-STANDARD-1.0-RC (documentation-only governance package, not released)
 
 Status:
-FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1 released; no next implementation package started
+ENGINEERING-WORKFLOW-STANDARD-1.0-RC adopted the Engineering Work Order Standard. ENGINEERING-ASSERTION-PROMOTION-0.1-RC is planned but has not begun implementation.
 
 Build:
 Passing
@@ -46,7 +46,7 @@ Total tests:
 754/754 passing
 
 Current task:
-`FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1` released as immutable tag `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1`. 754/754 tests passing. Next action: engineering-workflow governance package (no next implementation package started).
+`ENGINEERING-WORKFLOW-STANDARD-1.0-RC`: installed `docs/00-governance/ENGINEERING_WORK_ORDER_STANDARD.md` and the `ENGINEERING-ASSERTION-PROMOTION-0.1-RC` planning package at `docs/03-implementation/work-orders/`. Documentation-only governance package; no assertion implementation has begun.
 
 Required outcome:
 
@@ -62,7 +62,7 @@ Required outcome:
 - End-to-end executable proof: create project -> activate -> import -> parse -> review -> promote -> supersede -> verify snapshot
 
 Next review:
-After engineering-workflow governance package
+`ENGINEERING-WORKFLOW-STANDARD-1.0-RC` documentation installation review (stop gate: no commit until approved)
 
 Known blockers:
 None
@@ -72,6 +72,8 @@ None
 
 Last completed:
 
+- Adopted the Engineering Work Order Standard v1.0 via documentation-only governance package `ENGINEERING-WORKFLOW-STANDARD-1.0-RC` (created `docs/00-governance/ENGINEERING_WORK_ORDER_STANDARD.md` and the `ENGINEERING-ASSERTION-PROMOTION-0.1-RC` planning package)
+- Released `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1` as immutable tag; release-state continuity updated; next action is the engineering-workflow governance package
 - Released `PARSING-AND-FRAGMENT-FOUNDATION-0.1` with executable proof validated
 - Completed `FRAGMENT-INTEGRITY-HARDENING-CHECKPOINT`: fixed Rehydrate, added rehydration validation, documented contract-version identity choice (EDR-DE-006) across 4 prompts
 - Completed `FRAGMENT-REVIEW-DOMAIN-AND-SCHEMA-CHECKPOINT` (Prompt 1): implemented FragmentCandidateReviewState enum, Accept/Reject methods with audit events, review disposition properties, updated InfrastructureMapper/EF model, added EF migration, updated spec, created EDR-DE-007, added 20 review lifecycle domain tests
@@ -93,8 +95,8 @@ Last completed:
 
 Proposed next direction:
 
-- Engineering-workflow governance package (previously agreed as the next action); no new implementation package has been started
-- Do not begin a new vertical slice in this operation
+- `ENGINEERING-WORKFLOW-STANDARD-1.0-RC` documentation installation complete; awaiting review (stop gate: no commit until approved)
+- `ENGINEERING-ASSERTION-PROMOTION-0.1-RC` is planned but has not begun implementation; do not mark it active until explicitly directed
 - Preserve the non-authoritative document-candidate boundary
 - Keep OCR, AI extraction, and reconciliation workflows deferred until fragment contracts are explicit
 
@@ -187,6 +189,8 @@ Authoritative context:
 - `spec/rules/README.md`
 - `spec/rules/rule-engine-boundary.md`
 - `docs/00-governance/ROADMAP.md`
+- `docs/00-governance/ENGINEERING_WORK_ORDER_STANDARD.md`
+- `docs/03-implementation/work-orders/ENGINEERING-ASSERTION-PROMOTION-0.1-RC.md`
 - `docs/decisions/edr/EDR-KE-002-document-parsing-and-chunking.md`
 - `docs/decisions/edr/EDR-KE-009-knowledge-command-idempotency.md`
 - `docs/decisions/edr/EDR-KE-010-knowledge-fragment-identity.md`

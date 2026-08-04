@@ -36,19 +36,21 @@ Chronological released history:
 ## Current State
 
 - Latest released baseline: `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1`
+- Documentation-only governance package: `ENGINEERING-WORKFLOW-STANDARD-1.0-RC` — adopts the [Engineering Work Order Standard](ENGINEERING_WORK_ORDER_STANDARD.md) as normative for all future implementation work orders
+- Planned implementation package: [ENGINEERING-ASSERTION-PROMOTION-0.1-RC](../03-implementation/work-orders/ENGINEERING-ASSERTION-PROMOTION-0.1-RC.md) — planned, implementation has not begun
 - Previous release candidate: `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC` (validated, not released)
-- Next active package: engineering-workflow governance package (previously agreed next action after promotion release)
 
-Why this package was next:
+Why the promotion package was next:
 
 - The fragment candidate review lifecycle was released with executable proof.
-- The natural next capability is promoting human-reviewed candidates into authoritative knowledge records.
+- The natural next capability was promoting human-reviewed candidates into authoritative knowledge records.
 - This stayed focused on the vertical slice: precondition validation, document matching, revision creation, supersession, citation, relationship, idempotency, diagnostics, and authority isolation.
 
-Why release is deferred:
+Promotion release status:
 
-- The RC validates the core promotion flow end-to-end, but the review found that 6 spec gaps remain: Supersedes relationship creation, HigherAuthorityExists conflict check, AmbiguousDocumentMatch detection, spec audit event naming, temporal ordering on supersession, and concurrent promotion guard.
-- These gaps are well-scoped and can be addressed as incremental improvements without architectural changes.
+- `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1` was released (immutable tag) after WO1-WO9 hardening.
+- The documentation-only governance package `ENGINEERING-WORKFLOW-STANDARD-1.0-RC` now governs all future implementation packages.
+- `ENGINEERING-ASSERTION-PROMOTION-0.1-RC` is planned (package installed) but implementation has not begun.
 
 ## Released Foundations
 
@@ -126,7 +128,7 @@ Promote reviewed document understanding into authoritative engineering knowledge
 Major packages:
 
 - Fragment-to-knowledge promotion workflows (released: `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1`)
-- Engineering assertion promotion
+- Engineering assertion promotion (planned: [ENGINEERING-ASSERTION-PROMOTION-0.1-RC](../03-implementation/work-orders/ENGINEERING-ASSERTION-PROMOTION-0.1-RC.md))
 - Citation promotion from reviewed candidates
 - Knowledge conflict and contradiction handling
 - Knowledge graph expansion from promoted artifacts
