@@ -25,7 +25,7 @@ SPINbuster is an offline-first engineering knowledge platform with layered code 
 
 ## Active Implementation Package
 
-- `ENGINEERING-WORKFLOW-STANDARD-1.0-RC` — documentation-only governance package (adopts the Engineering Work Order Standard; not released)
+- `ENGINEERING-WORKFLOW-STANDARD-1.0-RC` — documentation-only governance package (installs the Engineering Work Order Standard on the review branch; awaiting architectural adoption approval; not released)
 - `ENGINEERING-ASSERTION-PROMOTION-0.1-RC` — planned; implementation has not begun
 
 ## Current Milestone
@@ -34,7 +34,7 @@ SPINbuster is an offline-first engineering knowledge platform with layered code 
 
 ## Current Active Task
 
-- Governance adoption: `ENGINEERING-WORKFLOW-STANDARD-1.0-RC` — install the work-order standard and the Engineering Assertion Promotion planning package (documentation only)
+- Governance package review: `ENGINEERING-WORKFLOW-STANDARD-1.0-RC` — install the work-order standard and the Engineering Assertion Promotion planning package (documentation only, awaiting architectural adoption approval)
 
 ## Authoritative Files
 

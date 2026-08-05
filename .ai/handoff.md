@@ -23,8 +23,8 @@ Planned implementation package:
 
 Recent accomplishments:
 
-- Adopted the Engineering Work Order Standard v1.0 via documentation-only governance package `ENGINEERING-WORKFLOW-STANDARD-1.0-RC`:
-  - Created `docs/00-governance/ENGINEERING_WORK_ORDER_STANDARD.md` with all twelve normative sections (purpose/authority, governing principles, development lifecycle, package-level sections, work-order structure, Architecture Justification Gate, validation standard, stop-gate rules, completion-report standard, review standard, living lessons learned, versioning and change control)
+- Installed the Engineering Work Order Standard v1.0 on the review branch via documentation-only governance package `ENGINEERING-WORKFLOW-STANDARD-1.0-RC`:
+  - Created `docs/00-governance/ENGINEERING_WORK_ORDER_STANDARD.md` with all twelve normative sections (purpose/authority, governing principles, development lifecycle, package-level sections, work-order structure, Architecture Justification Gate, validation standard, stop-gate rules, completion-report standard, review standard, living lessons learned, versioning and change control); the standard is not normative until this governance package is approved and released
   - Created `docs/03-implementation/work-orders/ENGINEERING-ASSERTION-PROMOTION-0.1-RC.md` preserving the full planning package (Document Status through Package Completion Criteria) including all six complete work orders WO0-WO5
   - Recorded `ENGINEERING-ASSERTION-PROMOTION-0.1-RC` as planned but not begun; no assertion implementation started
 - Completed `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC` with 6 hardening passes (WO1-WO6):
@@ -43,7 +43,7 @@ Current architectural decisions:
 
 - `ARCHITECTURE-VISION-2.0` is the active governance baseline.
 - `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1` is the latest released software baseline.
-- `ENGINEERING-WORKFLOW-STANDARD-1.0-RC` is a documentation-only governance package; the Engineering Work Order Standard v1.0 is normative for all future implementation packages.
+- `ENGINEERING-WORKFLOW-STANDARD-1.0-RC` is a documentation-only governance package installed on the review branch; the Engineering Work Order Standard v1.0 is not normative until this governance package is approved and released.
 - `ENGINEERING-ASSERTION-PROMOTION-0.1-RC` is planned but has not begun implementation; do not mark it active until explicitly directed.
 - Fragment identity is parser-run-scoped, not revision-stable (EDR-KE-010 resolved).
 - Fragment identity uses contract version, not implementation version (EDR-DE-006 accepted).
@@ -57,7 +57,7 @@ Current architectural decisions:
 - `ConcurrencyToken` on `KnowledgeDocument` prevents lost updates.
 - `IKnowledgeDocumentRepository.UpdateAsync` sets properties and increments token via `FindAsync`.
 - `PromotionProvenance` records `AuthorityBasis` and `PolicyVersion`.
-- Promotion attempt/diagnostic ownership: per-candidate isolation verified by SQLite integration tests.
+- Promotion attempt/diagnostic ownership: attempt-owned diagnostic history, indexed and queryable by candidate, with PromotionIdentity-only successful replay, verified by SQLite integration tests.
 - Released migration integrity: 17 migrations apply cleanly, snapshot consistent.
 - `SPINbuster.Desktop` remains a temporary bootstrap host, not a MAUI application yet.
 - The Document Engine owns binary-source handling and non-authoritative processing outputs only.
@@ -69,7 +69,7 @@ Current architectural decisions:
 - Knowledge Engine command idempotency is still deferred by `EDR-KE-009`.
 
 Next task:
-`ENGINEERING-WORKFLOW-STANDARD-1.0-RC` documentation installation is complete and awaiting architectural review. `ENGINEERING-ASSERTION-PROMOTION-0.1-RC` is planned but has not begun; do not start WO0, create a tag, or change release state in this operation.
+`ENGINEERING-WORKFLOW-STANDARD-1.0-RC` documentation installation is complete and awaiting architectural adoption approval. `ENGINEERING-ASSERTION-PROMOTION-0.1-RC` is planned but has not begun; do not start WO0, create a tag, or change release state in this operation.
 
 Known issues:
 
@@ -90,7 +90,7 @@ Known issues:
 
 Requested review:
 
-- `ENGINEERING-WORKFLOW-STANDARD-1.0-RC` documentation installation (diff presented for architectural review; no commit)
+- `ENGINEERING-WORKFLOW-STANDARD-1.0-RC` documentation installation (diff presented for architectural review and adoption approval; no commit)
 - Released as `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1`.
 
 Current capabilities:
@@ -123,7 +123,7 @@ Current capabilities:
 - Knowledge snapshot survives provider disposal and recreation
 - End-to-end executable proof: create project -> activate -> import -> parse -> review -> promote -> supersede -> verify snapshot
 - Persisted attempt history: Desktop scenario loads real promotion attempts across retries
-- Attempt/diagnostic ownership: SQLite integration tests verify per-candidate isolation
+- Attempt/diagnostic ownership: SQLite integration tests verify attempt-owned diagnostic history, indexed and queryable by candidate, with PromotionIdentity-only successful replay
 - Canonical identity migration: unique index, duplicate detection, cross-project isolation verified
 - Released migration integrity: 17 migrations apply cleanly, snapshot consistency verified
 - AI-parsed supersession blocked at equal authority via IAuthorityPolicy (Informational classification)

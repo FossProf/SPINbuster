@@ -36,7 +36,7 @@ Chronological released history:
 ## Current State
 
 - Latest released baseline: `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1`
-- Documentation-only governance package: `ENGINEERING-WORKFLOW-STANDARD-1.0-RC` — adopts the [Engineering Work Order Standard](ENGINEERING_WORK_ORDER_STANDARD.md) as normative for all future implementation work orders
+- Documentation-only governance package: `ENGINEERING-WORKFLOW-STANDARD-1.0-RC` — installs the [Engineering Work Order Standard](ENGINEERING_WORK_ORDER_STANDARD.md) on the review branch; it becomes normative for future implementation work orders only if approved and released
 - Planned implementation package: [ENGINEERING-ASSERTION-PROMOTION-0.1-RC](../03-implementation/work-orders/ENGINEERING-ASSERTION-PROMOTION-0.1-RC.md) — planned, implementation has not begun
 - Previous release candidate: `DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC` (validated, not released)
 
@@ -49,7 +49,7 @@ Why the promotion package was next:
 Promotion release status:
 
 - `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1` was released (immutable tag) after WO1-WO9 hardening.
-- The documentation-only governance package `ENGINEERING-WORKFLOW-STANDARD-1.0-RC` now governs all future implementation packages.
+- The documentation-only governance package `ENGINEERING-WORKFLOW-STANDARD-1.0-RC` is installed on the review branch and awaiting architectural adoption approval; it does not govern future implementation packages until approved and released.
 - `ENGINEERING-ASSERTION-PROMOTION-0.1-RC` is planned (package installed) but implementation has not begun.
 
 ## Released Foundations

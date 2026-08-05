@@ -13,8 +13,8 @@
 ## Active Documentation-Only Governance Package
 
 - `ENGINEERING-WORKFLOW-STANDARD-1.0-RC`
-- Status: `Documentation installed` (not released)
-- Adopts `docs/00-governance/ENGINEERING_WORK_ORDER_STANDARD.md` as normative for all future implementation packages
+- Status: `Installed on review branch` (awaiting architectural adoption approval, not released)
+- Installs `docs/00-governance/ENGINEERING_WORK_ORDER_STANDARD.md`; it is not normative until this governance package is approved and released
 
 ## Planned Implementation Package
 
@@ -28,11 +28,11 @@
 
 ## Last Completed Milestone
 
-- Engineering Work Order Standard v1.0 adopted (documentation-only governance package); Knowledge promotion vertical slice released
+- Engineering Work Order Standard v1.0 installed on the review branch (documentation-only governance package awaiting approval); Knowledge promotion vertical slice released
 
 ## Current Implementation Phase
 
-- Governance adoption — Engineering Work Order Standard installed; Engineering Assertion Promotion planned (not begun)
+- Governance package review — Engineering Work Order Standard installed on review branch awaiting architectural adoption approval; Engineering Assertion Promotion planned (not begun)
 
 ## Current Milestone
 
@@ -92,7 +92,7 @@
 
 ## Immediate Next Task
 
-- `ENGINEERING-WORKFLOW-STANDARD-1.0-RC` documentation installation awaiting architectural review. `ENGINEERING-ASSERTION-PROMOTION-0.1-RC` is planned but has not begun; do not start WO0 until explicitly directed.
+- `ENGINEERING-WORKFLOW-STANDARD-1.0-RC` documentation installation awaiting architectural adoption approval. `ENGINEERING-ASSERTION-PROMOTION-0.1-RC` is planned but has not begun; do not start WO0 until explicitly directed.
 
 ## Fast Context
 
@@ -100,7 +100,7 @@
 - Start every new AI session from `.ai/bootstrap.md`.
 - The latest governance baseline is `ARCHITECTURE-VISION-2.0`.
 - The latest software baseline is `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1`.
-- The documentation-only governance package is `ENGINEERING-WORKFLOW-STANDARD-1.0-RC` (Engineering Work Order Standard adopted, not released).
+- The documentation-only governance package is `ENGINEERING-WORKFLOW-STANDARD-1.0-RC` (Engineering Work Order Standard installed on the review branch, awaiting architectural adoption approval; not released).
 - The planned implementation package is `ENGINEERING-ASSERTION-PROMOTION-0.1-RC` (planned, implementation not begun).
 
 ## Current Capabilities
@@ -133,7 +133,7 @@
 - Knowledge snapshot survives provider disposal and recreation
 - End-to-end executable proof: create project -> activate -> import -> parse -> review -> promote -> supersede -> verify snapshot
 - Persisted attempt history: Desktop scenario loads real promotion attempts across retries
-- Attempt/diagnostic ownership: SQLite integration tests verify per-candidate isolation
+- Attempt/diagnostic ownership: SQLite integration tests verify attempt-owned diagnostic history, indexed and queryable by candidate, with PromotionIdentity-only successful replay
 - Canonical identity migration: unique index, duplicate detection, cross-project isolation verified
 - Released migration integrity: 17 migrations apply cleanly, snapshot consistency verified
 - AI-parsed supersession blocked at equal authority via IAuthorityPolicy (Informational classification)

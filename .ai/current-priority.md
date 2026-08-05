@@ -13,7 +13,7 @@ Active implementation package:
 ENGINEERING-WORKFLOW-STANDARD-1.0-RC (documentation-only governance package, not released)
 
 Status:
-ENGINEERING-WORKFLOW-STANDARD-1.0-RC adopted the Engineering Work Order Standard. ENGINEERING-ASSERTION-PROMOTION-0.1-RC is planned but has not begun implementation.
+ENGINEERING-WORKFLOW-STANDARD-1.0-RC is installed on the review branch and awaiting architectural adoption approval. If approved and released, ENGINEERING_WORK_ORDER_STANDARD.md will become normative for future work-order packages. ENGINEERING-ASSERTION-PROMOTION-0.1-RC is planned but has not begun implementation.
 
 Build:
 Passing
@@ -50,19 +50,14 @@ Current task:
 
 Required outcome:
 
-- Promote fragment candidates into authoritative KnowledgeDocument, KnowledgeDocumentRevision, KnowledgeCitation, and KnowledgeRelationship records
-- Enforce promotion precondition checklist deterministically (no AI participation in authority decisions)
-- Implement PromotionIdentity-based idempotent replay
-- Implement SupersedeCurrentRevision (sole Domain supersession operation, atomic UnitOfWork transaction)
-- Canonical identity enforcement via unique index on CanonicalIdentityHash
-- ConcurrencyToken on KnowledgeDocument prevents lost updates
-- Authority policy: AI-parsed candidates classified Informational, cannot escalate authority
-- Persisted attempt history across Desktop retries
-- Attempt/diagnostic ownership: per-candidate isolation
-- End-to-end executable proof: create project -> activate -> import -> parse -> review -> promote -> supersede -> verify snapshot
+- Install the proposed standard and planning package
+- Validate repository integration and internal links
+- Preserve software/schema/release state
+- Obtain architectural adoption approval
+- Do not begin assertion WO0
 
 Next review:
-`ENGINEERING-WORKFLOW-STANDARD-1.0-RC` documentation installation review (stop gate: no commit until approved)
+`ENGINEERING-WORKFLOW-STANDARD-1.0-RC` documentation installation architectural adoption review (stop gate: no commit until approved)
 
 Known blockers:
 None
@@ -72,7 +67,7 @@ None
 
 Last completed:
 
-- Adopted the Engineering Work Order Standard v1.0 via documentation-only governance package `ENGINEERING-WORKFLOW-STANDARD-1.0-RC` (created `docs/00-governance/ENGINEERING_WORK_ORDER_STANDARD.md` and the `ENGINEERING-ASSERTION-PROMOTION-0.1-RC` planning package)
+- Installed the Engineering Work Order Standard v1.0 on the review branch via documentation-only governance package `ENGINEERING-WORKFLOW-STANDARD-1.0-RC` (created `docs/00-governance/ENGINEERING_WORK_ORDER_STANDARD.md` and the `ENGINEERING-ASSERTION-PROMOTION-0.1-RC` planning package); awaiting architectural adoption approval
 - Released `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1` as immutable tag; release-state continuity updated; next action is the engineering-workflow governance package
 - Released `PARSING-AND-FRAGMENT-FOUNDATION-0.1` with executable proof validated
 - Completed `FRAGMENT-INTEGRITY-HARDENING-CHECKPOINT`: fixed Rehydrate, added rehydration validation, documented contract-version identity choice (EDR-DE-006) across 4 prompts
@@ -95,7 +90,7 @@ Last completed:
 
 Proposed next direction:
 
-- `ENGINEERING-WORKFLOW-STANDARD-1.0-RC` documentation installation complete; awaiting review (stop gate: no commit until approved)
+- `ENGINEERING-WORKFLOW-STANDARD-1.0-RC` documentation installation complete; awaiting architectural adoption approval (stop gate: no commit until approved)
 - `ENGINEERING-ASSERTION-PROMOTION-0.1-RC` is planned but has not begun implementation; do not mark it active until explicitly directed
 - Preserve the non-authoritative document-candidate boundary
 - Keep OCR, AI extraction, and reconciliation workflows deferred until fragment contracts are explicit
@@ -163,7 +158,7 @@ Current capabilities:
 - ConcurrencyToken prevents lost updates
 - AI-parsed candidates blocked from authority escalation
 - Persisted attempt history across Desktop retries
-- Attempt/diagnostic ownership per-candidate isolation
+- Attempt/diagnostic ownership: attempt-owned diagnostic history, indexed and queryable by candidate, with PromotionIdentity-only successful replay
 - Candidate-based diagnostic short-circuit removed: fresh diagnostic/attempt per promotion execution
 - LoadPromotionAttempts secured with ProjectId ownership validation
 - FailureReason exposure removed from public DTO; PromotionAttemptResult exposes bounded FailureSummary (500-char cap)
@@ -186,6 +181,7 @@ Authoritative context:
 - `docs/decisions/status/FRAGMENT-CANDIDATE-REVIEW-SLICE-0.1-RC-REVIEW.md`
 - `docs/decisions/status/DOCUMENT-UNDERSTANDING-TEXT-ADAPTER-0.1-RC-PROTOTYPE-REVIEW.md`
 - `docs/decisions/status/FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1-RC-REVIEW.md`
+- `docs/decisions/status/ENGINEERING-WORKFLOW-STANDARD-1.0-RC-REVIEW.md`
 - `spec/rules/README.md`
 - `spec/rules/rule-engine-boundary.md`
 - `docs/00-governance/ROADMAP.md`
