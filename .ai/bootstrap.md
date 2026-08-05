@@ -12,12 +12,12 @@ SPINbuster is an offline-first engineering knowledge platform with layered code 
 - Architecture guardrails are in place and passing.
 - The repository includes released foundations for Application, Infrastructure, AI proposal workflows, Knowledge Engine workflows, Document Engine workflows, the local filesystem storage adapter, the parsing and fragment foundation, and the fragment-to-knowledge promotion workflow.
 - The latest software baseline is `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1`.
-- The latest governance baseline is `ARCHITECTURE-VISION-2.0`.
+- The latest governance baseline is `ENGINEERING-WORKFLOW-STANDARD-1.0`.
 - The roadmap is organized by long-term capability evolution.
 
 ## Latest Governance Baseline
 
-- `ARCHITECTURE-VISION-2.0`
+- `ENGINEERING-WORKFLOW-STANDARD-1.0`
 
 ## Latest Software Baseline
 
@@ -25,7 +25,7 @@ SPINbuster is an offline-first engineering knowledge platform with layered code 
 
 ## Active Implementation Package
 
-- `ENGINEERING-WORKFLOW-STANDARD-1.0-RC` — documentation-only governance package (installs the Engineering Work Order Standard on the review branch; awaiting architectural adoption approval; not released)
+- `ENGINEERING-WORKFLOW-STANDARD-1.0` — released governance package (adopts the Engineering Work Order Standard as normative)
 - `ENGINEERING-ASSERTION-PROMOTION-0.1-RC` — planned; implementation has not begun
 
 ## Current Milestone
@@ -34,7 +34,7 @@ SPINbuster is an offline-first engineering knowledge platform with layered code 
 
 ## Current Active Task
 
-- Governance package review: `ENGINEERING-WORKFLOW-STANDARD-1.0-RC` — install the work-order standard and the Engineering Assertion Promotion planning package (documentation only, awaiting architectural adoption approval)
+- Governance release: `ENGINEERING-WORKFLOW-STANDARD-1.0` released; the Engineering Work Order Standard is normative for future work-order packages. `ENGINEERING-ASSERTION-PROMOTION-0.1-RC` remains planned; WO0 begins only after explicit instruction.
 
 ## Authoritative Files
 

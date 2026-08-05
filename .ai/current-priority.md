@@ -4,16 +4,16 @@ Current milestone:
 Prototype Vertical Slice
 
 Latest governance baseline:
-ARCHITECTURE-VISION-2.0
+ENGINEERING-WORKFLOW-STANDARD-1.0
 
 Latest software baseline:
 FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1
 
 Active implementation package:
-ENGINEERING-WORKFLOW-STANDARD-1.0-RC (documentation-only governance package, not released)
+ENGINEERING-WORKFLOW-STANDARD-1.0 (released governance package; Engineering Work Order Standard adopted and normative)
 
 Status:
-ENGINEERING-WORKFLOW-STANDARD-1.0-RC is installed on the review branch and awaiting architectural adoption approval. If approved and released, ENGINEERING_WORK_ORDER_STANDARD.md will become normative for future work-order packages. ENGINEERING-ASSERTION-PROMOTION-0.1-RC is planned but has not begun implementation.
+ENGINEERING-WORKFLOW-STANDARD-1.0 released; the Engineering Work Order Standard is adopted and normative for future work-order packages. ENGINEERING-ASSERTION-PROMOTION-0.1-RC is planned but has not begun implementation; WO0 begins only after explicit instruction.
 
 Build:
 Passing
@@ -46,18 +46,17 @@ Total tests:
 754/754 passing
 
 Current task:
-`ENGINEERING-WORKFLOW-STANDARD-1.0-RC`: installed `docs/00-governance/ENGINEERING_WORK_ORDER_STANDARD.md` and the `ENGINEERING-ASSERTION-PROMOTION-0.1-RC` planning package at `docs/03-implementation/work-orders/`. Documentation-only governance package; no assertion implementation has begun.
+`ENGINEERING-WORKFLOW-STANDARD-1.0` released as immutable governance tag; Engineering Work Order Standard adopted and normative. `ENGINEERING-ASSERTION-PROMOTION-0.1-RC` remains planned; WO0 is the next action only after explicit instruction.
 
 Required outcome:
 
-- Install the proposed standard and planning package
-- Validate repository integration and internal links
-- Preserve software/schema/release state
-- Obtain architectural adoption approval
-- Do not begin assertion WO0
+- Governance package `ENGINEERING-WORKFLOW-STANDARD-1.0` released and normative
+- Preserve `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1` as latest software baseline
+- Keep `ENGINEERING-ASSERTION-PROMOTION-0.1-RC` planned but inactive
+- Begin assertion WO0 only after explicit instruction
 
 Next review:
-`ENGINEERING-WORKFLOW-STANDARD-1.0-RC` documentation installation architectural adoption review (stop gate: no commit until approved)
+`ENGINEERING-ASSERTION-PROMOTION-0.1-RC` WO0 — do not begin until explicitly directed
 
 Known blockers:
 None
@@ -67,7 +66,7 @@ None
 
 Last completed:
 
-- Installed the Engineering Work Order Standard v1.0 on the review branch via documentation-only governance package `ENGINEERING-WORKFLOW-STANDARD-1.0-RC` (created `docs/00-governance/ENGINEERING_WORK_ORDER_STANDARD.md` and the `ENGINEERING-ASSERTION-PROMOTION-0.1-RC` planning package); awaiting architectural adoption approval
+- Released `ENGINEERING-WORKFLOW-STANDARD-1.0` as immutable governance tag; Engineering Work Order Standard adopted and normative; release-state continuity updated; `ENGINEERING-ASSERTION-PROMOTION-0.1-RC` remains planned (WO0 next only after explicit instruction)
 - Released `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1` as immutable tag; release-state continuity updated; next action is the engineering-workflow governance package
 - Released `PARSING-AND-FRAGMENT-FOUNDATION-0.1` with executable proof validated
 - Completed `FRAGMENT-INTEGRITY-HARDENING-CHECKPOINT`: fixed Rehydrate, added rehydration validation, documented contract-version identity choice (EDR-DE-006) across 4 prompts
@@ -90,8 +89,8 @@ Last completed:
 
 Proposed next direction:
 
-- `ENGINEERING-WORKFLOW-STANDARD-1.0-RC` documentation installation complete; awaiting architectural adoption approval (stop gate: no commit until approved)
-- `ENGINEERING-ASSERTION-PROMOTION-0.1-RC` is planned but has not begun implementation; do not mark it active until explicitly directed
+- `ENGINEERING-WORKFLOW-STANDARD-1.0` released; Engineering Work Order Standard adopted and normative for future work-order packages
+- `ENGINEERING-ASSERTION-PROMOTION-0.1-RC` is planned but has not begun implementation; WO0 is the next action only after explicit instruction
 - Preserve the non-authoritative document-candidate boundary
 - Keep OCR, AI extraction, and reconciliation workflows deferred until fragment contracts are explicit
 

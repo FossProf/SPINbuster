@@ -2,19 +2,20 @@
 
 - Package: `ENGINEERING-WORKFLOW-STANDARD-1.0-RC`
 - Profile: C — Governance or Documentation Package
-- Status: Release Candidate awaiting architectural adoption approval
-- Latest governance baseline: `ARCHITECTURE-VISION-2.0`
+- Status: Released
+- Latest governance baseline: `ENGINEERING-WORKFLOW-STANDARD-1.0`
 - Latest software baseline: `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1`
 - Review branch: `review/engineering-workflow-standard-1.0-rc`
+- Release tag: `ENGINEERING-WORKFLOW-STANDARD-1.0`
 - Date: 2026-08-04
 
 ## Purpose and Authority
 
 This governance package installs `docs/00-governance/ENGINEERING_WORK_ORDER_STANDARD.md` (the Engineering Work Order Standard v1.0) and the `ENGINEERING-ASSERTION-PROMOTION-0.1-RC` planning package at `docs/03-implementation/work-orders/` for architectural review.
 
-The standard is not normative until this governance package is approved and released. Until that approval, `ARCHITECTURE-VISION-2.0` remains the only active governance baseline, and the work-order standard is a review artifact on the review branch.
+The standard became normative when this governance package was approved and released (immutable tag `ENGINEERING-WORKFLOW-STANDARD-1.0`). `ARCHITECTURE-VISION-2.0` remains the released architecture constitution, and `ENGINEERING-WORKFLOW-STANDARD-1.0` is the latest released governance baseline.
 
-The package carries no executable implementation. It does not change production code, tests, projects, migrations, or release state.
+The package carries no executable implementation. It does not change production code, tests, projects, or migrations.
 
 ## Affected Artifacts
 
@@ -33,9 +34,10 @@ Updated reference artifacts (documentation only):
 
 ## Compatibility Implications
 
-- No software, schema, migration, tag, or release-state change.
-- Existing released baselines remain unchanged: latest software baseline `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1`; latest governance baseline `ARCHITECTURE-VISION-2.0`.
-- If approved and released, `ENGINEERING_WORK_ORDER_STANDARD.md` becomes normative for future work-order packages. Until then it has no governing effect on existing released behavior.
+- No software, schema, or migration change.
+- Release state changed only by the governance release action: immutable tag `ENGINEERING-WORKFLOW-STANDARD-1.0` at commit `4048e61`, and the review branch merged to `main`.
+- Existing released baselines remain unchanged: latest software baseline `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1`; latest governance baseline now `ENGINEERING-WORKFLOW-STANDARD-1.0`.
+- `ENGINEERING_WORK_ORDER_STANDARD.md` is normative for future work-order packages.
 - The `ENGINEERING-ASSERTION-PROMOTION-0.1-RC` package remains planned and inactive; no assertion WO0 begins without explicit direction.
 
 ## Scope Guard
@@ -70,13 +72,13 @@ Document verification:
 
 ## Stop Gate
 
-The corrected review branch is pushed to `origin`. This operation does not:
+The corrected review branch was pushed to `origin` and merged to `main` for architectural adoption approval. The release action:
 
-- merge to `main`;
-- create a tag or change release state;
-- begin assertion WO0.
+- merged the review branch to `main` (fast-forward to commit `4048e61`);
+- created and pushed the immutable annotated tag `ENGINEERING-WORKFLOW-STANDARD-1.0`;
+- did not begin assertion WO0.
 
-Review the final diff. After architectural adoption approval, the package can be committed to `main` and the standard becomes normative.
+The package is committed to `main` and the standard is normative. No further governance changes are part of this release.
 
 ## Review Findings and Disposition
 
@@ -89,6 +91,7 @@ Findings from architectural review of the governance package:
 
 ## Adoption/Release Status
 
-- Status: Release Candidate awaiting architectural adoption approval.
-- Not released; not normative; no tag.
-- Next action: architectural review of the review branch diff, then approval decision.
+- Status: Released.
+- Released as immutable annotated tag `ENGINEERING-WORKFLOW-STANDARD-1.0` at commit `4048e61`; review branch merged to `main`.
+- The Engineering Work Order Standard is adopted and normative for future work-order packages.
+- Next action: `ENGINEERING-ASSERTION-PROMOTION-0.1-RC` WO0 — do not begin until explicitly directed.

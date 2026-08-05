@@ -10,11 +10,11 @@
 - `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1`
 - Status: `Released`
 
-## Active Documentation-Only Governance Package
+## Released Governance Package
 
-- `ENGINEERING-WORKFLOW-STANDARD-1.0-RC`
-- Status: `Installed on review branch` (awaiting architectural adoption approval, not released)
-- Installs `docs/00-governance/ENGINEERING_WORK_ORDER_STANDARD.md`; it is not normative until this governance package is approved and released
+- `ENGINEERING-WORKFLOW-STANDARD-1.0`
+- Status: `Released` (Engineering Work Order Standard adopted and normative)
+- Releases `docs/00-governance/ENGINEERING_WORK_ORDER_STANDARD.md` as the normative standard for future work-order packages
 
 ## Planned Implementation Package
 
@@ -28,11 +28,11 @@
 
 ## Last Completed Milestone
 
-- Engineering Work Order Standard v1.0 installed on the review branch (documentation-only governance package awaiting approval); Knowledge promotion vertical slice released
+- Engineering Work Order Standard v1.0 released as governance package `ENGINEERING-WORKFLOW-STANDARD-1.0`; knowledge promotion vertical slice released
 
 ## Current Implementation Phase
 
-- Governance package review — Engineering Work Order Standard installed on review branch awaiting architectural adoption approval; Engineering Assertion Promotion planned (not begun)
+- Governance package released — Engineering Work Order Standard adopted and normative; Engineering Assertion Promotion planned (not begun)
 
 ## Current Milestone
 
@@ -92,15 +92,15 @@
 
 ## Immediate Next Task
 
-- `ENGINEERING-WORKFLOW-STANDARD-1.0-RC` documentation installation awaiting architectural adoption approval. `ENGINEERING-ASSERTION-PROMOTION-0.1-RC` is planned but has not begun; do not start WO0 until explicitly directed.
+- `ENGINEERING-WORKFLOW-STANDARD-1.0` released; Engineering Work Order Standard adopted and normative. `ENGINEERING-ASSERTION-PROMOTION-0.1-RC` is planned but has not begun; WO0 is the next action only after explicit instruction.
 
 ## Fast Context
 
 - The repository is the source of truth for project state and architecture.
 - Start every new AI session from `.ai/bootstrap.md`.
-- The latest governance baseline is `ARCHITECTURE-VISION-2.0`.
+- The latest governance baseline is `ENGINEERING-WORKFLOW-STANDARD-1.0`.
 - The latest software baseline is `FRAGMENT-TO-KNOWLEDGE-PROMOTION-0.1`.
-- The documentation-only governance package is `ENGINEERING-WORKFLOW-STANDARD-1.0-RC` (Engineering Work Order Standard installed on the review branch, awaiting architectural adoption approval; not released).
+- The released governance package is `ENGINEERING-WORKFLOW-STANDARD-1.0` (Engineering Work Order Standard adopted and normative).
 - The planned implementation package is `ENGINEERING-ASSERTION-PROMOTION-0.1-RC` (planned, implementation not begun).
 
 ## Current Capabilities

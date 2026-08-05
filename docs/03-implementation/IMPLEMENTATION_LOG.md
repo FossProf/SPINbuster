@@ -4,18 +4,18 @@
 
 Completed:
 
-- Installed the Engineering Work Order Standard v1.0 on the review branch via documentation-only governance package `ENGINEERING-WORKFLOW-STANDARD-1.0-RC` (awaiting architectural adoption approval; not normative until approved and released)
+- Installed the Engineering Work Order Standard v1.0 via governance package `ENGINEERING-WORKFLOW-STANDARD-1.0-RC` on the review branch and released it as `ENGINEERING-WORKFLOW-STANDARD-1.0` (now normative)
 - Created `docs/00-governance/ENGINEERING_WORK_ORDER_STANDARD.md` with all twelve normative sections
 - Created `docs/03-implementation/work-orders/ENGINEERING-ASSERTION-PROMOTION-0.1-RC.md` preserving the full planning package including all six work orders (WO0-WO5)
 - Recorded `ENGINEERING-ASSERTION-PROMOTION-0.1-RC` as planned; implementation has not begun
-- Created `docs/decisions/status/ENGINEERING-WORKFLOW-STANDARD-1.0-RC-REVIEW.md` (Profile C governance package record)
+- Created `docs/decisions/status/ENGINEERING-WORKFLOW-STANDARD-1.0-RC-REVIEW.md` (Profile C governance package record; status Released)
 - Corrected active continuity to remove premature adoption language and stale attempt-ownership terminology
 - Updated minimum governance/index references for discoverability (ROADMAP, `.ai/`, `PROJECT_STATE.md`)
+- Released governance package `ENGINEERING-WORKFLOW-STANDARD-1.0` as immutable annotated tag at commit `4048e61`; review branch merged to `main`; release-state continuity updated
 
 Next:
 
-- Await architectural adoption approval of the `ENGINEERING-WORKFLOW-STANDARD-1.0-RC` documentation installation
-- Do not begin WO0 of `ENGINEERING-ASSERTION-PROMOTION-0.1-RC` until explicitly directed
+- `ENGINEERING-ASSERTION-PROMOTION-0.1-RC` WO0 is the next action but must not begin until explicitly directed
 
 2026-07-16
 
